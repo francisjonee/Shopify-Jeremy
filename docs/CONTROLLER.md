@@ -1,154 +1,115 @@
 # The SCA task controller
 
-A small program on the project server. It reads the one approved task on `main`, starts
-Claude Code for exactly that task, records what happened, and stops.
+A small program on the project VPS. It reads the one approved task on `main`, starts Claude Code for exactly that task, records what happened, and stops.
 
-It is not an architect. It never picks work, never approves anything, and never merges.
+It is not an architect. It never picks work, never approves itself, and never merges.
 
-This is the implementation of `ADR-0003-CLAUDE-TASK-CONTROLLER.md`.
-
-**Word check:** *controller* = the program that starts Claude. *dispatch* = one launch of
-Claude for one task.
-
----
+This implements `ADR-0003-CLAUDE-TASK-CONTROLLER.md`.
 
 ## 1. Why it exists
 
-A task file on GitHub does not wake Claude up. Somebody has to press go.
+A task file on GitHub does not wake Claude by itself. The controller provides that execution bridge.
 
-The controller is that press. ChatGPT writes the task, the controller launches Claude for
-it once, and then everything stops until ChatGPT has read the evidence.
-
----
+ChatGPT writes the task. The controller dispatches that exact task once. Claude returns evidence. Then the workflow stops until ChatGPT audits the result and publishes a new/revised task.
 
 ## 2. Where it lives
 
 | Thing | Where |
 |---|---|
-| Source, version controlled | `ops/controller/` in this repo |
-| Installed copy | `/opt/sca-controller/bin/` on the server |
+| Version-controlled source | `ops/controller/` in this repo |
+| Installed copy | `/opt/sca-controller/bin/` on the VPS |
 | Settings | `/opt/sca-controller/config/controller.env` — **not in Git** |
 | State and logs | `/opt/sca-controller/state/` and `/opt/sca-controller/logs/` — **not in Git** |
-| Working copy of the repo | `/opt/sca-controller/repo/` |
+| Working copy | `/opt/sca-controller/repo/` |
 
-State and logs stay off GitHub because they hold server paths and run detail. This repo is
-public.
-
-It runs as the `sceyewear` account, not as root.
-
----
+It runs as the non-root `sceyewear` service account unless an approved task changes that design.
 
 ## 3. What one run does
 
-1. Takes a lock, so two runs can never overlap.
+1. Takes a lock so two runs cannot overlap.
 2. Stops if HOLD is set.
 3. Fetches `NEXT_TASK.md` from `main`.
-4. Reads `STATUS`, `TASK_ID` and `RETRY_GENERATION`.
+4. Reads `STATUS`, `TASK_ID`, and `RETRY_GENERATION`.
 5. Stops unless `STATUS` is `READY`.
-6. Stops if that exact `TASK_ID` and `RETRY_GENERATION` were dispatched before.
-7. Writes the pair into a list, so it can never be dispatched twice.
-8. Makes the task branch, for example `task/sca-ctrl-001-gen0`.
-9. Starts Claude Code for that one task.
-10. Records `AWAITING_ARCHITECT_AUDIT`, and stops.
+6. Stops if that exact `TASK_ID#RETRY_GENERATION` was already dispatched.
+7. Records the dispatch key before Claude starts.
+8. Creates/uses the task branch.
+9. Starts Claude Code for only that task in live mode, or simulates dispatch in dry-run mode.
+10. Records the final controller state and stops for architecture audit.
 
-ChatGPT reads the evidence. To send the same task back, ChatGPT raises
-`RETRY_GENERATION` by one. That makes a new pair, so the controller will run it again.
+Raising `RETRY_GENERATION` creates a new dispatch key for a remediation attempt.
 
----
+## 4. Commands
 
-## 4. The commands
-
-Run everything as the service account.
-
-Check where things stand:
+Check status:
 
 ```bash
 sudo -u sceyewear /opt/sca-controller/bin/sca-controllerctl status
 ```
 
-Dispatch once, without calling Claude:
+Dry-run without calling Claude:
 
 ```bash
 sudo -u sceyewear /opt/sca-controller/bin/sca-controllerctl run --dry-run
 ```
 
-Dispatch for real:
+Live dispatch, only when explicitly authorized and configured:
 
 ```bash
 sudo -u sceyewear /opt/sca-controller/bin/sca-controllerctl run --live
 ```
 
-Read the audit trail:
+Read recent audit entries:
 
 ```bash
 sudo -u sceyewear /opt/sca-controller/bin/sca-controllerctl log 20
 ```
 
----
+## 5. Stop switches
 
-## 5. The stop switches
-
-**HOLD** stops the next dispatch. Nothing running is touched.
+HOLD stops future dispatches:
 
 ```bash
-sudo -u sceyewear /opt/sca-controller/bin/sca-controllerctl hold "paused by Francis"
+sudo -u sceyewear /opt/sca-controller/bin/sca-controllerctl hold "approved pause reason"
 sudo -u sceyewear /opt/sca-controller/bin/sca-controllerctl resume
 ```
 
-**KILL** stops the Claude run that is happening now, and sets HOLD at the same time.
+KILL stops the active Claude process and sets HOLD:
 
 ```bash
-sudo -u sceyewear /opt/sca-controller/bin/sca-controllerctl kill "stop now"
+sudo -u sceyewear /opt/sca-controller/bin/sca-controllerctl kill "approved stop reason"
 ```
 
-`resume` is the only way back. Nothing clears HOLD on its own.
+## 6. Safety rules
 
----
+- Dry-run is the default safety mode.
+- Live mode requires both `--live` and `SCA_ALLOW_LIVE=1`.
+- `flock` prevents overlapping runs.
+- `TASK_ID#RETRY_GENERATION` prevents duplicate dispatch.
+- The controller never merges PRs.
+- Dispatch/audit logs are append-only.
+- The controller runs non-root.
+- Secrets stay outside Git.
+- Missing proof means the task is not accepted even if controller code was already merged.
 
-## 6. The safety rules built in
-
-- **Dry-run is the default.** Live needs `--live` *and* `SCA_ALLOW_LIVE=1` in the settings
-  file. It ships as `0`.
-- **One at a time.** A file lock means a second run exits instead of racing.
-- **No repeat dispatch.** The task ID and retry number are written down before Claude
-  starts, so a crash mid-run cannot cause a second launch.
-- **No merging.** The controller has no merge command, and it refuses to start if one is
-  ever added to its own source.
-- **Append-only trail.** Every decision is added to a log as one line. Lines are never
-  edited or removed.
-- **Non-root.** It runs as `sceyewear`.
-- **No secrets in Git.** Settings live in a file on the server, readable only by that
-  account.
-
----
-
-## 7. States it can record
+## 7. Controller states
 
 | State | Meaning |
 |---|---|
 | `RUNNING` | Claude was launched for this task |
-| `AWAITING_ARCHITECT_AUDIT` | Finished. Waiting for ChatGPT to read the evidence |
-| `FAILED_CLAUDE_INVOCATION` | Claude was launched but exited with an error |
-| `FAILED_TASK_UNPARSEABLE` | `NEXT_TASK.md` had no readable task ID or retry number |
-| `BLOCKED_LIVE_NOT_ENABLED` | `--live` was asked for, but live mode is switched off |
-| `HELD` | HOLD was set, so nothing was dispatched |
-| `IDLE` | `STATUS` on `main` was not `READY` |
+| `AWAITING_ARCHITECT_AUDIT` | Execution completed and waits for ChatGPT audit |
+| `FAILED_CLAUDE_INVOCATION` | Claude invocation failed |
+| `FAILED_TASK_UNPARSEABLE` | Current task could not be parsed |
+| `BLOCKED_LIVE_NOT_ENABLED` | Live dispatch requested while live mode is disabled |
+| `HELD` | HOLD blocked dispatch |
+| `IDLE` | Current task is not READY |
 
----
+## 8. Credentials and live mode
 
-## 8. Before live mode can be used
+Dry-run proof does not require production dispatch credentials.
 
-The service account has no credentials of its own yet. It needs two, set by Francis in
-`/opt/sca-controller/config/controller.env`:
+Live mode requires the service account to receive only the credentials explicitly authorized for this workflow, stored outside Git. Credential values must never appear in the architecture repo, PRs, logs, or chat evidence.
 
-- `ANTHROPIC_API_KEY` — so the account can run Claude Code
-- `GH_TOKEN` — so the account can push a branch and open a pull request
+## 9. Scheduling
 
-Names only. Never put the values in Git. Do not copy another account's credentials in.
-
----
-
-## 9. Running it on a schedule
-
-Not yet. `ops/controller/systemd/` holds the two files that would do it. They are not
-installed and not switched on. That waits for the audit and for Francis's approval.
+Unattended scheduling stays disabled until ChatGPT accepts the controller proof and a later approved task explicitly enables it.

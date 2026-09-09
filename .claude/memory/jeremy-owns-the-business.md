@@ -1,11 +1,9 @@
-# Jeremy owns the business, Francis owns the GitHub account
+# Jeremy owns the SCA/SCE business
 
-The repo is under `francisjonee`, but the business — Second Chance Eyewear / Second
-Chance Authenticators — is Jeremy's. `README.md` states this directly, and two commits
-were made specifically to correct it.
+Second Chance Eyewear / Second Chance Authenticators is Jeremy's business.
 
-**Why it matters:** Product decisions, domain choices, pricing, and going live are
-**Jeremy's** calls, not Francis's. Francis owns the account, the server and the spend.
+The repository is hosted under `francisjonee`, but that account name is only a technical hosting detail. It does not create a second business owner, product owner, or stakeholder.
 
-**How to apply:** When a question is about the product or the business, say it needs
-Jeremy. When it is about infrastructure, tooling or cost, that is Francis.
+**Why it matters:** Product decisions, pricing, domain/business choices, and production approval belong to Jeremy. ChatGPT controls architecture/task audit. Claude implements approved work. Infrastructure can be operated by an authorized technical operator without turning that operator into a business stakeholder.
+
+**How to apply:** Do not assign product/business authority based on the GitHub account name. Treat operational access separately from business ownership.

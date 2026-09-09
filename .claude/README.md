@@ -2,49 +2,40 @@
 
 `.claude/` is the instruction pack for **Claude Code** on the SCA project.
 
-It is read automatically every time a session starts in `/opt/secondchanceeyewear`. You
-never have to load it or mention it.
-
-Think of it as the onboarding pack you would hand a new hire — written for the AI, so
-nobody has to explain the same things every session.
-
----
+It is the onboarding pack for Claude: project rules, task flow, memory notes, commands, and permissions.
 
 ## The five parts
 
 | Part | What it is | When it is used |
 |---|---|---|
-| `../CLAUDE.md` | The short brief — the team, the repo, the top rules | Every session |
-| `MEMORY.md` + `memory/` | Facts the repo does not say out loud | Pulled in when they matter |
-| `rules/` | The hard rules. Not negotiable | `output.md` on **every reply**; the rest before anything risky |
-| `commands/` | Shortcuts you type as `/name` | When you type them |
-| `settings.json` | Permissions — what runs freely, what asks first, what is banned | On every action |
+| `../CLAUDE.md` | The short project brief and top rules | Every session |
+| `MEMORY.md` + `memory/` | Facts that are easy to lose between sessions | When relevant |
+| `rules/` | Hard workflow/security/output rules | Before acting |
+| `commands/` | Shortcuts such as `/next-task` and `/status` | When invoked |
+| `settings.json` | Permission guardrails | On actions |
 
----
+## Core rules
 
-## Rules — five files
+- Jeremy owns the SCA/SCE business.
+- The GitHub account owner name is only a technical hosting detail.
+- ChatGPT owns architecture, audit decisions, ADRs, and `NEXT_TASK.md`.
+- Claude executes only the approved task and stops for audit.
+- An authorized technical operator may operate the VPS/GitHub/credentials only within approved scope.
+- Never commit secrets or customer data to this public architecture repo.
+- Shopify remains commerce source; SCA remains provenance source.
+- Ownership/service/transfer history is append-only.
 
-| File | What it covers |
-|---|---|
-| `output.md` | **How every answer must look.** Answer first, plain English, under about 10 lines, proof before "it works", worst news at the top. **This one beats every skill** |
-| `github-flow.md` | **GitHub is the office.** Task → branch → pull request → approval → merge. Never push to `main`. Why this repo holds no app code |
-| `roles-and-task-flow.md` | **Who decides.** Jeremy the business, Francis the account and spend, ChatGPT the architecture, Claude the build. What a finished task must report |
-| `security-and-data.md` | **The expensive mistakes.** The repo is public, provenance is append-only, Shopify stays read-only, QR scans never leak private data |
-| `writing-and-code-style.md` | Match the docs, match the codebase, plain commit messages |
+## Memory summary
 
-## Memory — five facts
+- Current application source availability is **unresolved**, not proven absent. Prior SCA Ownership Bridge work is known to have existed and must be recovered/verified before rebuilding.
+- This repository is the architecture/task bridge, not the application codebase.
+- This repository is public, so secrets and personal data never belong here.
+- Jeremy owns the business; repository ownership does not create another business stakeholder.
+- ChatGPT writes `NEXT_TASK.md`; Claude executes it and returns evidence.
 
-`MEMORY.md` is the index. The short version:
-
-- There is no SCA app yet, anywhere — and `SCA-BOOT-001` says do not build one to fill it
-- Every project here splits into an architecture repo and a codebase repo
-- This repo is **public**, unlike all the others
-- Jeremy owns the business; the GitHub account name means nothing
-- ChatGPT writes `NEXT_TASK.md`; Claude does exactly it and reports evidence
-
-## Commands — two
+## Commands
 
 | Command | What it does |
 |---|---|
-| `/next-task` | Read `NEXT_TASK.md`, restate the job in plain English, and say what is needed before starting |
-| `/status` | Where the project stands: branch, open pull requests, current task, what is blocked |
+| `/next-task` | Read `NEXT_TASK.md`, restate the current job, and identify prerequisites |
+| `/status` | Report branch, PR, current task, and blockers |
