@@ -1,12 +1,18 @@
 # Second Chance Authenticators — Architecture & Delivery Bridge
 
-This repository is the canonical architecture, product-requirements, audit, and implementation-task bridge for the Second Chance Authenticators (SCA) platform.
+This repository is the canonical architecture, product-requirements, audit, and implementation-task bridge for **Jeremy's Second Chance Authenticators (SCA) business**.
+
+## Business Ownership
+
+This project is entirely for Jeremy's business: **Second Chance Eyewear / Second Chance Authenticators**.
+
+The GitHub account or repository owner name is only a technical hosting detail. It does not represent business ownership, product ownership, or a separate stakeholder in this project.
 
 ## Roles
 
-- **Francis / Product Owner** — final business decisions, credentials, accounts, domains, billing, production approvals.
+- **Jeremy / Business Owner** — owns the business vision, business requirements, product decisions, domains, billing, and production approvals.
 - **ChatGPT / Architect + Auditor** — owns product architecture, acceptance criteria, ADRs, audits, and `NEXT_TASK.md`.
-- **Claude / Implementer** — reads `NEXT_TASK.md`, implements only the approved task in the product codebase, returns evidence, commit SHA(s), test output, and deployment evidence.
+- **Claude / Implementer** — reads `NEXT_TASK.md`, implements only the approved task in the product codebase, and returns evidence, commit SHA(s), test output, and deployment evidence.
 - **GitHub** — source of truth for architecture decisions and task state.
 
 ## Product Vision
