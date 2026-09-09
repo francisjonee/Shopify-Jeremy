@@ -11,8 +11,8 @@ The GitHub account or repository owner name is only a technical hosting detail. 
 ## Roles
 
 - **Jeremy / Business Owner** — owns the business vision, business requirements, product decisions, domains, billing, and production approvals.
-- **ChatGPT / Architect + Auditor** — owns product architecture, acceptance criteria, ADRs, audits, and `NEXT_TASK.md`.
-- **Claude / Implementer** — reads `NEXT_TASK.md`, implements only the approved task in the product codebase, and returns evidence, commit SHA(s), test output, and deployment evidence.
+- **ChatGPT / Architect + Auditor** — converts Jeremy's requirements and brainstorming into architecture, acceptance criteria, ADRs, audits, and exactly one current implementation task in `NEXT_TASK.md`.
+- **Claude / Implementer** — reads `NEXT_TASK.md`, implements only the approved task in the product codebase, returns evidence, and then stops until ChatGPT audits the result and issues a new or revised task.
 - **GitHub** — source of truth for architecture decisions and task state.
 
 ## Product Vision
@@ -67,27 +67,33 @@ Shopify must not become the canonical provenance database.
 
 ## Hosting Principle
 
-Jeremy does not need to own or administer a server. Production should use managed cloud hosting and a managed PostgreSQL database. See `docs/ADR-0001-MANAGED-HOSTING.md`.
+Production infrastructure may be owner-operated or managed according to approved architecture, but infrastructure decisions must not change the SCA system-of-record boundaries or permanent-record requirements.
 
 ## Delivery Rules
 
 - One current implementation task only in `NEXT_TASK.md`.
+- ChatGPT is the authority that writes or replaces the current implementation task after architecture review.
 - Claude must not expand scope beyond that task.
+- Claude must stop after returning task evidence and wait for ChatGPT audit before doing additional implementation work.
+- Claude must not self-approve completion or invent the next task.
 - Every completed task must return evidence and commit SHA(s).
 - Architecture changes require an ADR before implementation.
 - Secrets, Shopify client secrets, access tokens, database credentials, and production keys must never be committed.
 - Historical provenance records are append-only at the business-logic level; owner/service/transfer history must not be silently overwritten.
+
+See `docs/EXECUTION_WORKFLOW.md` for the mandatory Architect → Claude → Audit → Next Task loop.
 
 ## Current State
 
 - Shopify Dev app created for SCA.
 - Intended Shopify scope baseline: `read_products,read_inventory,read_orders,read_customers`.
 - SCA domain: `secondchanceauthenticators.com`.
+- Arianee is rejected for the current SCA architecture.
 - This architecture repository was initialized before the implementation codebase was linked.
 
 Read next:
 
 - `docs/PRODUCT_REQUIREMENTS.md`
 - `docs/ARCHITECTURE.md`
-- `docs/ADR-0001-MANAGED-HOSTING.md`
+- `docs/EXECUTION_WORKFLOW.md`
 - `NEXT_TASK.md`
