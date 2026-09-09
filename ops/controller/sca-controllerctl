@@ -1,0 +1,99 @@
+#!/usr/bin/env bash
+#
+# SCA task controller — control switch.
+#
+# status / run / hold / resume / kill / log.
+# HOLD stops new dispatches. KILL stops the run that is happening now and holds.
+
+set -euo pipefail
+
+SCA_HOME="${SCA_HOME:-/opt/sca-controller}"
+DISPATCHER="${SCA_DISPATCHER:-$SCA_HOME/bin/sca-controller}"
+
+STATE_FILE="$SCA_HOME/state/state.json"
+LEDGER="$SCA_HOME/state/dispatched.log"
+AUDIT_LOG="$SCA_HOME/logs/dispatch.log"
+LOCK_FILE="$SCA_HOME/run/controller.lock"
+PID_FILE="$SCA_HOME/run/claude.pid"
+HOLD_FILE="$SCA_HOME/HOLD"
+
+now() { date -u +%Y-%m-%dT%H:%M:%SZ; }
+
+usage() {
+  cat <<USAGE
+Usage: sca-controllerctl <command> [args]
+
+  status            Show mode, state, HOLD, lock, and the last dispatches
+  run [--live]      Run the dispatcher once (dry-run unless --live is given)
+  hold [reason]     Stop new dispatches. Nothing is killed
+  resume            Clear HOLD and allow dispatches again
+  kill [reason]     Stop the Claude run in progress AND set HOLD
+  log [n]           Show the last n audit lines (default 20)
+USAGE
+}
+
+cmd_status() {
+  echo "controller home : $SCA_HOME"
+  if [ -f "$HOLD_FILE" ]; then
+    echo "hold            : HELD — $(cat "$HOLD_FILE")"
+  else
+    echo "hold            : not held"
+  fi
+  if [ -f "$LOCK_FILE" ] && ! flock -n "$LOCK_FILE" true 2>/dev/null; then
+    echo "lock            : held (a run is in progress)"
+  else
+    echo "lock            : free"
+  fi
+  if [ -f "$PID_FILE" ]; then
+    echo "claude pid      : $(cat "$PID_FILE")"
+  else
+    echo "claude pid      : none running"
+  fi
+  echo "state           :"
+  if [ -f "$STATE_FILE" ]; then jq . "$STATE_FILE"; else echo "  (no state yet)"; fi
+  echo "dispatched keys :"
+  if [ -s "$LEDGER" ]; then sed 's/^/  /' "$LEDGER"; else echo "  (none)"; fi
+}
+
+cmd_hold() {
+  printf '%s held at %s\n' "${1:-manual hold}" "$(now)" > "$HOLD_FILE"
+  echo "HOLD set. No new task will be dispatched."
+}
+
+cmd_resume() {
+  rm -f "$HOLD_FILE"
+  echo "HOLD cleared. Dispatch allowed again."
+}
+
+cmd_kill() {
+  cmd_hold "${1:-kill switch}"
+  if [ -f "$PID_FILE" ]; then
+    pid="$(cat "$PID_FILE")"
+    # Claude is started with setsid, so the whole run is one process group.
+    if kill -TERM -- "-$pid" 2>/dev/null || kill -TERM "$pid" 2>/dev/null; then
+      echo "sent TERM to Claude run (pid $pid)"
+    else
+      echo "pid $pid was not running"
+    fi
+    rm -f "$PID_FILE"
+  else
+    echo "no Claude run in progress"
+  fi
+}
+
+cmd_log() {
+  local n="${1:-20}"
+  [ -f "$AUDIT_LOG" ] || { echo "(no audit log yet)"; return 0; }
+  tail -n "$n" "$AUDIT_LOG"
+}
+
+case "${1:-}" in
+  status)  shift; cmd_status "$@" ;;
+  run)     shift; "$DISPATCHER" "${@:---dry-run}" ;;
+  hold)    shift; cmd_hold "${1:-}" ;;
+  resume)  shift; cmd_resume ;;
+  kill)    shift; cmd_kill "${1:-}" ;;
+  log)     shift; cmd_log "${1:-20}" ;;
+  -h|--help|"") usage ;;
+  *) echo "unknown command: $1" >&2; usage; exit 2 ;;
+esac

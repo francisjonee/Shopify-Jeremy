@@ -1,0 +1,31 @@
+# NOT INSTALLED AND NOT ENABLED.
+#
+# This unit is committed as reference only. Unattended execution stays off until
+# ChatGPT audits the dry-run evidence and Francis approves. See systemd/README.md.
+
+[Unit]
+Description=SCA task controller — dispatch one approved NEXT_TASK.md to Claude Code
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=sceyewear
+Group=sceyewear
+WorkingDirectory=/opt/sca-controller
+EnvironmentFile=/opt/sca-controller/config/controller.env
+ExecStart=/opt/sca-controller/bin/sca-controller --live
+TimeoutStartSec=7200
+
+# The controller only needs its own home and the system runtimes.
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=yes
+ReadWritePaths=/opt/sca-controller
+ProtectKernelTunables=yes
+ProtectControlGroups=yes
+RestrictSUIDSGID=yes
+
+[Install]
+WantedBy=multi-user.target
