@@ -1,0 +1,216 @@
+#!/usr/bin/env bash
+#
+# SCA task controller — dispatcher.
+#
+# Reads NEXT_TASK.md from the main branch of the architecture repo, and launches
+# Claude Code once for that exact task. It is not an architect: it never invents
+# work, never merges, and stops after one dispatch so ChatGPT can audit.
+#
+# See docs/CONTROLLER.md and docs/ADR-0003-CLAUDE-TASK-CONTROLLER.md.
+
+set -euo pipefail
+
+SCA_HOME="${SCA_HOME:-/opt/sca-controller}"
+CONFIG_FILE="${SCA_CONFIG:-$SCA_HOME/config/controller.env}"
+
+# shellcheck disable=SC1090
+[ -f "$CONFIG_FILE" ] && . "$CONFIG_FILE"
+
+SCA_REPO_URL="${SCA_REPO_URL:-https://github.com/francisjonee/Shopify-Jeremy.git}"
+SCA_REPO_SLUG="${SCA_REPO_SLUG:-francisjonee/Shopify-Jeremy}"
+SCA_MAIN_BRANCH="${SCA_MAIN_BRANCH:-main}"
+SCA_CLAUDE_BIN="${SCA_CLAUDE_BIN:-/usr/bin/claude}"
+SCA_CLAUDE_MODEL="${SCA_CLAUDE_MODEL:-claude-opus-5}"
+SCA_ALLOW_LIVE="${SCA_ALLOW_LIVE:-0}"
+SCA_MAX_TURNS="${SCA_MAX_TURNS:-200}"
+
+REPO_DIR="$SCA_HOME/repo"
+STATE_FILE="$SCA_HOME/state/state.json"
+LEDGER="$SCA_HOME/state/dispatched.log"
+AUDIT_LOG="$SCA_HOME/logs/dispatch.log"
+RUN_LOG_DIR="$SCA_HOME/logs/runs"
+LOCK_FILE="$SCA_HOME/run/controller.lock"
+PID_FILE="$SCA_HOME/run/claude.pid"
+HOLD_FILE="$SCA_HOME/HOLD"
+
+MODE="dry-run"
+
+now() { date -u +%Y-%m-%dT%H:%M:%SZ; }
+say() { printf '[%s] %s\n' "$(now)" "$*" >&2; }
+
+# Append-only audit trail. One JSON object per line, never rewritten.
+audit() {
+  jq -c -n \
+    --arg ts "$(now)" --arg event "$1" --arg mode "$MODE" \
+    --arg task_id "${TASK_ID:-}" --arg gen "${RETRY_GENERATION:-}" \
+    --arg branch "${TASK_BRANCH:-}" --arg state "${2:-}" --arg detail "${3:-}" \
+    '{ts:$ts,event:$event,mode:$mode,task_id:$task_id,retry_generation:$gen,
+      branch:$branch,state:$state,detail:$detail}' >> "$AUDIT_LOG"
+}
+
+write_state() {
+  local tmp="$STATE_FILE.tmp.$$"
+  jq -n \
+    --arg ts "$(now)" --arg state "$1" --arg mode "$MODE" \
+    --arg task_id "${TASK_ID:-}" --arg gen "${RETRY_GENERATION:-}" \
+    --arg key "${DISPATCH_KEY:-}" --arg branch "${TASK_BRANCH:-}" \
+    --arg detail "${2:-}" \
+    '{updated_at:$ts,state:$state,mode:$mode,task_id:$task_id,
+      retry_generation:$gen,dispatch_key:$key,branch:$branch,detail:$detail}' > "$tmp"
+  mv "$tmp" "$STATE_FILE"
+}
+
+fail() {
+  say "$2"
+  write_state "$1" "$2"
+  audit "dispatch_failed" "$1" "$2"
+  exit 1
+}
+
+# NEXT_TASK.md writes fields as "**STATUS:** READY". Tolerate plainer forms too.
+parse_field() {
+  sed -n -E "s/^[[:space:]]*\*{0,2}$1\*{0,2}[[:space:]]*:[[:space:]]*\*{0,2}[[:space:]]*([A-Za-z0-9_.-]+).*/\1/p" "$2" | head -1
+}
+
+usage() {
+  cat <<USAGE
+Usage: sca-controller [--dry-run|--live] [--help]
+
+  --dry-run   Parse, de-duplicate, prepare the branch, print the Claude command
+              that would run, and record state. Does not call Claude. (default)
+  --live      Actually invoke Claude Code. Requires SCA_ALLOW_LIVE=1 in
+              $CONFIG_FILE.
+USAGE
+}
+
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --dry-run) MODE="dry-run" ;;
+    --live)    MODE="live" ;;
+    -h|--help) usage; exit 0 ;;
+    *) echo "unknown option: $1" >&2; usage; exit 2 ;;
+  esac
+  shift
+done
+
+# Guard: this controller must never merge a pull request. Refuse to run if the
+# script has been edited to do so.
+if grep -qE '(gh[[:space:]]+pr[[:space:]]+merge|--auto[[:space:]]+--merge)' "$0"; then
+  say "REFUSING: auto-merge command found in controller source"
+  exit 3
+fi
+
+for tool in git jq flock "$SCA_CLAUDE_BIN"; do
+  command -v "$tool" >/dev/null 2>&1 || { say "missing prerequisite: $tool"; exit 4; }
+done
+
+# Single-run lock. A second controller exits quietly rather than racing.
+exec 9>"$LOCK_FILE"
+if ! flock -n 9; then
+  say "another controller run holds the lock; exiting"
+  exit 0
+fi
+
+if [ -f "$HOLD_FILE" ]; then
+  say "HOLD is set ($HOLD_FILE); no dispatch"
+  audit "hold_active" "HELD" "$(head -c 200 "$HOLD_FILE" 2>/dev/null || true)"
+  exit 0
+fi
+
+# Get NEXT_TASK.md from main. Never from a local branch.
+if [ ! -d "$REPO_DIR/.git" ]; then
+  say "cloning $SCA_REPO_SLUG into $REPO_DIR"
+  git clone --quiet "$SCA_REPO_URL" "$REPO_DIR"
+fi
+git -C "$REPO_DIR" fetch --quiet origin "$SCA_MAIN_BRANCH"
+git -C "$REPO_DIR" show "origin/$SCA_MAIN_BRANCH:NEXT_TASK.md" > "$SCA_HOME/state/NEXT_TASK.main.md"
+
+TASK_FILE="$SCA_HOME/state/NEXT_TASK.main.md"
+STATUS="$(parse_field STATUS "$TASK_FILE")"
+TASK_ID="$(parse_field TASK_ID "$TASK_FILE")"
+RETRY_GENERATION="$(parse_field RETRY_GENERATION "$TASK_FILE")"
+
+[ -n "$TASK_ID" ] || fail "FAILED_TASK_UNPARSEABLE" "NEXT_TASK.md has no TASK_ID"
+[ -n "$RETRY_GENERATION" ] || fail "FAILED_TASK_UNPARSEABLE" "NEXT_TASK.md has no RETRY_GENERATION"
+
+DISPATCH_KEY="${TASK_ID}#${RETRY_GENERATION}"
+TASK_BRANCH="task/$(echo "$TASK_ID" | tr '[:upper:]' '[:lower:]')-gen${RETRY_GENERATION}"
+
+say "main has $DISPATCH_KEY, STATUS=$STATUS"
+
+if [ "$STATUS" != "READY" ]; then
+  say "STATUS is not READY; nothing to dispatch"
+  audit "skipped_not_ready" "IDLE" "STATUS=$STATUS"
+  exit 0
+fi
+
+# De-duplicate on TASK_ID + RETRY_GENERATION. ChatGPT bumps RETRY_GENERATION to
+# re-dispatch the same task after a rejected audit.
+if [ -f "$LEDGER" ] && grep -Fxq "$DISPATCH_KEY" "$LEDGER"; then
+  say "DUPLICATE SUPPRESSED: $DISPATCH_KEY was already dispatched"
+  audit "duplicate_suppressed" "AWAITING_ARCHITECT_AUDIT" "$DISPATCH_KEY already in ledger"
+  exit 0
+fi
+
+# Claim the key before doing any work, so a crash mid-run cannot re-dispatch.
+echo "$DISPATCH_KEY" >> "$LEDGER"
+
+write_state "RUNNING" "dispatching $DISPATCH_KEY on $TASK_BRANCH"
+audit "dispatch_started" "RUNNING" "mode=$MODE"
+
+git -C "$REPO_DIR" checkout --quiet -B "$TASK_BRANCH" "origin/$SCA_MAIN_BRANCH"
+say "task branch ready: $TASK_BRANCH"
+
+PROMPT="You are the SCA Implementer for repository $SCA_REPO_SLUG, checked out at $REPO_DIR on branch $TASK_BRANCH.
+
+Read README.md, CLAUDE.md, docs/EXECUTION_WORKFLOW.md, every ADR in docs/, and NEXT_TASK.md.
+
+Execute ONLY task $TASK_ID (retry generation $RETRY_GENERATION) exactly as written in NEXT_TASK.md.
+Commit permitted changes to $TASK_BRANCH and open a pull request against $SCA_MAIN_BRANCH if the task requires repository changes.
+
+Do NOT merge any pull request.
+Do NOT invent, start, or suggest the next task.
+Do NOT self-approve or widen the scope.
+Never commit a secret; report environment variable names only.
+
+Finish by printing every item listed under the task's Acceptance Criteria, then stop."
+
+RUN_LOG="$RUN_LOG_DIR/${TASK_ID}-gen${RETRY_GENERATION}.log"
+
+if [ "$MODE" = "dry-run" ]; then
+  say "DRY RUN — Claude would be invoked as:"
+  printf '%s -p --model %s --permission-mode acceptEdits --max-turns %s --add-dir %s <prompt:%s bytes>\n' \
+    "$SCA_CLAUDE_BIN" "$SCA_CLAUDE_MODEL" "$SCA_MAX_TURNS" "$REPO_DIR" "${#PROMPT}" >&2
+  printf '%s\n' "$PROMPT" > "$RUN_LOG.dryrun-prompt"
+  write_state "AWAITING_ARCHITECT_AUDIT" "dry-run complete; Claude not invoked"
+  audit "dispatch_finished" "AWAITING_ARCHITECT_AUDIT" "dry-run; no Claude invocation"
+  say "state: AWAITING_ARCHITECT_AUDIT (dry-run). Controller stops here."
+  exit 0
+fi
+
+if [ "$SCA_ALLOW_LIVE" != "1" ]; then
+  fail "BLOCKED_LIVE_NOT_ENABLED" "--live requested but SCA_ALLOW_LIVE is not 1 in $CONFIG_FILE"
+fi
+
+say "invoking Claude Code (live); output -> $RUN_LOG"
+set +e
+setsid "$SCA_CLAUDE_BIN" -p "$PROMPT" \
+  --model "$SCA_CLAUDE_MODEL" \
+  --permission-mode acceptEdits \
+  --max-turns "$SCA_MAX_TURNS" \
+  --add-dir "$REPO_DIR" \
+  > "$RUN_LOG" 2>&1 &
+CLAUDE_PID=$!
+echo "$CLAUDE_PID" > "$PID_FILE"
+wait "$CLAUDE_PID"
+RC=$?
+set -e
+rm -f "$PID_FILE"
+
+if [ "$RC" -ne 0 ]; then
+  fail "FAILED_CLAUDE_INVOCATION" "Claude Code exited $RC; see $RUN_LOG"
+fi
+
+write_state "AWAITING_ARCHITECT_AUDIT" "Claude finished; evidence in $RUN_LOG"
+audit "dispatch_finished" "AWAITING_ARCHITECT_AUDIT" "exit=0 log=$RUN_LOG"
+say "state: AWAITING_ARCHITECT_AUDIT. Controller stops. No merge performed."

@@ -1,0 +1,13 @@
+# NOT INSTALLED AND NOT ENABLED. Reference only. See systemd/README.md.
+
+[Unit]
+Description=Poll main for an approved NEXT_TASK.md every 10 minutes
+
+[Timer]
+OnBootSec=5min
+OnUnitActiveSec=10min
+AccuracySec=1min
+Unit=sca-controller.service
+
+[Install]
+WantedBy=timers.target
