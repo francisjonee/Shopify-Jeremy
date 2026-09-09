@@ -2,13 +2,13 @@
 
 **STATUS:** READY
 
-**TASK_ID:** SCA-BOOT-001
+**TASK_ID:** SCA-CTRL-001
 
 **RETRY_GENERATION:** 0
 
 ## Title
 
-Establish the SCA implementation baseline before feature development
+Bootstrap and prove the Claude task controller
 
 ## Implementer
 
@@ -16,81 +16,80 @@ Claude
 
 ## Objective
 
-Recover or establish the actual SCA product codebase that will implement the architecture in this repository. Do not begin new provenance features until the current implementation source and runtime are known.
+Create the minimal controller on the project VPS that turns approved `NEXT_TASK.md` work into a controlled Claude Code execution, then stops for ChatGPT architecture audit.
+
+This task is infrastructure/workflow only. Do not build SCA product features.
 
 ## Required Inputs
 
 Read first:
 
 - `README.md`
-- `docs/PRODUCT_REQUIREMENTS.md`
-- `docs/ARCHITECTURE.md`
+- `CLAUDE.md`
 - `docs/EXECUTION_WORKFLOW.md`
-- `docs/ADR-0001-MANAGED-HOSTING.md`
-- `docs/ADR-0002-ARIANEE-REJECTED.md`
+- `docs/ADR-0003-CLAUDE-TASK-CONTROLLER.md`
+- this `NEXT_TASK.md`
 
 ## Work
 
-1. Inspect the local/workspace environment for any existing Second Chance Authenticators / SCA Ownership Bridge implementation created by prior staff.
-2. If existing implementation code is present, preserve it. Do not rebuild working functionality from scratch.
-3. Identify and report:
-   - framework/runtime
-   - package manager
-   - application entry point
-   - database technology/schema/migrations
-   - authentication approach
-   - existing Shopify integration
-   - existing QR/serial/claim routes
-   - existing admin/customer routes
-   - environment variable **names only**
-   - local start/test commands
-   - current deployment assumptions
-4. Run the existing application/tests locally if reasonably possible without production secrets.
-5. Ensure the implementation code is in a clean Git repository with no credentials committed.
-6. If no implementation code exists in the workspace, **STOP** and report `BLOCKED_NO_IMPLEMENTATION_SOURCE`. Do not scaffold a replacement yet.
-7. If implementation code exists but is not in GitHub, prepare it for a private implementation repository and report what is needed to push it. Do not put implementation source into this architecture repository unless an approved architecture decision changes the repository role.
+1. Inspect the VPS/workspace and report the installed Claude Code/runtime prerequisites.
+2. Create the smallest reliable controller implementation that:
+   - reads `NEXT_TASK.md` from `main`
+   - dispatches only `STATUS: READY`
+   - de-duplicates by `TASK_ID + RETRY_GENERATION`
+   - creates/uses a dedicated task branch
+   - invokes Claude Code non-interactively for the exact task
+   - records state as `RUNNING`, then `AWAITING_ARCHITECT_AUDIT` or a specific failure state
+   - uses a single-run lock
+   - supports a HOLD/KILL switch
+   - never auto-merges
+3. Run it under a non-root service account.
+4. Store controller state/logs outside the public architecture repo if they may contain machine-specific data.
+5. Add only safe controller documentation/configuration to Git as needed. Never commit credentials or `.env` contents.
+6. Prove the controller in DRY-RUN/TEST mode using `SCA-CTRL-001` itself or a harmless synthetic task. The proof must demonstrate that the same task cannot be dispatched twice.
+7. Do not enable unattended production execution until the dry-run evidence is returned and audited by ChatGPT.
 
 ## Acceptance Criteria
 
 Return all of the following:
 
-- `RESULT=PASS` or a specific `BLOCKED_*` result
-- implementation source path
-- implementation repository URL if already available
-- framework/runtime and versions
-- database summary
-- existing feature inventory
-- exact local start/test commands
-- test/build output summary
-- current Git commit SHA if applicable
-- list of required environment variable names with values redacted
-- any security problems discovered
-- any missing source/artifacts required to proceed
+- `RESULT=PASS` or a specific `BLOCKED_*`
+- controller source path
+- service account used
+- runtime / Claude Code versions
+- exact start/stop/status commands
+- HOLD/KILL switch command or mechanism
+- lock mechanism
+- state file/database location
+- dispatch/audit log location
+- dry-run evidence showing one dispatch and duplicate suppression
+- branch/commit/PR references for any repository changes
+- environment variable names only, values redacted
+- security findings
 
 ## Prohibited Changes
 
-- Do not add new SCA product features.
-- Do not redesign the data model.
-- Do not change Shopify scopes.
-- Do not deploy to production.
-- Do not create permanent QR URLs yet.
-- Do not commit secrets, access tokens, Shopify credentials, database credentials, or `.env` contents.
-- Do not delete prior staff work simply because a different implementation would be easier.
-- Do not create, select, or begin the next implementation task.
-- Do not self-approve this task.
+- Do not build SCA product features.
+- Do not connect or modify the live Shopify store.
+- Do not deploy the SCA product application.
+- Do not modify DNS.
+- Do not create permanent QR URLs.
+- Do not add Shopify scopes.
+- Do not auto-merge any PR.
+- Do not enable unattended controller execution beyond dry-run/test mode before ChatGPT audit.
+- Do not invent the next task.
+- Do not self-approve.
 
 ## Required Evidence
 
-Provide concise evidence for every acceptance criterion, including relevant command output, paths, commit SHA(s), and test/build results. Redact all secret values.
+Provide concise command output and file/service references sufficient to independently verify every acceptance criterion. Redact all secrets.
 
 ## Completion Rule
 
-After returning the required evidence, **STOP**.
+After returning evidence, STOP.
 
-Claude must wait for ChatGPT architecture audit. Claude may resume only after `NEXT_TASK.md` has been replaced or revised with an approved task that has `STATUS: READY`.
-
-If ChatGPT rejects the evidence, the next task will be a remediation task with an incremented `RETRY_GENERATION`. Claude must fix only that remediation scope.
+Wait for ChatGPT architecture audit. Claude may resume only after `NEXT_TASK.md` is replaced/revised with an approved `STATUS: READY` task.
 
 ## Last Completed
 
-Architecture bridge initialized. Product requirements, target architecture, Arianee rejection, and the Architect–Implementer approval workflow are recorded.
+Architect–Implementer workflow established. ADR-0003 approved the VPS-based Claude task controller. `SCA-BOOT-001` was deferred until controller bootstrap is accepted.
