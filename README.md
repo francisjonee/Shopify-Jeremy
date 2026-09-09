@@ -12,7 +12,8 @@ The GitHub account or repository owner name is only a technical hosting detail. 
 
 - **Jeremy / Business Owner** — owns the business vision, business requirements, product decisions, domains, billing, and production approvals.
 - **ChatGPT / Architect + Auditor** — converts Jeremy's requirements and brainstorming into architecture, acceptance criteria, ADRs, audits, and exactly one current implementation task in `NEXT_TASK.md`.
-- **Claude / Implementer** — reads `NEXT_TASK.md`, implements only the approved task in the product codebase, returns evidence, and then stops until ChatGPT audits the result and issues a new or revised task.
+- **Claude / Implementer** — reads `NEXT_TASK.md`, implements only the approved task, returns evidence, and then stops until ChatGPT audits the result and issues a new or revised task.
+- **Authorized Technical Operator** — may operate the VPS, GitHub account, credentials, and infrastructure only when the current task/governance permits it. This is an operational role, not business ownership.
 - **GitHub** — source of truth for architecture decisions and task state.
 
 ## Product Vision
@@ -67,7 +68,7 @@ Shopify must not become the canonical provenance database.
 
 ## Hosting Principle
 
-Production infrastructure may be owner-operated or managed according to approved architecture, but infrastructure decisions must not change the SCA system-of-record boundaries or permanent-record requirements.
+A project VPS is now available. `ADR-0004-VPS-HOSTING-SUPERSEDES-ADR-0001.md` supersedes the earlier managed-only hosting direction. Hosting choice must not change the SCA system-of-record boundaries, permanent-record requirements, security requirements, or approval gates.
 
 ## Delivery Rules
 
@@ -89,11 +90,13 @@ See `docs/EXECUTION_WORKFLOW.md` for the mandatory Architect → Claude → Audi
 - Intended Shopify scope baseline: `read_products,read_inventory,read_orders,read_customers`.
 - SCA domain: `secondchanceauthenticators.com`.
 - Arianee is rejected for the current SCA architecture.
-- This architecture repository was initialized before the implementation codebase was linked.
+- Project VPS path is available under ADR-0004.
+- The current implementation source still needs to be recovered/established before feature development continues.
 
 Read next:
 
 - `docs/PRODUCT_REQUIREMENTS.md`
 - `docs/ARCHITECTURE.md`
 - `docs/EXECUTION_WORKFLOW.md`
+- `docs/ADR-0004-VPS-HOSTING-SUPERSEDES-ADR-0001.md`
 - `NEXT_TASK.md`
