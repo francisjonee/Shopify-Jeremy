@@ -19,6 +19,18 @@ SCA Integration Layer / API
 Managed PostgreSQL
 ```
 
+## Production Shopify Store Requirement
+
+The SCA Shopify app is intended to connect to and be installed on the **actual live Second Chance Eyewear Shopify store**, not merely a Shopify development store.
+
+The production installation must be authorized from the real Second Chance Eyewear Shopify admin and should appear in that store's Apps area once installed.
+
+The Shopify Dev Dashboard account/repository location is only where the app configuration and source are managed. The actual commerce data source is the live Second Chance Eyewear store.
+
+Before any production installation, the implementation must identify and record the exact live store identity using Shopify's canonical store identifier (`*.myshopify.com` domain / corresponding Shopify admin store identity). Do not guess the store identity from the public storefront domain.
+
+The app should use **Custom distribution** for the actual Second Chance Eyewear store unless an ADR explicitly changes this decision. It is not intended for public Shopify App Store distribution at this stage.
+
 ## System of Record Boundaries
 
 ### Shopify is authoritative for
@@ -130,6 +142,10 @@ Purpose:
 - associate original purchaser information for claim eligibility
 
 Do not add Shopify write scopes until an approved feature specifically requires Shopify mutation.
+
+### Store Connection Rule
+
+Production API calls and webhooks must bind to the real Second Chance Eyewear Shopify store. Development or test stores may be used only for safe development/testing; they must never be treated as the canonical production commerce source.
 
 ## Webhooks
 
