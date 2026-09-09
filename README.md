@@ -1,0 +1,87 @@
+# Second Chance Authenticators — Architecture & Delivery Bridge
+
+This repository is the canonical architecture, product-requirements, audit, and implementation-task bridge for the Second Chance Authenticators (SCA) platform.
+
+## Roles
+
+- **Francis / Product Owner** — final business decisions, credentials, accounts, domains, billing, production approvals.
+- **ChatGPT / Architect + Auditor** — owns product architecture, acceptance criteria, ADRs, audits, and `NEXT_TASK.md`.
+- **Claude / Implementer** — reads `NEXT_TASK.md`, implements only the approved task in the product codebase, returns evidence, commit SHA(s), test output, and deployment evidence.
+- **GitHub** — source of truth for architecture decisions and task state.
+
+## Product Vision
+
+SCA is not only an authentication service. It is a permanent ownership and provenance platform for collectible eyewear.
+
+Every qualifying pair should receive a permanent SCA record before sale:
+
+- Authentication completed
+- Condition graded
+- Registry record created
+- Unique SCA Certification ID
+- Permanent QR code
+
+For Second Chance Eyewear purchases, the buyer scans the QR, creates/signs into an SCA account, and claims the already-authenticated pair for free. The pair then appears in **My Collection**. Future ownership transfers append to the provenance record rather than overwriting prior owners.
+
+External eyewear not purchased from Second Chance Eyewear can later enter SCA through paid authentication.
+
+## System Boundaries
+
+### Shopify
+Commerce source for:
+- Products / variants / SKUs
+- Inventory state
+- Orders / sale events
+- Original purchaser reference
+
+### SCA Platform
+Canonical system for:
+- Certification ID
+- Authentication record
+- Condition grade
+- Inspection images
+- Permanent QR identity
+- Current registered owner
+- Ownership history
+- Transfer history
+- Service history
+- Certification status
+- Lost / stolen status
+- Collector collection
+- Insurance / document outputs
+- Future market-history features
+
+Shopify must not become the canonical provenance database.
+
+## Interfaces
+
+1. **SCA Admin / CRM** — inventory intake, authentication, grading, certificates, QR, customers, ownership, transfers, service events, reports.
+2. **Collector Portal** — account, claim ownership, My Collection, certificate, transfer ownership, service history, lost/stolen actions.
+3. **Public Registry / Passport** — QR verification, authenticity, condition, public provenance/status without exposing private personal data.
+
+## Hosting Principle
+
+Jeremy does not need to own or administer a server. Production should use managed cloud hosting and a managed PostgreSQL database. See `docs/ADR-0001-MANAGED-HOSTING.md`.
+
+## Delivery Rules
+
+- One current implementation task only in `NEXT_TASK.md`.
+- Claude must not expand scope beyond that task.
+- Every completed task must return evidence and commit SHA(s).
+- Architecture changes require an ADR before implementation.
+- Secrets, Shopify client secrets, access tokens, database credentials, and production keys must never be committed.
+- Historical provenance records are append-only at the business-logic level; owner/service/transfer history must not be silently overwritten.
+
+## Current State
+
+- Shopify Dev app created for SCA.
+- Intended Shopify scope baseline: `read_products,read_inventory,read_orders,read_customers`.
+- SCA domain: `secondchanceauthenticators.com`.
+- This architecture repository was initialized before the implementation codebase was linked.
+
+Read next:
+
+- `docs/PRODUCT_REQUIREMENTS.md`
+- `docs/ARCHITECTURE.md`
+- `docs/ADR-0001-MANAGED-HOSTING.md`
+- `NEXT_TASK.md`
