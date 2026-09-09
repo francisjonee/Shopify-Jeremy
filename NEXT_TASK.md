@@ -46,7 +46,7 @@ Read first:
 4. Run the existing application/tests locally if reasonably possible without production secrets.
 5. Ensure the implementation code is in a clean Git repository with no credentials committed.
 6. If no implementation code exists in the workspace, **STOP** and report `BLOCKED_NO_IMPLEMENTATION_SOURCE`. Do not scaffold a replacement yet.
-7. If implementation code exists but is not in GitHub, prepare it for a private implementation repository and report what is needed to push it. Do not put implementation source into this architecture repository unless Francis explicitly changes the repository role.
+7. If implementation code exists but is not in GitHub, prepare it for a private implementation repository and report what is needed to push it. Do not put implementation source into this architecture repository unless an approved architecture decision changes the repository role.
 
 ## Acceptance Criteria
 
@@ -77,7 +77,7 @@ Return all of the following:
 
 ## Completion Rule
 
-Claude must return evidence to Francis. ChatGPT will audit the evidence and then replace this file with exactly one next task.
+Claude must return evidence for architecture audit. ChatGPT will audit the evidence and then replace this file with exactly one next task.
 
 ## Last Completed
 
