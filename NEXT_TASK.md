@@ -25,7 +25,9 @@ Read first:
 - `README.md`
 - `docs/PRODUCT_REQUIREMENTS.md`
 - `docs/ARCHITECTURE.md`
+- `docs/EXECUTION_WORKFLOW.md`
 - `docs/ADR-0001-MANAGED-HOSTING.md`
+- `docs/ADR-0002-ARIANEE-REJECTED.md`
 
 ## Work
 
@@ -74,11 +76,21 @@ Return all of the following:
 - Do not create permanent QR URLs yet.
 - Do not commit secrets, access tokens, Shopify credentials, database credentials, or `.env` contents.
 - Do not delete prior staff work simply because a different implementation would be easier.
+- Do not create, select, or begin the next implementation task.
+- Do not self-approve this task.
+
+## Required Evidence
+
+Provide concise evidence for every acceptance criterion, including relevant command output, paths, commit SHA(s), and test/build results. Redact all secret values.
 
 ## Completion Rule
 
-Claude must return evidence for architecture audit. ChatGPT will audit the evidence and then replace this file with exactly one next task.
+After returning the required evidence, **STOP**.
+
+Claude must wait for ChatGPT architecture audit. Claude may resume only after `NEXT_TASK.md` has been replaced or revised with an approved task that has `STATUS: READY`.
+
+If ChatGPT rejects the evidence, the next task will be a remediation task with an incremented `RETRY_GENERATION`. Claude must fix only that remediation scope.
 
 ## Last Completed
 
-Architecture bridge initialized. Product requirements, target architecture, and managed-hosting ADR recorded.
+Architecture bridge initialized. Product requirements, target architecture, Arianee rejection, and the Architect–Implementer approval workflow are recorded.
