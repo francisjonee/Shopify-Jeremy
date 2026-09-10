@@ -1,7 +1,9 @@
-# Existing SCA implementation must be recovered before rebuilding
+# Implementation recovery requirement — SUPERSEDED
 
-Prior SCA Ownership Bridge work is known to have existed outside this architecture repository. The current VPS/workspace may not contain that source yet, and the currently connected GitHub account may not expose the prior implementation repository.
+The recovery requirement was valid while the project was deciding whether to preserve the inaccessible prior SCA Ownership Bridge implementation.
 
-**Why it matters:** "not found in this workspace" is not proof that no implementation ever existed. The recovery task must inspect known local/remote sources and preserve working prior functionality before any replacement scaffold is authorized.
+That decision has now changed. Jeremy's team explicitly authorized a **greenfield rebuild from scratch** on the current blank VPS and decided not to recover the old implementation.
 
-**How to apply:** If the current task is an implementation-baseline/recovery task, report exactly what was checked and what was or was not found. Do not conclude the product must be rebuilt unless ChatGPT explicitly authorizes that after audit.
+**Current rule:** Do not block implementation waiting for the old code. Follow `.claude/memory/greenfield-build-approved.md`, ADR-0005, `docs/INFRASTRUCTURE_BLUEPRINT.md`, and `docs/ROADMAP.md`.
+
+The current VPS is temporary construction/staging infrastructure. New implementation must be portable to a future permanent server and must not hard-code temporary server identity into QR records or business data.
