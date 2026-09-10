@@ -2,13 +2,13 @@
 
 **STATUS:** READY
 
-**TASK_ID:** SCA-CTRL-001
+**TASK_ID:** SCA-CTRL-002
 
-**RETRY_GENERATION:** 1
+**RETRY_GENERATION:** 0
 
 ## Title
 
-Prove controller dry-run and duplicate suppression
+Prove one controlled live Claude dispatch
 
 ## Implementer
 
@@ -16,9 +16,9 @@ Claude
 
 ## Objective
 
-Remediate the missing acceptance evidence from `SCA-CTRL-001` generation 0.
+Prove the controller can complete one real end-to-end Claude Code dispatch safely under the non-root service account.
 
-The controller source was merged before its required dry-run proof existed. This retry is **evidence/remediation only**. Do not expand into SCA product work and do not enable unattended/live execution.
+This task validates the live execution path only. Unattended scheduling must remain disabled until this task is audited and accepted by ChatGPT.
 
 ## Required Inputs
 
@@ -30,42 +30,53 @@ Read first:
 - `docs/ADR-0003-CLAUDE-TASK-CONTROLLER.md`
 - `docs/ADR-0004-VPS-HOSTING-SUPERSEDES-ADR-0001.md`
 - `docs/CONTROLLER.md`
+- `audits/SCA-CTRL-001-gen1-PASS.md`
 - this `NEXT_TASK.md`
 
 ## Work
 
-1. Confirm the installed controller on the VPS corresponds to the controller source currently on `main` or report the exact drift before proceeding.
-2. Confirm the controller remains in safe mode:
-   - non-root `sceyewear` service account;
-   - unattended/systemd execution disabled;
-   - `SCA_ALLOW_LIVE=0` or equivalent live-dispatch guard still disabled.
-3. Run the controller status command and capture the relevant output.
-4. Run **one dry-run dispatch** for `SCA-CTRL-001#1` using the documented controller command.
-5. Capture evidence that the dispatch key was recorded and the controller did **not** invoke Claude live.
-6. Run the **same dry-run a second time** without changing `TASK_ID` or `RETRY_GENERATION`.
-7. Capture evidence that the second attempt is suppressed as a duplicate and does not create a second dispatch.
-8. Capture the controller state and recent append-only audit log showing the first dry-run and duplicate suppression.
-9. If a controller defect prevents this proof, make only the smallest controller fix needed, test it, commit it on the task branch, open/update the PR, and return the diff/commit evidence. Do not redesign the controller.
-10. After returning evidence, STOP for ChatGPT audit.
+1. Confirm the installed controller still matches the source on current `main`, or report exact drift and STOP before live execution.
+2. Confirm the controller service account is `sceyewear` and is non-root.
+3. Establish the minimum authentication needed for the `sceyewear` account to run Claude Code and push/open a pull request for this repository.
+   - Do **not** copy root credentials.
+   - Prefer account-native or least-privilege authentication scoped only as broadly as required.
+   - Never print, commit, paste into a PR, or return any secret/token value.
+   - If interactive human authentication is required, pause and give the operator the exact safe command/action to perform, then continue only after it succeeds.
+4. Keep unattended execution disabled. Do not install/enable the controller timer or cron during this task.
+5. Immediately before the controlled test, enable only the minimum live-dispatch guard required for this one manual run.
+6. Run the controller manually in live mode exactly once for `SCA-CTRL-002#0`.
+7. The controller-launched Claude session must execute only this task and produce a harmless proof change on the controller-created task branch:
+   - create `audits/SCA-CTRL-002-live-proof.md`;
+   - include only safe information: task ID, retry generation, statement that the file was created by the controller-launched Claude session, and the resulting commit SHA/PR reference if available;
+   - do not include credentials, customer data, machine secrets, environment values, or unrelated project information.
+8. The controller-launched Claude session must commit the proof change, push only the task branch, open a pull request against `main`, then STOP. It must not merge the PR.
+9. Capture evidence showing the controller actually invoked Claude live, the Claude process completed, the expected branch/commit/PR was produced, and controller state reached `AWAITING_ARCHITECT_AUDIT`.
+10. After the single controlled live run completes, return the live-dispatch guard to disabled (`SCA_ALLOW_LIVE=0` or equivalent) before reporting completion.
+11. Confirm unattended scheduling is still disabled after the test.
+12. Return all required evidence and STOP for ChatGPT audit.
 
 ## Acceptance Criteria
 
 Return all of the following:
 
 - `RESULT=PASS` or a specific `BLOCKED_*` result;
-- controller installed-source vs `main` comparison result;
+- installed-source vs `main` comparison result;
 - service account confirmation;
-- live/unattended mode confirmation;
-- exact status command and relevant output;
-- exact first dry-run command and relevant output;
-- dispatch key evidence for `SCA-CTRL-001#1`;
-- proof that no live Claude invocation occurred during dry-run;
-- exact second dry-run command and relevant output;
-- explicit duplicate-suppression evidence;
-- state file/ledger evidence sufficient to prove only one dispatch key was recorded;
-- audit-log evidence showing the first dry-run and duplicate suppression;
-- branch/commit/PR reference only if code/docs required remediation;
-- environment variable **names only**, values redacted;
+- Claude Code authentication status for `sceyewear` without exposing credentials;
+- GitHub authentication status for `sceyewear` without exposing credentials;
+- confirmation that no root credential was copied;
+- confirmation that unattended/systemd/cron execution remained disabled;
+- exact manual live controller command and relevant output;
+- evidence that a real Claude Code process was invoked by the controller;
+- controller run-log evidence sufficient to distinguish this from dry-run mode;
+- dispatch key evidence for `SCA-CTRL-002#0`;
+- resulting task branch name;
+- resulting commit SHA;
+- resulting pull request URL/number;
+- proof that the PR remains unmerged;
+- final controller state showing `AWAITING_ARCHITECT_AUDIT`;
+- final confirmation that the live-dispatch guard was returned to disabled;
+- environment variable names only, values redacted;
 - security findings, if any.
 
 ## Prohibited Changes
@@ -76,18 +87,20 @@ Return all of the following:
 - Do not modify DNS.
 - Do not publish permanent QR URLs.
 - Do not add/change Shopify scopes.
-- Do not enable unattended/systemd controller execution.
-- Do not set `SCA_ALLOW_LIVE=1`.
-- Do not run the controller with `--live`.
-- Do not copy root credentials into the service account.
-- Do not expose credential values.
-- Do not auto-merge any PR.
+- Do not enable unattended/systemd/cron execution.
+- Do not copy root credentials into `sceyewear`.
+- Do not expose any credential value.
+- Do not push directly to `main`.
+- Do not merge the proof PR.
+- Do not make unrelated repository changes.
 - Do not invent the next task.
 - Do not self-approve.
 
 ## Required Evidence
 
-Provide concise, real command output sufficient for ChatGPT to independently verify every acceptance criterion. Redact secret values and customer/private data.
+Provide concise real command output sufficient for ChatGPT to independently verify every acceptance criterion. Redact all secret values and private data.
+
+If authentication cannot be safely established, return a specific `BLOCKED_AUTH_*` result with the exact non-secret human action required, then STOP.
 
 ## Completion Rule
 
@@ -97,4 +110,4 @@ Wait for ChatGPT architecture audit. Claude may resume only after ChatGPT replac
 
 ## Last Completed
 
-Controller source from generation 0 was merged, but its required dry-run and duplicate-suppression proof was missing. Generation 1 exists only to close that evidence gap safely.
+`SCA-CTRL-001` generation 1 passed architecture audit. Dry-run dispatch, duplicate suppression, non-root execution, safe-mode behavior, and append-only controller audit logging are proven. Live Claude invocation and PR creation are not yet proven.
