@@ -64,11 +64,28 @@ Full rule: `.claude/rules/github-flow.md`.
 
 ## 2. What is actually established right now
 
-The architecture, product requirements, Shopify app baseline, and controller workflow are recorded.
+The project is now authorized as a **greenfield SCA build from scratch**. Do not wait for or attempt to recover the inaccessible old Ownership Bridge unless a future task explicitly changes that decision.
 
-The **current application implementation source is not yet established on this VPS**. Prior SCA Ownership Bridge work is known to have existed outside this architecture repo, so Claude must not convert "not found here" into "it never existed." Recovery/verification must follow the current task.
+The current VPS is a **temporary construction/staging environment**, not the permanent SCA server. Build so the application can later move to permanent infrastructure without rebuilding the product, regenerating permanent QR codes, or rewriting provenance history.
 
-Do not scaffold a replacement unless `NEXT_TASK.md` explicitly authorizes it.
+The approved implementation direction is recorded in:
+
+- `docs/ADR-0005-GREENFIELD-PORTABLE-SCA-BUILD.md`
+- `docs/INFRASTRUCTURE_BLUEPRINT.md`
+- `docs/ROADMAP.md`
+
+Core implementation rules now established:
+
+- application source goes in a separate **private implementation repository**;
+- initial stack is TypeScript + Node.js + Next.js + PostgreSQL + Prisma + Docker;
+- use a modular monolith first;
+- Shopify remains the commerce source;
+- SCA owns unique physical eyewear identity, Certification ID, QR, claims, ownership, and provenance;
+- canonical QR generation is in SCA, not Shopify;
+- the printed QR travels with the physical eyewear;
+- Shopify purchase creates claim eligibility;
+- the customer registers ownership only after scanning the QR, signing into SCA, and completing the claim;
+- no permanent QR may depend on the temporary VPS IP/hostname.
 
 ---
 
@@ -78,15 +95,18 @@ Do not scaffold a replacement unless `NEXT_TASK.md` explicitly authorizes it.
 |---|---|
 | `README.md` | The business, roles, and system boundaries |
 | `docs/PRODUCT_REQUIREMENTS.md` | What SCA has to do |
-| `docs/ARCHITECTURE.md` | Target design, data model, and claim state machine |
+| `docs/ARCHITECTURE.md` | Target design, data model, QR/claim model, and state machine |
+| `docs/INFRASTRUCTURE_BLUEPRINT.md` | Temporary-to-permanent hosting and portability blueprint |
+| `docs/ROADMAP.md` | Ordered implementation phases |
 | `docs/EXECUTION_WORKFLOW.md` | Architect → Implementer → Audit loop |
 | `docs/ADR-0002-ARIANEE-REJECTED.md` | Arianee rejected as the core platform |
-| `docs/ADR-0003-CLAUDE-TASK-CONTROLLER.md` | Controller workflow |
-| `docs/ADR-0004-VPS-HOSTING-SUPERSEDES-ADR-0001.md` | Current VPS hosting direction |
+| `docs/ADR-0003-CLAUDE-TASK-CONTROLLER.md` | Controller workflow; automatic live dispatch remains deferred |
+| `docs/ADR-0004-VPS-HOSTING-SUPERSEDES-ADR-0001.md` | VPS hosting allowed |
+| `docs/ADR-0005-GREENFIELD-PORTABLE-SCA-BUILD.md` | Current greenfield portable-build decision |
 | `NEXT_TASK.md` | **The one current job.** ChatGPT writes it; Claude executes it |
 | `.claude/` | Claude instruction pack |
 
-Working folder on the VPS is controlled by the authorized technical operator. Do not assume an application source location unless the current task proves it.
+The implementation repository and working directory are established by the approved current task. Do not put application source into this public architecture repository.
 
 ---
 
@@ -94,11 +114,13 @@ Working folder on the VPS is controlled by the authorized technical operator. Do
 
 1. **Never commit a secret.** No Shopify client secret, access token, database URL, session secret, API key, or `.env` contents.
 2. **Provenance is append-only.** Ownership, transfer, and service history are events that get added. Never overwrite history.
-3. **Shopify is not the provenance database.** Shopify owns products, stock, and orders. SCA owns certification, ownership, and history.
+3. **Shopify is not the provenance database.** Shopify owns products, stock, and orders. SCA owns certification, physical-item identity, QR, ownership, and history.
 4. **Shopify scopes stay read-only** — `read_products`, `read_inventory`, `read_orders`, `read_customers` — unless an approved ADR/task changes them.
 5. **A public QR scan never shows private data.** No email, phone, address, or account details.
-6. **Architecture changes need an ADR first.** ChatGPT writes/approves the architecture decision.
-7. **No production deploy or permanent QR release unless the current task explicitly authorizes it and required approval exists.**
+6. **Permanent QR identity belongs to SCA.** Never hard-code a temporary server IP/hostname or staging route into a lifetime QR.
+7. **Architecture changes need an ADR first.** ChatGPT writes/approves the architecture decision.
+8. **No production deploy or permanent QR release unless the current task explicitly authorizes it and required approval exists.**
+9. **The temporary VPS is disposable.** Irreplaceable source, database, media, or secrets must not exist only on that machine.
 
 ---
 
@@ -112,6 +134,8 @@ Claude stops and asks when the current task does not already authorize:
 - creating a new repository or changing repository visibility;
 - sending anything to a real customer;
 - credential or infrastructure changes outside the approved task.
+
+If the current `NEXT_TASK.md` explicitly authorizes one of these actions, that task is the approval for that bounded action only.
 
 ---
 
