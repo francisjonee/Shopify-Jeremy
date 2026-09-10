@@ -2,13 +2,13 @@
 
 **STATUS:** READY
 
-**TASK_ID:** SCA-CTRL-002
+**TASK_ID:** SCA-RECOVERY-001
 
 **RETRY_GENERATION:** 0
 
 ## Title
 
-Prove one controlled live Claude dispatch
+Recover and inventory the existing SCA Ownership Bridge implementation
 
 ## Implementer
 
@@ -16,9 +16,15 @@ Claude
 
 ## Objective
 
-Prove the controller can complete one real end-to-end Claude Code dispatch safely under the non-root service account.
+Find the existing Second Chance Authenticators / SCA Ownership Bridge implementation that was previously built and tested, preserve it, and establish an accurate implementation baseline before any new SCA feature work.
 
-This task validates the live execution path only. Unattended scheduling must remain disabled until this task is audited and accepted by ChatGPT.
+Do **not** scaffold or rebuild the application from scratch unless a later task explicitly authorizes that.
+
+## Context
+
+Project history indicates an SCA Ownership Bridge implementation previously existed and had working behavior around serial creation, QR generation, customer claiming, duplicate ownership protection, My Collection, Shopify integration, and PostgreSQL/production deployment work.
+
+The architecture repository is not the application source repository. The implementation may exist in another Git repository, another workspace, a local machine, a deployment source, or an accessible remote.
 
 ## Required Inputs
 
@@ -26,81 +32,78 @@ Read first:
 
 - `README.md`
 - `CLAUDE.md`
+- `docs/PRODUCT_REQUIREMENTS.md`
+- `docs/ARCHITECTURE.md`
 - `docs/EXECUTION_WORKFLOW.md`
-- `docs/ADR-0003-CLAUDE-TASK-CONTROLLER.md`
 - `docs/ADR-0004-VPS-HOSTING-SUPERSEDES-ADR-0001.md`
-- `docs/CONTROLLER.md`
-- `audits/SCA-CTRL-001-gen1-PASS.md`
+- `.claude/memory/implementation-recovery-required.md`
+- `audits/SCA-CTRL-002-DEFERRED.md`
 - this `NEXT_TASK.md`
 
 ## Work
 
-1. Confirm the installed controller still matches the source on current `main`, or report exact drift and STOP before live execution.
-2. Confirm the controller service account is `sceyewear` and is non-root.
-3. Establish the minimum authentication needed for the `sceyewear` account to run Claude Code and push/open a pull request for this repository.
-   - Do **not** copy root credentials.
-   - Prefer account-native or least-privilege authentication scoped only as broadly as required.
-   - Never print, commit, paste into a PR, or return any secret/token value.
-   - If interactive human authentication is required, pause and give the operator the exact safe command/action to perform, then continue only after it succeeds.
-4. Keep unattended execution disabled. Do not install/enable the controller timer or cron during this task.
-5. Immediately before the controlled test, enable only the minimum live-dispatch guard required for this one manual run.
-6. Run the controller manually in live mode exactly once for `SCA-CTRL-002#0`.
-7. The controller-launched Claude session must execute only this task and produce a harmless proof change on the controller-created task branch:
-   - create `audits/SCA-CTRL-002-live-proof.md`;
-   - include only safe information: task ID, retry generation, statement that the file was created by the controller-launched Claude session, and the resulting commit SHA/PR reference if available;
-   - do not include credentials, customer data, machine secrets, environment values, or unrelated project information.
-8. The controller-launched Claude session must commit the proof change, push only the task branch, open a pull request against `main`, then STOP. It must not merge the PR.
-9. Capture evidence showing the controller actually invoked Claude live, the Claude process completed, the expected branch/commit/PR was produced, and controller state reached `AWAITING_ARCHITECT_AUDIT`.
-10. After the single controlled live run completes, return the live-dispatch guard to disabled (`SCA_ALLOW_LIVE=0` or equivalent) before reporting completion.
-11. Confirm unattended scheduling is still disabled after the test.
-12. Return all required evidence and STOP for ChatGPT audit.
+1. Search the current accessible workspace/server for existing SCA / Second Chance Authenticators / Ownership Bridge application source.
+2. Inspect accessible Git remotes/repositories for a likely existing implementation repository. Do not create a new repository yet.
+3. If a candidate implementation is found, verify it is actually the SCA codebase by inspecting the code and Git history rather than relying only on a folder/repository name.
+4. Preserve existing source exactly. Do not delete, replace, or rewrite working prior implementation.
+5. Report the implementation baseline:
+   - source path;
+   - repository URL and default/current branch if available;
+   - current commit SHA;
+   - framework/runtime and package manager;
+   - application entry point;
+   - database technology, schema/migrations, and ORM if any;
+   - authentication approach;
+   - Shopify integration approach and current scopes/config assumptions;
+   - existing serial/QR/claim/My Collection/admin/customer routes or modules;
+   - deployment configuration/host assumptions;
+   - environment variable **names only**;
+   - available start/build/test commands.
+6. Run only safe local/static checks that do not require production secrets or modify production data. If dependencies are already present, run build/tests where reasonably possible. Do not deploy.
+7. Compare the existing implementation against the documented SCA architecture at a high level and identify what is already implemented versus clearly missing. Do not implement the missing features in this task.
+8. If the implementation source cannot be reached from the current environment, return `BLOCKED_SOURCE_ACCESS` and state the exact non-secret human action needed to make the existing source available (for example: push the existing local repository to an accessible private GitHub repo, provide the existing repository URL/access, or run Claude from the machine containing the source).
+9. If multiple candidate codebases exist, return `BLOCKED_MULTIPLE_CANDIDATES` with enough evidence to distinguish them. Do not choose by guess.
+10. Return the required evidence and STOP for ChatGPT audit.
 
 ## Acceptance Criteria
 
 Return all of the following:
 
-- `RESULT=PASS` or a specific `BLOCKED_*` result;
-- installed-source vs `main` comparison result;
-- service account confirmation;
-- Claude Code authentication status for `sceyewear` without exposing credentials;
-- GitHub authentication status for `sceyewear` without exposing credentials;
-- confirmation that no root credential was copied;
-- confirmation that unattended/systemd/cron execution remained disabled;
-- exact manual live controller command and relevant output;
-- evidence that a real Claude Code process was invoked by the controller;
-- controller run-log evidence sufficient to distinguish this from dry-run mode;
-- dispatch key evidence for `SCA-CTRL-002#0`;
-- resulting task branch name;
-- resulting commit SHA;
-- resulting pull request URL/number;
-- proof that the PR remains unmerged;
-- final controller state showing `AWAITING_ARCHITECT_AUDIT`;
-- final confirmation that the live-dispatch guard was returned to disabled;
+- `RESULT=PASS`, `BLOCKED_SOURCE_ACCESS`, `BLOCKED_MULTIPLE_CANDIDATES`, or another specific blocker;
+- exact implementation source path if found;
+- repository URL if available;
+- current branch and commit SHA if available;
+- framework/runtime/package-manager summary;
+- database/schema/ORM summary;
+- authentication summary;
+- Shopify integration summary;
+- existing feature inventory, including serial, QR, claim, duplicate protection, My Collection, admin/customer surfaces where present;
+- deployment configuration summary;
 - environment variable names only, values redacted;
-- security findings, if any.
+- exact safe start/build/test commands discovered;
+- build/test/static-check result if safely runnable;
+- high-level implemented-vs-missing comparison against current SCA architecture;
+- security findings, including any accidentally committed secrets or production coupling found;
+- exact human recovery action if the source is not accessible.
 
 ## Prohibited Changes
 
-- Do not build SCA product features.
-- Do not connect or modify the live Shopify store.
-- Do not deploy the SCA product application.
-- Do not modify DNS.
-- Do not publish permanent QR URLs.
-- Do not add/change Shopify scopes.
-- Do not enable unattended/systemd/cron execution.
-- Do not copy root credentials into `sceyewear`.
-- Do not expose any credential value.
-- Do not push directly to `main`.
-- Do not merge the proof PR.
-- Do not make unrelated repository changes.
+- Do not scaffold a replacement SCA application.
+- Do not rebuild existing working features from scratch.
+- Do not add new SCA product features.
+- Do not change the provenance data model.
+- Do not change Shopify scopes.
+- Do not connect, modify, or write to the live Shopify store.
+- Do not deploy or restart the production SCA application.
+- Do not modify DNS or permanent QR URLs.
+- Do not create a new implementation repository unless a later approved task authorizes it.
+- Do not expose or commit secrets, credentials, tokens, database URLs, or `.env` values.
 - Do not invent the next task.
 - Do not self-approve.
 
 ## Required Evidence
 
-Provide concise real command output sufficient for ChatGPT to independently verify every acceptance criterion. Redact all secret values and private data.
-
-If authentication cannot be safely established, return a specific `BLOCKED_AUTH_*` result with the exact non-secret human action required, then STOP.
+Provide concise real evidence for the findings: paths, repository/branch/commit references, relevant safe command output, discovered scripts, and test/build output where safely runnable. Redact all secrets and customer/private data.
 
 ## Completion Rule
 
@@ -110,4 +113,4 @@ Wait for ChatGPT architecture audit. Claude may resume only after ChatGPT replac
 
 ## Last Completed
 
-`SCA-CTRL-001` generation 1 passed architecture audit. Dry-run dispatch, duplicate suppression, non-root execution, safe-mode behavior, and append-only controller audit logging are proven. Live Claude invocation and PR creation are not yet proven.
+`SCA-CTRL-001` generation 1 passed architecture audit. The fully automatic live-dispatch proof (`SCA-CTRL-002`) is deferred because manual operator-to-Claude task pickup is already working and is sufficient for current delivery. Product implementation recovery now takes priority.
