@@ -2,13 +2,11 @@
 
 **STATUS:** READY
 
-**TASK_ID:** SCA-KRAYIN-INSTALL-001
-
-**RETRY_GENERATION:** 2
+**TASK_ID:** SCA-KRAYIN-HARDEN-001
 
 ## Title
 
-Fix the Krayin admin-security safeguard lockout bug in PR #1 and return it for final re-audit
+Harden the accepted Krayin v2.2.6 foundation before SCA provenance development
 
 ## Implementer
 
@@ -16,21 +14,23 @@ Claude
 
 ## Authority
 
-This is a narrow remediation generation issued after ChatGPT re-audit of implementation PR #1.
+PR #1 for `SCA-KRAYIN-INSTALL-001` passed ChatGPT final architecture/security audit and was merged into the implementation repository on 2026-09-12.
 
-Authoritative implementation repository:
+Merged implementation repository:
 
 `francisjonee/francisjonee-sca-platform-private`
 
-Authoritative implementation PR:
+Merge commit:
 
-`#1`
+`4d585511b8578d3e330f62a44defe7c858253a24`
 
-Continue on the existing branch:
+This task is the next governed task. Do not start provenance, eyewear, authentication, certification, QR, collector, transfer, service, or Shopify feature work.
 
-`chore/sca-krayin-install-001`
+## Goal
 
-Do not start any queued follow-on task.
+Perform a formal security-hardening pass on the exact accepted Krayin v2.2.6 foundation before SCA stores real provenance data or is exposed publicly.
+
+The purpose is to identify, verify, remediate where narrowly safe, and document security/operational risks in the current foundation without redesigning the product.
 
 ## Read First
 
@@ -39,96 +39,75 @@ Do not start any queued follow-on task.
 - `docs/ROADMAP.md`
 - `TASK_QUEUE.md`
 - `docs/EXECUTION_WORKFLOW.md`
-- `docs/task-reports/SCA-KRAYIN-INSTALL-001.md` in the implementation repository
 - this `NEXT_TASK.md`
+- `docs/task-reports/SCA-KRAYIN-INSTALL-001.md` in the implementation repository
 
-PR comments are audit history only. Do not depend on access to GitHub PR comments for executable instructions. This file is the authoritative instruction for this remediation.
+## Required Work
 
-## Audit Status
+1. Sync implementation `main` and create a new task branch for `SCA-KRAYIN-HARDEN-001`.
+2. Record the exact starting Krayin, Laravel, PHP, Composer, MariaDB, Docker image, and dependency versions.
+3. Re-run dependency/security audits and record exact evidence. Do not perform broad dependency upgrades merely because newer versions exist.
+4. Investigate current security reports relevant to the exact Krayin v2.2.6 codebase, including reported classes of issue such as XSS, authorization/role escalation, unauthenticated email abuse/injection, SQL injection, IDOR/missing authorization, and other high-impact reports discovered during the review. Verify applicability against the pinned code; do not assume every public report affects this release.
+5. Audit authentication and authorization boundaries for Krayin staff/admin routes and the SCA Foundation route. Confirm restricted staff cannot access full-admin-only operations.
+6. Re-run and preserve the accepted default-admin safeguard, including confirmation that only another active full administrator can satisfy its lockout guard.
+7. Audit public exposure assumptions: app remains loopback-only for this task; no DNS/public endpoint changes. Identify what must be in place before future HTTPS/public exposure, including rate limiting and safe error behavior.
+8. Review sensitive-file and secret exposure, Laravel production/debug settings, session/cookie/security headers where applicable, database network exposure, file permissions, and container isolation.
+9. Review Docker/container image pinning and supply-chain reproducibility. Record mutable tags/digests or other reproducibility gaps; make only narrow changes that are clearly safe and justified.
+10. Verify backup security and operational readiness. Off-server encrypted backup is a known gap. Do not place real provenance data into the system until durable off-server backup exists. If implementing an off-server destination requires credentials/provider decisions not already authorized, document the blocker rather than inventing credentials or providers.
+11. Verify backup/restore still works after any hardening changes.
+12. Re-run minimum runtime regression: login, dashboard, SCA Foundation route, migrations/database, dependency audit, safeguard, restart persistence, and sensitive-path checks.
+13. Create and commit `docs/task-reports/SCA-KRAYIN-HARDEN-001.md` in the implementation repository. It must distinguish VERIFIED, NOT APPLICABLE, REMEDIATED, ACCEPTED RISK, and BLOCKED findings; include commands/evidence, exact versions, limitations, technical debt, recommendations, commit SHAs, and PR reference.
+14. Make logical checkpoint commits throughout the work. Do not leave all findings only in terminal/chat.
+15. Push the branch and open a pull request into implementation `main` if available. If the VPS still cannot call the GitHub API, push the branch and return the exact branch name so the operator can open the PR. Do not treat inability to open a PR as permission to merge.
+16. STOP for ChatGPT audit. Do not merge or start another task.
 
-Generation 1 successfully remediated the original two blockers:
+## Security Remediation Rule
 
-- `maatwebsite/excel` was updated from vulnerable 3.1.68 to 3.1.70 and the task report records a clean `composer audit`;
-- an SCA-owned `sca:verify-admin-security` safeguard and operator wrapper were added and tested.
+Claude may make narrow hardening changes inside this task when they are directly supported by evidence and do not alter SCA product architecture. Examples include safe configuration, SCA-owned guards/middleware, container/runtime hardening, or dependency patch-level remediation compatible with the pinned foundation.
 
-However, ChatGPT re-audit found a lockout-safety defect in the safeguard. The safeguard must not consider an arbitrary active CRM user to be a replacement administrator. A restricted/non-admin staff user does not make it safe to deactivate the only active full administrator.
-
-PR #1 remains open and must not merge until this is corrected and re-audited.
-
-## Required Remediation
-
-1. Inspect the current implementation of:
-   - `app/packages/Sca/Foundation/src/Console/Commands/VerifyAdminSecurity.php`;
-   - `scripts/verify-admin-security.sh`;
-   - relevant Krayin User/Role models and role semantics.
-2. Correct the `--fix` lockout guard so an unsafe/default administrator may be deactivated only when another active **full administrator** exists.
-3. Do not count a normal active CRM user or restricted/custom-role staff member as a safe replacement administrator.
-4. Use Krayin's actual role semantics to determine full administrative capability. The current Krayin baseline represents the administrator role with `permission_type = all`; implement the check robustly through the user's role relationship/role data rather than merely counting active users.
-5. Preserve safe behavior: if the unsafe account is the only active full administrator, `--fix` must refuse loudly and return non-zero rather than locking administrators out.
-6. Prove the safeguard with explicit tests and record results:
-   - unsafe/default admin + no other active user -> refuse;
-   - unsafe/default admin + active restricted/non-admin user -> **refuse**;
-   - unsafe/default admin + another active full administrator -> remediation may proceed safely;
-   - after safe remediation, rerun -> PASS;
-   - remove all temporary test accounts/data after testing.
-7. Keep all safeguard code SCA-owned. Do not edit `app/packages/Webkul/**` or `vendor/**`.
-8. Re-run the minimal regression checks after the fix:
-   - `composer validate`;
-   - `composer audit` remains free of the previously reported HIGH advisory;
-   - locked/installed `maatwebsite/excel` remains on the remediated compatible release;
-   - app/login/dashboard still work;
-   - SCA Foundation route/module still works;
-   - migrations/database remain healthy;
-   - admin-security safeguard passes on the final database state.
-9. Update `docs/task-reports/SCA-KRAYIN-INSTALL-001.md`:
-   - add remediation generation 2;
-   - explain the lockout bug and exact correction;
-   - record all three role/lockout test scenarios and results;
-   - record regression/security results;
-   - record generation-2 commit SHA(s);
-   - keep PR #1 reference;
-   - set final RESULT accurately.
-10. Clean stale statements in the existing report that still describe the `maatwebsite/excel` CVE as unresolved. Historical sections may state that it was originally found, but current technical-debt/recommendation sections must clearly say it is resolved in generation 1 and must not recommend resolving an already-fixed issue.
-11. Push the remediation commits to the existing `chore/sca-krayin-install-001` branch.
-12. Leave PR #1 open and **unmerged**.
-13. Return evidence and STOP for ChatGPT final re-audit.
+If a finding requires a Krayin core modification, major framework/dependency upgrade, architectural change, new external provider, or uncertain compatibility, document it and stop for ChatGPT decision rather than improvising.
 
 ## Acceptance Criteria
 
-Return `RESULT=PASS` only if all are true:
+Return `RESULT=PASS` only if:
 
-- the safeguard requires another active full administrator before deactivating an unsafe/default administrator;
-- a restricted/non-admin active user cannot satisfy the lockout guard;
-- the three required lockout scenarios are tested and documented;
-- `maatwebsite/excel` remains on the remediated compatible release and `composer audit` remains clean of the previously reported HIGH advisory;
-- app/login/dashboard/database/SCA Foundation regression checks pass;
-- no default/example admin credential remains active in the final state;
-- no test users/data remain;
-- no real secret is committed;
-- no Krayin vendor/core modification is introduced;
-- stale current-state CVE statements in the task report are corrected;
-- task report is updated and committed;
-- PR #1 remains open and unmerged;
-- no queued feature task has started.
+- exact foundation versions are recorded;
+- dependency audit is clean or every remaining advisory is explicitly evaluated and dispositioned;
+- relevant Krayin security reports are checked against the pinned v2.2.6 code and dispositioned with evidence;
+- staff authentication/authorization boundaries are tested;
+- the SCA admin safeguard remains effective;
+- sensitive files/secrets are not exposed;
+- production/debug/database/container boundaries remain safe for the current loopback staging state;
+- public-exposure prerequisites and rate-limiting gaps are explicitly documented;
+- backup/restore remains proven and off-server-backup readiness is explicitly addressed;
+- runtime regression checks pass;
+- no SCA product-domain feature work has started;
+- no Krayin core/vendor modification is hidden or casually introduced;
+- task report and checkpoint commits are pushed;
+- implementation PR is left open and unmerged for ChatGPT audit.
+
+If a material security blocker remains unresolved, return `RESULT=BLOCKED` with exact evidence and recommended options rather than `PASS`.
 
 ## Prohibited Changes
 
 Do not:
 
-- merge PR #1;
-- change Krayin core/vendor files;
-- start eyewear/provenance/authentication/QR/collector/Shopify work;
-- change DNS;
+- merge your own PR;
+- expose Krayin publicly or change DNS;
+- create real provenance/customer production data;
+- start SCA domain/provenance schema work;
+- start Shopify integration;
+- build QR/public passport/collector features;
 - introduce PostgreSQL;
-- perform unrelated dependency/framework upgrades;
-- change architecture/roadmap/task queue beyond this authorized NEXT_TASK update;
-- invent or start the next task;
-- self-approve.
+- perform broad or major dependency/framework upgrades without architecture approval;
+- modify Krayin core/vendor merely to silence a finding;
+- invent external credentials, storage providers, or production infrastructure;
+- advance the task queue yourself.
 
 ## Completion Rule
 
-After pushing the generation-2 remediation commits and returning evidence:
+After pushing the hardening branch/report and opening or identifying the PR:
 
 **STOP.**
 
-Wait for ChatGPT to re-audit PR #1.
+Wait for ChatGPT architecture/security audit.
