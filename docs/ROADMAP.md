@@ -4,7 +4,15 @@
 
 Build the permanent provenance platform in controlled layers while reusing mature MIT-licensed CRM infrastructure where it reduces commodity development. The current VPS is temporary. Every phase must preserve portability to a future permanent server.
 
-Each implementation phase is broken into small Claude tasks. ChatGPT audits each completed task before the next task is issued.
+Delivery is controlled through three levels:
+
+- `docs/ROADMAP.md` — phase-level destination and milestones;
+- `TASK_QUEUE.md` — ordered implementation backlog and dependencies;
+- `NEXT_TASK.md` — the single task Claude is authorized to execute now.
+
+Claude must not execute directly from this roadmap or from the queue. ChatGPT audits each completed task and promotes exactly one next task into `NEXT_TASK.md`.
+
+Every implementation task must preserve its findings and evidence in Git through logical commits plus a committed report at `docs/task-reports/<TASK_ID>.md` in the private implementation repository.
 
 ## Phase 0 — Architecture Freeze
 
@@ -35,6 +43,11 @@ Accepted decisions:
 
 **Goal:** prove the selected mature MIT CRM can be safely used as SCA's operational foundation before product customization begins.
 
+Planned task sequence:
+
+- `SCA-KRAYIN-INSTALL-001` — install and validate pinned Krayin foundation;
+- `SCA-KRAYIN-HARDEN-002` — resolve approved hardening/operational findings from the installation audit.
+
 Deliverables:
 
 - exact Krayin upstream repository/release pinned;
@@ -49,9 +62,10 @@ Deliverables:
 - health/smoke checks;
 - database backup and restore proof;
 - restart/persistence proof;
-- SCA module/package extension path demonstrated with a harmless proof module or equivalent extension, without product-domain implementation;
+- SCA module/package extension path demonstrated without product-domain implementation;
 - confirmation no vendor-core edit was required;
 - documented upstream update strategy and rollback approach;
+- committed installation findings/task report;
 - temporary VPS portability documentation.
 
 Exit proof:
@@ -64,11 +78,16 @@ Exit proof:
 - no committed secrets/default passwords;
 - SCA extension mechanism works without modifying vendor core;
 - selected version/license/dependencies are documented;
-- known security/upgrade risks are reported before product work.
+- known security/upgrade risks are committed and either resolved or explicitly queued.
 
 ## Phase 2 — SCA Domain Module and Provenance Schema
 
 **Goal:** create the permanent SCA business model inside controlled SCA modules, not generic CRM entities.
+
+Planned task sequence:
+
+- `SCA-DOMAIN-DESIGN-003` — exact schema, invariants, state machines, and migration plan;
+- `SCA-DOMAIN-CORE-004` — implement models/migrations/services/tests.
 
 Core concepts:
 
@@ -105,6 +124,11 @@ Exit proof:
 
 **Goal:** turn the CRM foundation into Jeremy's operational SCA workspace.
 
+Planned task sequence:
+
+- `SCA-ADMIN-ITEMS-005` — physical eyewear intake/search/mapping;
+- `SCA-ADMIN-AUTH-006` — authentication and condition grading workflow.
+
 Initial functions:
 
 - physical eyewear intake/search;
@@ -125,21 +149,21 @@ Reuse Krayin's mature capabilities for users, roles, contacts, notes, activities
 
 **Goal:** give every certified physical pair a stable SCA public identity.
 
-Deliverables:
+Planned task sequence:
 
-- stable QR identifier;
-- public registry/passport route;
-- environment-driven Jeremy-controlled QR base URL;
-- explicit public-field allowlist;
-- state-sensitive public display;
-- staging/non-production guard;
-- QR print/export action for staff.
+- `SCA-CERT-QR-007` — certification ID and permanent/staging-safe QR identity;
+- `SCA-PUBLIC-PASSPORT-008` — public verification/passport surface.
 
 Permanent QR printing remains disabled until the approved Jeremy-controlled production URL is configured.
 
 ## Phase 5 — Shopify Integration
 
 **Goal:** connect Second Chance Eyewear commerce to exact SCA physical items.
+
+Planned task sequence:
+
+- `SCA-SHOPIFY-CONNECT-009` — connect the approved live store with least privilege;
+- `SCA-SHOPIFY-SALELINK-010` — map paid order lines to exact physical SCA items and claim eligibility.
 
 Initial scope baseline:
 
@@ -148,13 +172,17 @@ Initial scope baseline:
 - `read_orders`
 - `read_customers`
 
-Deliverables include store identity verification, OAuth/configuration, signed webhooks, paid-order processing, cancellation/refund/return-aware eligibility, idempotent sale links, exact physical-item mapping, safe retries, and audit logs.
-
 No Shopify write scope unless separately approved.
 
 ## Phase 6 — Collector Accounts, Claim, and My Collection
 
 **Goal:** provide a premium SCA customer experience separate from the staff CRM.
+
+Planned task sequence:
+
+- `SCA-COLLECTOR-AUTH-011` — independent SCA collector identity/authentication;
+- `SCA-CLAIM-012` — scan/sign-in/claim ownership workflow;
+- `SCA-MY-COLLECTION-013` — collector collection experience.
 
 Flow:
 
@@ -167,65 +195,57 @@ Flow:
 7. state becomes REGISTERED;
 8. item appears in My Collection.
 
-The customer-facing UI may be Laravel-based initially or separated later. Collectors must not be exposed to Krayin's staff/admin interface.
+Collectors must not be exposed to Krayin's staff/admin interface.
 
 ## Phase 7 — Ownership Transfer
 
 **Goal:** support resale/gifting without erasing provenance.
 
-Deliverables:
+Planned task:
 
-- owner initiates transfer;
-- secure transfer workflow;
-- recipient accepts after authentication;
-- expiration/cancellation behavior;
-- new ownership event appended;
-- prior owner retained in history;
-- current owner derived from active state.
+- `SCA-TRANSFER-014` — secure ownership transfer lifecycle.
+
+Prior ownership remains immutable history.
 
 ## Phase 8 — Service + Lost/Stolen Registry
 
 **Goal:** extend the record throughout the physical item's life.
 
-Deliverables include append-only service events, repair/lens/polish/tune-up/inspection records, lost/stolen/recovered states, public warnings without private owner data, and staff audit trail.
+Planned task sequence:
+
+- `SCA-SERVICE-015` — append-only service history;
+- `SCA-STATUS-016` — lost/stolen/recovered lifecycle and public warning behavior.
 
 ## Phase 9 — Certificates and Insurance Records
 
 **Goal:** produce durable documents from trusted SCA data.
 
-Deliverables include authentication certificate, ownership certificate, provenance report, insurance report PDF, controlled inclusion of photos/specs/condition/current ownership, and versioned/audited document generation.
+Planned task:
+
+- `SCA-DOCUMENTS-017` — authentication/ownership/provenance/insurance documents.
 
 ## Phase 10 — Permanent Infrastructure Migration
 
 **Goal:** move from temporary VPS to permanent SCA infrastructure without rebuilding identity/history.
 
-Deliverables:
+Planned task:
 
-- hardened permanent server;
-- production MySQL/MariaDB backup strategy;
-- durable object storage;
-- production secrets;
-- Jeremy-controlled QR domain;
-- full restore rehearsal;
-- smoke tests;
-- DNS cutover and rollback window;
-- temporary VPS decommission only after acceptance.
+- `SCA-PRODUCTION-018` — hardened production infrastructure, restore rehearsal, durable backups/media, QR domain, cutover/rollback.
 
 Permanent QR identifiers and provenance must survive unchanged.
 
 ## Phase 11 — Expansion
 
-After the core registry is reliable:
+**Goal:** add value after the core registry is reliable.
 
-- market history;
-- resale-value tracking;
-- market notifications;
-- collector profiles/privacy controls;
-- external paid authentication intake;
-- trusted resale workflows;
-- marketplace;
-- advanced analytics/reporting.
+Planned task family begins with:
+
+- `SCA-EXPANSION-019` — plan market history, value tracking, collector profiles/privacy, paid external authentication, resale/marketplace, and analytics.
+
+These features must not block the trusted provenance core.
 
 ## Current Implementation Starting Point
 
-The next implementation task is **SCA-CRM-FOUNDATION-001**: validate, pin, deploy, harden, back up, and prove the Krayin CRM foundation on the temporary VPS before any SCA product-domain feature is implemented.
+The active executable task is defined only in `NEXT_TASK.md`.
+
+At the time of this roadmap revision the intended active task is `SCA-KRAYIN-INSTALL-001`. The authoritative live status is always `NEXT_TASK.md` + `TASK_QUEUE.md`, not this historical sentence.
