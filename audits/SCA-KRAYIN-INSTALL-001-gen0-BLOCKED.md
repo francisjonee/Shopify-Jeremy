@@ -1,18 +1,16 @@
 # SCA-KRAYIN-INSTALL-001 — implementation report
 
-> **Filed in the architecture repo because the implementation repo is unreachable.**
-> The task requires findings to be committed, not left in chat. `sca-platform` does not
-> exist yet (see §12), so this report is committed here instead of at
-> `docs/task-reports/SCA-KRAYIN-INSTALL-001.md`. An identical copy is committed in the
-> local implementation repository and will push with the branch once access exists.
+> **Mirror.** The canonical copy lives in the private implementation repository at
+> `docs/task-reports/SCA-KRAYIN-INSTALL-001.md` on branch `chore/sca-krayin-install-001`.
+> It is duplicated here so the audit trail stays in the architecture repo.
 >
 > **This repository is public.** The server address, hostname, and the unrelated
 > production tenant sharing this host are generalised throughout, per the precedent in
 > `SCA-RECOVERY-001-gen0-EVIDENCE.md`. No credential, password, or host identifier
 > appears below.
 
-**RESULT:** `BLOCKED_REPOSITORY_ACCESS` — installation complete and proven; only the
-GitHub steps (task steps 2 and 14) could not be performed.
+**RESULT:** `BLOCKED_PR_CREATION` — installation complete and proven, branch pushed; only
+the final pull-request step could not be performed by Claude.
 
 **Implementer:** Claude
 **Date:** 2026-09-11
@@ -27,11 +25,22 @@ Krayin CRM v2.2.6 is installed, running, and proven on the temporary VPS. Admini
 login works, data survives restart, backup and restore work, and an SCA-owned module
 extends Krayin without touching a single core or vendor file.
 
-Two things did not happen, both for the same reason: the private implementation
-repository `francisjonee/sca-platform` cannot be reached from this environment, so the
-branch could not be pushed and no pull request could be opened. All work is committed to
-a **local** Git repository at `/opt/sca-platform` on branch
-`chore/sca-krayin-install-001` and is ready to push unchanged the moment access exists.
+All work is committed and **pushed** to the private implementation repository on branch
+`chore/sca-krayin-install-001`. One item remains: the pull request itself. Access is via a
+deploy key, which can push a branch but cannot call the GitHub API, so the PR must be
+opened by the operator with one click. It must not be merged before audit.
+
+**Deviation from the task, flagged for audit.** Task step 2 names the repository
+`francisjonee/sca-platform`. The repository that exists and that the deploy key opens is
+**`francisjonee/francisjonee-sca-platform-private`**. Claude did not create it and did not
+choose the name; the operator confirmed this is the intended repository. Recorded here
+because the audit checks the repository against the name the task specified.
+
+A related correction: an earlier generation of this report stated the implementation
+repository did not exist. That was overstated. A deploy key scoped to one repository
+returns `Repository not found` for every other repository whether or not it exists, so
+that check could not distinguish the two cases and should not have been read as proof of
+absence.
 
 Three defects were found by running the install rather than reading about it. One is a
 security issue that anyone following Krayin's documented path will also hit. See
@@ -404,51 +413,47 @@ the real environment.
 
 ## 11. Git state
 
-Local repository: `/opt/sca-platform`. Branch `chore/sca-krayin-install-001`.
+Repository: **`francisjonee/francisjonee-sca-platform-private`** (private). Working path
+on the VPS: `/opt/sca-platform`. Branch: `chore/sca-krayin-install-001`, **pushed**.
 
 | # | SHA | Purpose |
 |---|---|---|
-| — | `564df08` | `main` — repository initialization only |
-| 1 | `e273a69` | Deployment foundation + pinned Krayin v2.2.6 source |
-| 2 | `a02dfcb` | SCA Foundation proof module + backup/restore scripts |
-| 3 | `0d3cf07` | Apache docroot fix, concord re-registration, runbook |
-| 4 | *(this report)* | Task report |
+| — | `56d4a64` | The repository's own `Initial commit` on `main`, pre-existing |
+| 1 | `564df08` | Local repository initialization (README, .gitignore) |
+| 2 | `e273a69` | Deployment foundation + pinned Krayin v2.2.6 source |
+| 3 | `a02dfcb` | SCA Foundation proof module + backup/restore scripts |
+| 4 | `0d3cf07` | Apache docroot fix, concord re-registration, runbook |
+| 5 | `7ddb2a9` | Task report (this file) |
+| 6 | `72a5ff4` | Merge commit joining this work onto the repository's `main` |
 
-**Not pushed. No pull request exists.** See § 12.
+The repository was initialized with its own root commit while this task's work was
+committed locally, leaving two unrelated histories a pull request could not merge. They
+were joined with a merge rather than a rebase, deliberately: a merge is additive, so
+commits 1-5 keep the SHAs listed above and this report stays accurate.
+
+**Branch is pushed. No pull request exists yet** — see § 12. Nothing is merged into
+`main`.
 
 ---
 
 ## 12. Blocker
 
-Task steps 2 and 14 could not be performed.
+One step remains: **opening the pull request.**
 
-`francisjonee/sca-platform` is unreachable from this environment:
+Access to the implementation repository is a deploy key. A deploy key can push a branch
+but cannot call the GitHub API, and opening a pull request is an API action. The GitHub
+CLI is not installed on this host and no account-level credential is present.
 
-- `git ls-remote` against it returns `Repository not found`, meaning it either does not
-  exist or this credential cannot see it;
-- the GitHub CLI is not installed;
-- no account-level credential is present;
-- the only credential available is a deploy key scoped to the **architecture** repo
-  `Shopify-Jeremy`, and a deploy key can never create a repository or reach a second one.
+### Action required — operator, one click
 
-### Exact action required — operator only
+Open a pull request from `chore/sca-krayin-install-001` into `main` in
+`francisjonee/francisjonee-sca-platform-private`.
 
-**Option A (recommended, least privilege).** Create `francisjonee/sca-platform` in the
-GitHub UI, set visibility **Private**, initialize with a `main` branch. Claude generates
-an SSH keypair and returns the public half; add it under that repository's
-Settings → Deploy keys with **Allow write access** enabled.
+**Do not merge it.** ChatGPT must audit the installation and this report first.
 
-Limitation: a deploy key can push a branch but cannot open a pull request, because that
-is an API action requiring account authentication. Claude pushes the branch and returns a
-compare link; the operator clicks "Create pull request". The PR must not be merged before
-audit.
-
-**Option B.** A fine-grained personal access token scoped to `sca-platform`. Satisfies
-step 14 end to end, including opening the PR. Broader than Option A.
-
-Once either exists, the local history pushes unchanged — no rework.
-
----
+If future tasks should open their own pull requests without operator involvement, that
+needs a fine-grained personal access token scoped to this repository. That is a broader
+grant than a deploy key and is the operator's decision, not Claude's.
 
 ## 13. Scope confirmation
 
@@ -465,7 +470,7 @@ Explicitly confirmed:
 - no vendor or core modification remains — verified against pristine upstream;
 - no queued task from `TASK_QUEUE.md` started;
 - no governance, roadmap, or ADR file modified;
-- no pull request merged — none exists;
+- no pull request merged — none exists yet;
 - nothing self-approved, and no next task invented;
 - the unrelated production tenant was not modified in any way.
 
