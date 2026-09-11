@@ -2,54 +2,65 @@
 
 ## Objective
 
-Separate commerce from provenance while keeping the customer experience simple and keeping the application portable from the current temporary VPS to a future permanent server.
+Separate commerce from provenance, reuse mature MIT-licensed CRM capabilities for staff operations, and keep the SCA-specific business domain portable and under SCA control.
 
 ```text
 Second Chance Eyewear / Shopify
         |
         | products, variants, inventory, orders, purchaser reference
         v
-SCA Shopify Integration Layer
+SCA Shopify Integration
         |
         v
-SCA Modular Monolith
+SCA Platform — Laravel / Krayin Foundation
         |
-        +--> SCA Admin / CRM
-        +--> Collector Portal
-        +--> Public QR Registry
+        +--> Krayin Staff Admin / CRM
+        |      +--> users / roles / permissions
+        |      +--> customers / contacts
+        |      +--> notes / activities / files
+        |      +--> search / filters / dashboards
         |
-        +--> PostgreSQL
+        +--> SCA Domain Modules
+        |      +--> physical eyewear identity
+        |      +--> authentication / certification
+        |      +--> QR identity
+        |      +--> claims / ownership / provenance
+        |      +--> transfers / service / registry status
+        |
+        +--> SCA Collector Portal
+        +--> SCA Public QR Registry / Passport
+        |
+        +--> MySQL or MariaDB
         +--> S3-compatible durable media storage
-        +--> background worker/jobs as required
+        +--> background jobs as required
 ```
 
 ## Build Direction
 
-The inaccessible prior Ownership Bridge is no longer a prerequisite. The project is authorized as a **greenfield build from scratch**.
+The inaccessible prior Ownership Bridge is not a prerequisite. SCA remains authorized as a greenfield implementation, but the project will no longer rebuild commodity CRM/admin capabilities from scratch.
 
-The current VPS is a temporary construction/staging environment. The implementation must be portable to a future permanent server. See `ADR-0005-GREENFIELD-PORTABLE-SCA-BUILD.md` and `INFRASTRUCTURE_BLUEPRINT.md`.
+Per `ADR-0006-KRAYIN-CRM-ADMIN-FOUNDATION.md`, Krayin CRM is the initial staff-facing admin/operations foundation.
 
-Initial implementation stack:
+Initial implementation direction:
 
-- TypeScript
-- Node.js
-- Next.js
-- PostgreSQL
-- Prisma
-- Docker / Docker Compose
-- modular monolith
-- Caddy or equivalent reverse proxy when needed
-- S3-compatible object storage abstraction for durable media
+- Krayin CRM;
+- Laravel / PHP;
+- MySQL or MariaDB on Krayin's supported path;
+- Docker / Docker Compose;
+- modular SCA Laravel/Krayin extensions rather than invasive vendor-core edits;
+- S3-compatible durable media abstraction;
+- purpose-built SCA collector/public surfaces where required;
+- Shopify integration as a separate commerce boundary.
 
-Application source belongs in a separate **private implementation repository**. This repository remains the public architecture/task/audit bridge.
+The current VPS remains temporary construction/staging infrastructure. The implementation must be portable to a future permanent server.
 
-## Production Shopify Store Requirement
+Application source belongs in a separate private implementation repository. This repository remains the public architecture/task/audit bridge.
 
-The SCA Shopify app is intended to connect to and be installed on the **actual live Second Chance Eyewear Shopify store**, not merely a Shopify development store.
+## Core Architectural Rule
 
-Before any production installation, identify and record the exact live store identity using Shopify's canonical `*.myshopify.com` identity. Do not guess the store from the public storefront domain.
+**Krayin is the operational shell; SCA is the product.**
 
-Use Custom distribution for the actual Second Chance Eyewear store unless a later ADR changes this.
+Generic CRM entities must not replace SCA's permanent business concepts. A CRM product/deal/contact record is not a substitute for a uniquely certified physical eyewear item, an ownership event, or a provenance record.
 
 ## System of Record Boundaries
 
@@ -60,7 +71,17 @@ Use Custom distribution for the actual Second Chance Eyewear store unless a late
 - inventory quantity/state;
 - orders and payment/sale events;
 - original sale linkage;
-- Shopify purchaser reference used for initial claim eligibility.
+- purchaser reference used for initial claim eligibility.
+
+### Krayin provides reusable operational capabilities
+
+- staff accounts;
+- roles and permissions;
+- people/customer records;
+- notes and activities;
+- files where suitable;
+- search, filters, forms, dashboards, and admin navigation;
+- extension points for SCA modules.
 
 ### SCA is authoritative for
 
@@ -69,26 +90,21 @@ Use Custom distribution for the actual Second Chance Eyewear store unless a late
 - authentication result;
 - condition report;
 - inspection media references;
-- QR identity;
+- permanent QR identity;
 - claim state;
 - registered ownership;
-- ownership events;
+- ownership/provenance events;
 - transfer events;
 - service events;
-- registry status;
-- lost/stolen status;
+- registry and lost/stolen status;
 - collector collection;
 - generated certificates/insurance records.
 
-Shopify must never become the canonical provenance database.
+Neither Shopify nor generic Krayin CRM records may become the canonical provenance database.
 
-## Physical Item vs Shopify Product
+## Physical Item vs Shopify/Krayin Records
 
-A Shopify product/variant is a commerce definition. An SCA `eyewear_item` represents one uniquely certified physical pair.
-
-Do not assume one Shopify product ID or variant ID equals one permanent provenance record.
-
-Examples:
+A Shopify product/variant is a commerce definition. A Krayin product/contact/deal is an operational CRM concept. An SCA `eyewear_item` represents one uniquely certified physical pair.
 
 ```text
 Shopify Product A / Variant A / Qty 5
@@ -100,43 +116,47 @@ Shopify Product A / Variant A / Qty 5
    +--> SCA physical pair 005 / Certification ID / QR 005
 ```
 
-If Jeremy lists each collectible pair as its own quantity-1 Shopify product, the mapping can be one-to-one, but the SCA data model must still support the more general case.
+## SCA Domain Model
 
-## Core Data Model
+The implementation must preserve explicit first-class concepts equivalent to:
 
 ### `collector_accounts`
-Independent SCA users/collectors. A Shopify customer ID may be linked but is not the SCA identity source of truth.
+Independent SCA collectors. A Shopify customer or Krayin person may be linked but is not automatically the permanent ownership identity.
 
 ### `eyewear_items`
-One uniquely certified physical eyewear item.
-
-Suggested identifiers:
-
-- internal UUID;
-- unique human-readable `sca_certification_id`;
-- optional Shopify product/variant/SKU references;
-- stable registry status.
+One uniquely certified physical eyewear item with internal identifier, human-readable Certification ID, optional commerce references, and registry state.
 
 ### `authentications`
-Appendable authentication/inspection records with result, date, grade, notes, and media references.
+Appendable authentication/inspection records including result, date, condition grade, notes, and media references.
+
+### `certifications`
+Certification issuance/version/status information when separated from authentication.
 
 ### `ownership_events`
-Append-only ownership lifecycle events. Never erase prior owner history during transfer.
+Append-only ownership lifecycle. Transfers never erase prior owner history.
 
-### `transfer_requests`
-Pending/accepted/expired/cancelled ownership-transfer workflows.
+### `transfer_requests` / `transfer_events`
+Pending/accepted/expired/cancelled ownership-transfer workflow and resulting provenance events.
 
 ### `service_events`
 Repairs, lens work, polishing, tune-up, inspection, and other service history.
 
 ### `status_events`
-Lost, stolen, recovered, certification changes, and other registry status transitions.
+Lost, stolen, recovered, certification changes, and other registry transitions.
 
 ### `shopify_sale_links`
-Links a paid Shopify order line to the exact physical SCA eyewear item and controls initial claim eligibility.
+Links a Shopify order line to the exact physical SCA item and controls initial claim eligibility.
 
 ### `qr_identifiers`
-Permanent public identity for a physical item. The QR contains no secret or raw customer data.
+Permanent public identity for a physical item. QR payloads contain no secret or private customer data.
+
+Exact table/package names may change during implementation, but these semantics must remain explicit and testable.
+
+## Provenance Integrity
+
+Historical provenance is append-only at the business-logic level.
+
+The CRM may maintain convenient current-state fields such as current owner or current registry status, but those values must be derived from or reconciled with the authoritative SCA event history. Staff must not be able to silently rewrite historical ownership, transfer, service, or status history through generic CRM editing.
 
 ## Claim State Machine
 
@@ -160,47 +180,57 @@ TRANSFER_PENDING
 REGISTERED (new active owner, prior owner retained in history)
 ```
 
-Returns, cancellations, refunds, failed delivery, and other commerce reversals must be handled explicitly before claim eligibility is considered final.
+A Shopify purchase makes someone eligible to claim. It does not itself create permanent registered SCA ownership.
 
-A Shopify purchase makes someone **eligible to claim**. It does not itself create permanent registered SCA ownership.
+## Permanent QR Model
 
-## Final QR Operational Model
+Canonical QR generation belongs to SCA, not Shopify or generic Krayin functionality.
 
-Canonical QR generation belongs to SCA, **not Shopify**.
+1. Staff authenticates and grades a physical pair through the SCA admin module.
+2. SCA creates the provenance record and Certification ID.
+3. SCA creates a permanent QR identity.
+4. Staff prints and includes it with the eyewear.
+5. Shopify later records the sale.
+6. SCA links the exact physical pair to the eligible order/purchaser.
+7. Customer receives and scans the QR.
+8. SCA public/collector experience opens.
+9. Customer signs in or creates an SCA collector account.
+10. SCA verifies eligibility and appends ownership.
+11. Item becomes REGISTERED and appears in My Collection.
 
-Flow:
+Permanent printed QR codes must use a Jeremy-controlled production route such as `https://secondchanceauthenticators.com/p/<id>` or another approved Jeremy-controlled subdomain. Never hard-code the temporary VPS IP/hostname.
 
-1. Staff authenticates and grades a physical pair in SCA.
-2. SCA creates the Digital Provenance Record and Certification ID.
-3. SCA creates a permanent QR identity for that physical pair.
-4. Staff prints the QR and physically includes it with the eyewear.
-5. Shopify later records the sale/order.
-6. SCA links the exact sold physical pair to the order/purchaser and moves it to `SOLD_AWAITING_CLAIM` when eligible.
-7. Customer receives the eyewear and scans the physical QR.
-8. SCA public/collector application opens.
-9. Customer signs in or creates an independent SCA account.
-10. SCA verifies claim eligibility and appends ownership.
-11. Item becomes `REGISTERED` and appears in My Collection.
+## Customer-facing Surfaces
 
-Emailing the same QR or claim link may be added later as a convenience. Ownership registration does not happen at checkout.
+Collectors must not be required to use Krayin's staff/admin interface.
 
-## Shopify App Role
+### Collector Portal
 
-The Shopify Dev app is the integration/admin surface between Shopify and SCA. It does not generate the canonical provenance QR and does not replace the SCA application/database.
+- sign up/sign in;
+- claim eligible pair;
+- My Collection;
+- view provenance/certificate;
+- initiate/accept transfer;
+- service history;
+- lost/stolen actions;
+- privacy settings.
 
-Later Shopify Admin conveniences may include:
+### Public Registry / Passport
 
-- linked SCA Certification ID;
-- SCA authentication/claim status;
-- Open SCA Record action;
-- View/Print QR action;
-- mapping status between a Shopify sale line and a physical SCA item.
+- authenticity status;
+- Certification ID;
+- approved public specifications;
+- approved condition summary;
+- approved provenance summary;
+- lost/stolen warning;
+- claim CTA when eligible;
+- secure transfer CTA only when authorized.
 
-Any Shopify metafield write or other mutation requires an approved write scope/task. Initial integration remains least privilege.
+The collector/public UI may initially be implemented within Laravel or as a separate frontend later. The boundary is an experience/security requirement, not a mandate for a second framework on day one.
 
 ## Shopify Integration
 
-Initial least-privilege scope baseline:
+Initial least-privilege scope baseline remains:
 
 ```text
 read_products
@@ -209,129 +239,67 @@ read_orders
 read_customers
 ```
 
-Purpose:
-
-- read/map commerce product data;
-- reference inventory;
-- detect relevant order/sale events;
-- associate purchaser references with initial claim eligibility.
-
-Do not add Shopify write scopes until an approved feature explicitly requires Shopify mutation.
-
-### Webhooks
-
-Expected initial events include the minimum needed for:
-
-- paid order/sale event;
-- cancellation;
-- refund/return-related eligibility changes;
-- app uninstalled;
-- product update only if required for sync.
-
-Webhook processing must be:
-
-- signature verified;
-- idempotent;
-- retry safe;
-- auditable;
-- resistant to duplicate sale-link or ownership events.
-
-## Public QR Route
-
-Jeremy controls `secondchanceauthenticators.com`.
-
-Permanent printed QR codes must use a Jeremy-controlled production route, for example:
-
-```text
-https://secondchanceauthenticators.com/p/SCA-2026-000001
-```
-
-or:
-
-```text
-https://passport.secondchanceauthenticators.com/p/SCA-2026-000001
-```
-
-The exact production route is finalized before lifetime QR printing is enabled.
-
-The implementation must use environment configuration such as `PUBLIC_QR_BASE_URL`; never hard-code the temporary VPS IP/hostname. Staging QR codes must be clearly non-production and must not be printed as permanent lifetime identifiers.
-
-## Application Surfaces
-
-### Admin / CRM
-
-- dashboard;
-- physical eyewear inventory/mapping;
-- authentication workflow;
-- condition grading;
-- certification record;
-- QR generation/printing;
-- collector/customer lookup;
-- claims;
-- ownership history;
-- transfers;
-- service history;
-- registry status;
-- reporting.
-
-### Collector Portal
-
-- sign up/sign in;
-- claim eligible pair;
-- My Collection;
-- view provenance record;
-- certificates;
-- initiate/accept transfer;
-- service history;
-- lost/stolen actions;
-- privacy settings.
-
-### Public Registry
-
-- authenticity status;
-- Certification ID;
-- approved public item specifications;
-- approved condition summary;
-- approved provenance summary;
-- lost/stolen warning;
-- claim CTA when eligible;
-- secure transfer CTA only when transfer flow authorizes it.
+Webhook processing must be signature verified, idempotent, retry safe, and auditable. No Shopify write scope is added until a separately approved feature requires mutation.
 
 ## Security Baseline
 
-- production secrets only outside Git;
-- never commit Shopify secret/access token, DB URL, session secret, or magic-link secret;
+- pin and document the selected Krayin release;
+- verify upstream MIT license before adoption;
+- audit dependencies before production;
+- never retain default admin credentials;
+- secrets remain outside Git;
+- prefer SCA modules/packages over vendor-core modification;
+- document every unavoidable vendor-core patch and its upgrade impact;
 - server-side Shopify API calls only;
 - verified webhooks;
-- established authentication libraries/provider;
-- hashed passwords if password authentication is used;
 - rate-limit public QR, login, claim, and transfer endpoints;
+- authorization tests for admin/owner/public boundaries;
 - audit ownership/transfer/service/status mutations;
-- authorization tests for owner/admin/public boundaries;
 - explicit public registry field allowlist;
-- no customer private data in public QR payloads or routes.
+- no private customer data in QR payloads or public routes.
+
+## Database and Backup Boundary
+
+The initial CRM-based architecture uses MySQL/MariaDB instead of the previously mandated PostgreSQL/Prisma stack.
+
+Before production provenance data is trusted:
+
+- database backups must exist outside the temporary VPS;
+- restore must be tested;
+- durable media must have a recoverable storage strategy;
+- migrations for SCA modules must be version controlled;
+- upgrade and rollback procedures must be documented.
+
+Do not add PostgreSQL merely to preserve the old architecture unless a later ADR identifies a concrete requirement.
+
+## Upgradeability Rule
+
+SCA must be able to update or replace Krayin without destroying the SCA provenance model.
+
+Therefore:
+
+- custom SCA domain code belongs in isolated modules/packages where practical;
+- vendor core modifications are strongly discouraged;
+- SCA schema/migrations are version controlled;
+- integration boundaries are documented;
+- backups and migration procedures are tested.
 
 ## Deployment Boundary
 
-The current VPS is temporary and may host development/staging. It is not the permanent identity of the platform.
-
-The application must be reconstructable on a fresh server from:
+The current VPS is temporary. The system must be reconstructable on a fresh server from:
 
 ```text
 Private implementation Git repository
++ pinned Krayin/Laravel dependencies
 + environment/secrets
-+ PostgreSQL backup
++ MySQL/MariaDB backup
 + durable object/media storage
 + deployment documentation
 ```
 
-Before permanent provenance data is trusted in production:
+Moving to permanent infrastructure must not require permanent QR regeneration, customer reset, or ownership-history rewriting.
 
-- PostgreSQL backups must exist outside the temporary VPS;
-- a restore must be tested;
-- TLS/firewall/patching/monitoring/process supervision must be active;
-- durable media must not depend only on the temporary application disk;
-- production QR domain must be Jeremy-controlled;
-- migration/rollback procedure must be tested.
+## Governing Decisions
 
-Moving to the permanent server must not require application rebuilding, QR regeneration, or ownership-history rewriting.
+- ADR-0005 remains authoritative for greenfield freedom, portability, backup discipline, and separation from the inaccessible old implementation.
+- ADR-0006 supersedes ADR-0005's initial Next.js/PostgreSQL/Prisma/admin-from-scratch stack and establishes Krayin as the initial CRM/admin foundation.
