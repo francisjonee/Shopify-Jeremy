@@ -21,33 +21,37 @@ This file is the ordered implementation backlog for Second Chance Authenticators
 
 ---
 
-## ACTIVE
+## COMPLETED
 
 ### SCA-KRAYIN-INSTALL-001 — Install and validate Krayin foundation
 **Phase:** 1 — CRM Foundation
+**Status:** DONE
+
+Accepted after ChatGPT audit and merged into implementation `main`.
+
+### SCA-KRAYIN-HARDEN-001 — Security hardening of Krayin foundation
+**Phase:** 1 — CRM Foundation
+**Status:** DONE
+**Depends on:** SCA-KRAYIN-INSTALL-001 PASS
+
+Accepted after ChatGPT security audit. PR #2 merged. Standing production gates remain documented: no real provenance data or public exposure until the required production prerequisites, including off-server encrypted backup and public-edge hardening, are completed.
+
+---
+
+## ACTIVE
+
+### SCA-DOMAIN-DESIGN-003 — Design SCA provenance schema and invariants
+**Phase:** 2 — SCA Domain
 **Status:** ACTIVE
+**Depends on:** hardened Krayin foundation — PASS
 
-Install a pinned MIT-licensed Krayin release on the temporary VPS, prove MySQL/MariaDB persistence, backup/restore, secure admin access, portable deployment, and a clean SCA extension point without modifying vendor core.
+Define and document the exact SCA domain schema and state machines for physical eyewear, authentication, certification, QR identity, ownership, transfer, service, status, collector identity, and Shopify sale linkage. No UI-first shortcuts and no collapsing provenance into generic CRM records.
 
-**Exit gate:** ChatGPT audits implementation PR, runtime evidence, security findings, backup/restore proof, and committed task report.
+**Exit gate:** ChatGPT audits the schema, invariants, lifecycle/state-machine decisions, migration plan, privacy boundaries, and evidence report before implementation of domain migrations/models begins.
 
 ---
 
 ## QUEUED
-
-### SCA-KRAYIN-HARDEN-002 — Harden and baseline the CRM foundation
-**Phase:** 1 — CRM Foundation
-**Status:** QUEUED
-**Depends on:** SCA-KRAYIN-INSTALL-001 PASS
-
-Apply approved hardening/remediation discovered during installation audit. Establish final staging service exposure, scheduler/queue strategy if required, logging, update policy, database backup automation design, and baseline operational runbook.
-
-### SCA-DOMAIN-DESIGN-003 — Design SCA provenance schema and invariants
-**Phase:** 2 — SCA Domain
-**Status:** QUEUED
-**Depends on:** hardened Krayin foundation
-
-Define and document the exact SCA domain schema and state machines for physical eyewear, authentication, certification, QR identity, ownership, transfer, service, status, collector identity, and Shopify sale linkage. No UI-first shortcuts and no collapsing provenance into generic CRM records.
 
 ### SCA-DOMAIN-CORE-004 — Implement core SCA domain migrations and models
 **Phase:** 2 — SCA Domain
@@ -152,7 +156,7 @@ Generate versioned authentication certificates, ownership certificates, provenan
 **Status:** QUEUED
 **Depends on:** core product acceptance
 
-Harden permanent infrastructure, configure off-server backups/durable media, rehearse full restore, configure Jeremy-controlled production QR route, perform DNS/cutover/rollback plan, and migrate without regenerating permanent IDs or rewriting provenance.
+Harden permanent infrastructure, configure off-server backups/durable media, rehearse full restore, configure Jeremy-controlled production QR route, perform DNS/cutover/rollback plan, and migrate without regenerating permanent IDs or rewriting provenance. This task must also close all standing public-exposure/real-data gates recorded by SCA-KRAYIN-HARDEN-001 before production use.
 
 ### SCA-EXPANSION-019 — Market history, collector profiles, paid external authentication
 **Phase:** 11 — Expansion
