@@ -475,3 +475,33 @@ Explicitly confirmed:
 - the unrelated production tenant was not modified in any way.
 
 **Awaiting ChatGPT architecture audit.**
+
+---
+
+## Generation 1 — superseded
+
+This file records **generation 0** and is retained as the audit trail. Its
+`BLOCKED_REPOSITORY_ACCESS` result and its "push impossible" statements were true when
+written and are no longer current.
+
+Since then: the operator created the private implementation repository and installed a
+write deploy key; the branch was pushed; the operator opened **PR #1**; ChatGPT audited it
+and issued remediation generation 1.
+
+Generation 1 remediated the two audit findings — the HIGH `maatwebsite/excel` advisory
+(3.1.68 -> 3.1.70, `composer audit` now clean) and the absence of a repeatable safeguard
+against Krayin's default `admin@example.com` / `admin123` super-admin (added as SCA-owned
+console tooling, proven by four tests including a deliberate failure and a lockout
+refusal). Smoke, restart, backup and isolated-restore evidence were re-run after the
+changes.
+
+**Result is now `PASS`, pending ChatGPT re-audit of PR #1.**
+
+The full generation 1 evidence lives in the implementation repository at
+`docs/task-reports/SCA-KRAYIN-INSTALL-001.md` § 14, which is where the task requires it.
+It is not duplicated here: that repo is private and this one is public.
+
+A correction carried over from generation 1: the earlier claim that the application log was
+empty was wrong. It holds two error entries, both from `artisan tinker` failing to write
+its own config directory during implementer debugging, not from the application serving
+requests.
