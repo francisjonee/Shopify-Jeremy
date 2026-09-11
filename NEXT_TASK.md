@@ -4,9 +4,11 @@
 
 **TASK_ID:** SCA-KRAYIN-HARDEN-001
 
+**RETRY_GENERATION:** 1
+
 ## Title
 
-Harden the accepted Krayin v2.2.6 foundation before SCA provenance development
+Complete the missing Krayin v2.2.6 security-report coverage in PR #2 and return for re-audit
 
 ## Implementer
 
@@ -14,100 +16,80 @@ Claude
 
 ## Authority
 
-PR #1 for `SCA-KRAYIN-INSTALL-001` passed ChatGPT final architecture/security audit and was merged into the implementation repository on 2026-09-12.
+ChatGPT audited the first pass of `SCA-KRAYIN-HARDEN-001`. The narrow hardening changes themselves are acceptable so far, but the security review is incomplete against the explicit task scope.
 
-Merged implementation repository:
+Authoritative implementation repository:
 
 `francisjonee/francisjonee-sca-platform-private`
 
-Merge commit:
+Authoritative implementation PR:
 
-`4d585511b8578d3e330f62a44defe7c858253a24`
+`#2`
 
-This task is the next governed task. Do not start provenance, eyewear, authentication, certification, QR, collector, transfer, service, or Shopify feature work.
+Continue on the existing branch:
 
-## Goal
+`chore/sca-krayin-harden-001`
 
-Perform a formal security-hardening pass on the exact accepted Krayin v2.2.6 foundation before SCA stores real provenance data or is exposed publicly.
+PR #2 is open and must remain unmerged. Do not start any follow-on task.
 
-The purpose is to identify, verify, remediate where narrowly safe, and document security/operational risks in the current foundation without redesigning the product.
+## Audit Finding
 
-## Read First
+The report checked several CVEs, SQL injection, IDOR, installer takeover, and upload behavior, but it did not explicitly investigate/disposition all security-report classes required by the original task.
 
-- `docs/ADR-0006-KRAYIN-CRM-ADMIN-FOUNDATION.md`
-- `docs/ARCHITECTURE.md`
-- `docs/ROADMAP.md`
-- `TASK_QUEUE.md`
-- `docs/EXECUTION_WORKFLOW.md`
-- this `NEXT_TASK.md`
-- `docs/task-reports/SCA-KRAYIN-INSTALL-001.md` in the implementation repository
+In particular, current public Krayin reports include at least:
 
-## Required Work
+- GitHub issue #2560: unauthenticated email injection through `/admin/mail/inbound-parse`, confirmed by the reporter against v2.2.3. This must be checked against the exact pinned v2.2.6 source/runtime rather than assumed fixed.
+- GitHub issue #2616: privilege escalation / unrestricted role assignment, reported for Krayin <=2.2.5. Verify the exact v2.2.6 behavior and code path.
+- GitHub issue #2617: stored XSS via client-controlled upload validation, reported for Krayin <=2.2.5. Verify the exact v2.2.6 behavior/code path.
 
-1. Sync implementation `main` and create a new task branch for `SCA-KRAYIN-HARDEN-001`.
-2. Record the exact starting Krayin, Laravel, PHP, Composer, MariaDB, Docker image, and dependency versions.
-3. Re-run dependency/security audits and record exact evidence. Do not perform broad dependency upgrades merely because newer versions exist.
-4. Investigate current security reports relevant to the exact Krayin v2.2.6 codebase, including reported classes of issue such as XSS, authorization/role escalation, unauthenticated email abuse/injection, SQL injection, IDOR/missing authorization, and other high-impact reports discovered during the review. Verify applicability against the pinned code; do not assume every public report affects this release.
-5. Audit authentication and authorization boundaries for Krayin staff/admin routes and the SCA Foundation route. Confirm restricted staff cannot access full-admin-only operations.
-6. Re-run and preserve the accepted default-admin safeguard, including confirmation that only another active full administrator can satisfy its lockout guard.
-7. Audit public exposure assumptions: app remains loopback-only for this task; no DNS/public endpoint changes. Identify what must be in place before future HTTPS/public exposure, including rate limiting and safe error behavior.
-8. Review sensitive-file and secret exposure, Laravel production/debug settings, session/cookie/security headers where applicable, database network exposure, file permissions, and container isolation.
-9. Review Docker/container image pinning and supply-chain reproducibility. Record mutable tags/digests or other reproducibility gaps; make only narrow changes that are clearly safe and justified.
-10. Verify backup security and operational readiness. Off-server encrypted backup is a known gap. Do not place real provenance data into the system until durable off-server backup exists. If implementing an off-server destination requires credentials/provider decisions not already authorized, document the blocker rather than inventing credentials or providers.
-11. Verify backup/restore still works after any hardening changes.
-12. Re-run minimum runtime regression: login, dashboard, SCA Foundation route, migrations/database, dependency audit, safeguard, restart persistence, and sensitive-path checks.
-13. Create and commit `docs/task-reports/SCA-KRAYIN-HARDEN-001.md` in the implementation repository. It must distinguish VERIFIED, NOT APPLICABLE, REMEDIATED, ACCEPTED RISK, and BLOCKED findings; include commands/evidence, exact versions, limitations, technical debt, recommendations, commit SHAs, and PR reference.
-14. Make logical checkpoint commits throughout the work. Do not leave all findings only in terminal/chat.
-15. Push the branch and open a pull request into implementation `main` if available. If the VPS still cannot call the GitHub API, push the branch and return the exact branch name so the operator can open the PR. Do not treat inability to open a PR as permission to merge.
-16. STOP for ChatGPT audit. Do not merge or start another task.
+The original task explicitly required investigation of XSS, authorization/role escalation, unauthenticated email abuse/injection, SQL injection, IDOR/missing authorization, and other high-impact reports. A PASS cannot omit these named classes.
 
-## Security Remediation Rule
+## Required Remediation
 
-Claude may make narrow hardening changes inside this task when they are directly supported by evidence and do not alter SCA product architecture. Examples include safe configuration, SCA-owned guards/middleware, container/runtime hardening, or dependency patch-level remediation compatible with the pinned foundation.
+1. Pull the latest `Shopify-Jeremy/main` and read this file.
+2. Stay on `chore/sca-krayin-harden-001`; do not create a new task branch.
+3. Inspect the exact Krayin v2.2.6 source and relevant runtime behavior for issue #2560 unauthenticated inbound-email injection. Determine whether `/admin/mail/inbound-parse` is unauthenticated, whether AJAX bypass behavior remains, whether webhook/signature verification exists, and whether an unauthenticated request can create/inject CRM email data. Use safe test data only and remove it afterwards.
+4. Inspect issue #2616 privilege escalation against v2.2.6. Verify whether a restricted/custom-role user can assign or obtain a full-admin/all-permission role or otherwise escalate through user/role management. Record exact code/runtime evidence.
+5. Inspect issue #2617 stored XSS/upload validation against v2.2.6. Verify the relevant upload/configuration path and output behavior with safe non-destructive test payloads. Record exact evidence.
+6. Re-check the broader XSS class sufficiently to explain the status of the known notes/activity XSS fixes in the pinned release where relevant; do not rely only on version labels.
+7. For every finding, use one of VERIFIED, NOT APPLICABLE, REMEDIATED, ACCEPTED RISK, or BLOCKED and explain why.
+8. If any of these issues actually affects v2.2.6 and can be narrowly mitigated without modifying Krayin core/vendor or changing architecture, propose/implement the narrow safe mitigation permitted by the original task. If remediation requires core/vendor changes, a major upgrade, architectural change, or uncertain compatibility, do not improvise: mark RESULT=BLOCKED and give exact options for ChatGPT decision.
+9. Re-run only the regression/security checks needed after any remediation: dependency audit, login/dashboard, SCA Foundation, authorization boundary, safeguard, database/migrations, and relevant exploit regression. If no runtime/config change is made, avoid unnecessary unrelated changes.
+10. Update `docs/task-reports/SCA-KRAYIN-HARDEN-001.md` with a clearly labeled remediation generation 1 section, exact findings/evidence, test cleanup, commit SHA(s), and PR #2 reference.
+11. Reconcile RESULT with the report. Do not state `RESULT=PASS` while also claiming an unresolved material security BLOCKER. A known future prerequisite may be documented as blocked for production use, but the report must clearly distinguish task completion from a blocker that prevents real data/public exposure.
+12. Push to the existing branch and leave PR #2 open and unmerged.
+13. STOP for ChatGPT re-audit.
 
-If a finding requires a Krayin core modification, major framework/dependency upgrade, architectural change, new external provider, or uncertain compatibility, document it and stop for ChatGPT decision rather than improvising.
+## Preserve Accepted Work
 
-## Acceptance Criteria
+Do not undo the already-supported narrow changes unless new evidence requires it:
 
-Return `RESULT=PASS` only if:
-
-- exact foundation versions are recorded;
-- dependency audit is clean or every remaining advisory is explicitly evaluated and dispositioned;
-- relevant Krayin security reports are checked against the pinned v2.2.6 code and dispositioned with evidence;
-- staff authentication/authorization boundaries are tested;
-- the SCA admin safeguard remains effective;
-- sensitive files/secrets are not exposed;
-- production/debug/database/container boundaries remain safe for the current loopback staging state;
-- public-exposure prerequisites and rate-limiting gaps are explicitly documented;
-- backup/restore remains proven and off-server-backup readiness is explicitly addressed;
-- runtime regression checks pass;
-- no SCA product-domain feature work has started;
-- no Krayin core/vendor modification is hidden or casually introduced;
-- task report and checkpoint commits are pushed;
-- implementation PR is left open and unmerged for ChatGPT audit.
-
-If a material security blocker remains unresolved, return `RESULT=BLOCKED` with exact evidence and recommended options rather than `PASS`.
+- MariaDB image digest pinning;
+- baseline Apache response headers;
+- `.dockerignore` build-context hygiene.
 
 ## Prohibited Changes
 
 Do not:
 
-- merge your own PR;
-- expose Krayin publicly or change DNS;
-- create real provenance/customer production data;
-- start SCA domain/provenance schema work;
-- start Shopify integration;
-- build QR/public passport/collector features;
-- introduce PostgreSQL;
-- perform broad or major dependency/framework upgrades without architecture approval;
+- merge PR #2;
 - modify Krayin core/vendor merely to silence a finding;
-- invent external credentials, storage providers, or production infrastructure;
-- advance the task queue yourself.
+- start provenance/eyewear/authentication/certification/QR/collector/transfer/service/Shopify work;
+- expose the app publicly or change DNS;
+- introduce PostgreSQL;
+- perform broad dependency/framework upgrades;
+- invent off-server backup credentials/provider;
+- advance the roadmap/task queue;
+- self-approve.
+
+## Acceptance Criteria
+
+Return PASS only if the missing security-report classes are explicitly checked against v2.2.6 with evidence; any applicable material issue is safely remediated or correctly returned as BLOCKED for architecture decision; test data is removed; regression remains healthy; the report is internally consistent; and PR #2 remains open/unmerged.
 
 ## Completion Rule
 
-After pushing the hardening branch/report and opening or identifying the PR:
+After pushing remediation evidence to PR #2:
 
 **STOP.**
 
-Wait for ChatGPT architecture/security audit.
+Wait for ChatGPT re-audit.
