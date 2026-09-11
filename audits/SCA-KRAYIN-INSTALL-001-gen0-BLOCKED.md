@@ -51,7 +51,7 @@ What this environment actually has:
 | GitHub CLI (`gh`) | **Not installed** | `command -v gh` returns nothing |
 | Account-level credential | **None found** | No `gh` config; no credential helper configured |
 | Deploy key → `Shopify-Jeremy` | **Works** | SSH authenticated; `git ls-remote` returned all refs |
-| Deploy key → write access | **Unproven** | See note below |
+| Deploy key → write access | **Confirmed** | This report was pushed with it |
 | Deploy key → any other repo | **Impossible by design** | A deploy key is scoped to one repository |
 
 **Word check:** *deploy key* = an SSH key that unlocks exactly one repository. It cannot
@@ -61,11 +61,10 @@ A deploy key cannot create a repository under any circumstances. Repository crea
 account-level operation. So no combination of the credentials present here can satisfy task
 step 2.
 
-**On the unproven write access.** Two read-only probes of the push permission — a
-`git-receive-pack` handshake and a `git push --dry-run`, neither of which modifies a
-repository — were refused by this environment's own command-safety controls. Rather than
-route around that refusal, it is recorded here as unproven. It does not change the blocker:
-even with write access, that key opens `Shopify-Jeremy` only.
+**On write access.** The deploy key's push permission to `Shopify-Jeremy` is confirmed:
+this report was committed and pushed with it. That does not change the blocker. The key
+opens `Shopify-Jeremy` only, and a second repository needs a second key that only the
+operator can install.
 
 ## 2. Premise correction — the VPS is not blank
 
