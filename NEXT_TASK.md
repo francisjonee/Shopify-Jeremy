@@ -2,13 +2,13 @@
 
 **STATUS:** READY
 
-**TASK_ID:** SCA-FOUNDATION-001
+**TASK_ID:** SCA-CRM-FOUNDATION-001
 
 **RETRY_GENERATION:** 0
 
 ## Title
 
-Create the portable SCA application foundation on the temporary VPS
+Validate and deploy the Krayin CRM foundation for SCA on the temporary VPS
 
 ## Implementer
 
@@ -16,15 +16,15 @@ Claude
 
 ## Owner Approval
 
-Jeremy's team explicitly approved a greenfield rebuild from scratch and authorized implementation to begin. The inaccessible old Ownership Bridge is no longer a prerequisite.
+Jeremy's team has approved changing the initial SCA implementation strategy from building the staff CRM/admin foundation from scratch to using a mature MIT-licensed CRM foundation.
 
-For this task only, creation of the new **private** SCA implementation repository is authorized.
+Krayin CRM is the selected initial candidate. This task must validate the exact upstream version, license, requirements, security posture, deployment, persistence, backup/restore, and extension mechanism before SCA product features are built.
 
 ## Objective
 
-Create the clean, portable foundation for the new Second Chance Authenticators application and prove it can run safely on the current temporary VPS without coupling the product to that server.
+Create a reproducible, portable, hardened Krayin foundation suitable for later SCA modules while proving that SCA can extend Krayin without invasive vendor-core modification.
 
-This task creates infrastructure/application scaffolding only. Do **not** build SCA product features yet.
+This is a foundation/validation task only. **Do not build SCA product-domain features yet.**
 
 ## Architecture Inputs — Read First
 
@@ -32,146 +32,164 @@ This task creates infrastructure/application scaffolding only. Do **not** build 
 - `CLAUDE.md`
 - `docs/PRODUCT_REQUIREMENTS.md`
 - `docs/ARCHITECTURE.md`
-- `docs/INFRASTRUCTURE_BLUEPRINT.md`
 - `docs/ROADMAP.md`
-- `docs/ADR-0004-VPS-HOSTING-SUPERSEDES-ADR-0001.md`
 - `docs/ADR-0005-GREENFIELD-PORTABLE-SCA-BUILD.md`
+- `docs/ADR-0006-KRAYIN-CRM-ADMIN-FOUNDATION.md`
+- `docs/INFRASTRUCTURE_BLUEPRINT.md` (apply portability/security principles; note its old PostgreSQL/Next.js specifics are superseded where ADR-0006 conflicts)
 - `docs/EXECUTION_WORKFLOW.md`
-- `.claude/memory/greenfield-build-approved.md`
 - this `NEXT_TASK.md`
 
 ## Required Technical Direction
 
-Use the approved foundation stack:
+Use the selected Krayin release's supported stack. Expected baseline:
 
-- TypeScript
-- Node.js
-- Next.js
-- PostgreSQL
-- Prisma
-- Docker / Docker Compose
-- modular monolith
+- Krayin CRM
+- Laravel / PHP
+- MySQL or MariaDB
+- Composer
+- Node/npm tooling only where required by Krayin assets
+- Docker / Docker Compose where practical and maintainable
 
-Use the current VPS only as temporary development/staging infrastructure.
+Do not force PostgreSQL, Prisma, or Next.js into the admin foundation merely to preserve the superseded stack.
 
 ## Work
 
-1. Sync the architecture repository to current `main` and confirm ADR-0005 is present before building.
-2. Create a new **private** GitHub implementation repository named `francisjonee/sca-platform` if it does not already exist.
-   - Initialize the repository safely with a `main` branch and minimal README if required.
-   - Verify repository visibility is private.
-   - Do not place application source in `Shopify-Jeremy`.
-3. Clone the implementation repository to an appropriate dedicated working directory on the temporary VPS.
-4. Create a task branch named `chore/sca-foundation-001` from `main`.
-5. Scaffold a production-oriented Next.js application using TypeScript and the App Router. Pin dependencies through the lockfile. Use one package manager consistently and document it.
-6. Add Prisma configured for PostgreSQL.
-   - Do not create the SCA product-domain tables in this task.
-   - Prove Prisma configuration validates and the application can connect to PostgreSQL safely.
-7. Add Docker support:
-   - multi-stage production Dockerfile for the web application;
-   - Docker Compose for the temporary environment;
-   - PostgreSQL container with a named persistent volume;
-   - web container running as non-root where practical;
-   - health checks;
-   - `.dockerignore`.
-8. Bind the temporary web service to localhost/internal access only unless an existing approved staging reverse proxy requires otherwise. Do not expose a new public production endpoint in this task.
-9. Add environment-driven configuration with `.env.example` containing **names/placeholders only**. At minimum include names equivalent to:
-   - `DATABASE_URL`
-   - `APP_URL`
-   - `PUBLIC_QR_BASE_URL`
-   - `NODE_ENV`
-   - `PORT`
-   Do not commit any real secret, token, password, database URL, VPS IP, or hostname.
-10. Add application health/readiness endpoints sufficient to prove:
-   - web process is alive;
-   - PostgreSQL connectivity is ready.
-11. Add baseline quality commands/scripts for:
-   - lint;
-   - TypeScript typecheck;
-   - automated test;
-   - production build;
-   - Prisma validate/generate.
-12. Add a minimal automated test for the foundation/health behavior. Do not add product-domain tests yet.
-13. Add database backup/restore scripts or documented commands suitable for PostgreSQL in this Docker environment.
-   - Backups/dumps must be ignored by Git.
-   - Prove a safe temporary backup can be created.
-   - If reasonably possible without product data, prove a restore into an isolated temporary/test database or clearly report why restore proof is deferred.
-   - Do not claim the temporary VPS is a durable external backup destination.
-14. Add implementation-repository documentation covering:
-   - local/temp-VPS start and stop;
-   - build/test commands;
-   - environment variable names;
-   - database backup/restore procedure;
-   - migration approach;
-   - rule that permanent production QR URLs must not use this VPS hostname/IP;
-   - future migration to a permanent server.
-15. Start the foundation on the temporary VPS and run real smoke tests.
-16. Restart the Docker stack once and prove it returns healthy and PostgreSQL remains reachable.
-17. Search the implementation tree for accidentally hard-coded temporary server IP/hostname and secret values before committing.
-18. Commit only the foundation changes to `chore/sca-foundation-001`, push that branch, and open a pull request against `main` in the **private implementation repository**.
-19. Do **not** merge the implementation PR. Return evidence and STOP for ChatGPT audit.
+1. Sync this architecture repository to current approved branch/main state and confirm ADR-0006 is present before implementation.
+2. Identify the official upstream Krayin repository and select a stable release/version rather than an unpinned moving target.
+3. Record evidence of the selected release's MIT license and official runtime/database requirements.
+4. Review the selected release for obvious deployment blockers before installation:
+   - open/known security concerns relevant to the selected version;
+   - unsupported/EOL PHP or framework requirements;
+   - database compatibility;
+   - required queues/cache/mail services;
+   - upgrade/migration mechanism.
+   Report findings; do not silently ignore material risks.
+5. Create or reuse the authorized private implementation repository `francisjonee/sca-platform`.
+   - Verify it is private.
+   - Application/custom SCA source belongs there, not in `Shopify-Jeremy`.
+6. Create task branch `chore/sca-crm-foundation-001` from implementation `main`.
+7. Establish a reproducible Krayin deployment in the private implementation repository.
+   - Pin dependencies/version sufficiently for repeatability.
+   - Prefer an installation structure that preserves a clean upstream/vendor boundary.
+   - Do not fork/edit vendor core merely for branding or convenience in this task.
+8. Configure MySQL or MariaDB using the selected Krayin version's supported path.
+   - persistent database storage;
+   - credentials from environment/secrets only;
+   - no real secrets committed.
+9. Add/maintain Docker and Docker Compose deployment for the temporary VPS if this can be done without creating a brittle unsupported Krayin installation.
+   - If official/runtime constraints make a different deployment materially safer, document the reason and stop for architecture review rather than improvising a permanent divergence.
+10. Keep the temporary deployment non-production.
+   - Do not publish a permanent QR route;
+   - do not connect the live Shopify store;
+   - do not change DNS;
+   - do not treat the temporary VPS as durable backup storage.
+11. Secure the initial CRM installation:
+   - no default/example admin credentials retained;
+   - no debug mode exposed publicly;
+   - secrets outside Git;
+   - least public exposure practical for staging;
+   - document writable directories/permissions;
+   - document scheduled jobs/queues if required.
+12. Add `.env.example` with variable names/placeholders only. Do not commit passwords, tokens, VPS IP, hostname, Shopify secrets, or real database URLs.
+13. Prove the CRM is operational with smoke tests:
+   - application loads;
+   - staff login works;
+   - database connectivity works;
+   - core CRM navigation works;
+   - restart returns to healthy state.
+14. Prove persistence through at least one controlled Docker/application restart.
+15. Add database backup/restore scripts or documented commands appropriate for MySQL/MariaDB.
+   - backup output ignored by Git;
+   - create a safe test backup;
+   - restore into an isolated temporary/test database when reasonably possible;
+   - do not claim the VPS copy is an off-server durable backup.
+16. Demonstrate the supported Krayin extension/package/module mechanism with a harmless SCA proof extension/module, for example an isolated package that registers an `SCA Foundation` admin marker/page/route.
+   - It must not create eyewear/authentication/ownership/provenance product tables yet.
+   - It must not modify vendor core.
+   - Its purpose is only to prove SCA can extend the CRM cleanly.
+17. Document the custom-code boundary:
+   - upstream/vendor Krayin code;
+   - SCA-owned module/package code;
+   - configuration/branding overrides;
+   - database migrations;
+   - future collector/public code.
+18. Document an upgrade strategy:
+   - how upstream Krayin updates will be evaluated/applied;
+   - how SCA modules remain isolated;
+   - how database backup/rollback occurs before upgrades;
+   - how unavoidable core patches, if ever approved later, will be tracked.
+19. Search the implementation tree for secrets, default credentials, temporary VPS IP/hostname, and accidental vendor-core modifications.
+20. Run available quality/security checks appropriate to the selected stack, including at minimum:
+   - Composer dependency validation/audit where supported;
+   - application/framework tests available for the deployed baseline or a documented smoke-test suite;
+   - frontend build if required by the selected Krayin release;
+   - configuration/cache clear/build checks appropriate to Laravel;
+   - database migration status.
+21. Commit only the foundation changes to `chore/sca-crm-foundation-001`, push the branch, and open a PR against implementation `main`.
+22. Do **not** merge the implementation PR. Return evidence and STOP for ChatGPT audit.
 
 ## Acceptance Criteria
 
 Return all of the following:
 
 - `RESULT=PASS` or a specific `BLOCKED_*` result;
-- private implementation repository URL/name;
-- proof repository visibility is private without exposing credentials;
-- implementation working path on the temporary VPS;
+- exact official Krayin upstream repository;
+- exact selected Krayin version/tag/commit;
+- MIT license evidence/reference;
+- PHP, Laravel, Composer, Node/npm (if used), and MySQL/MariaDB versions;
+- selected release support/compatibility evidence;
+- known material security/upgrade findings for the selected version;
+- private implementation repository name/URL and proof it is private;
+- implementation working path on temporary VPS;
 - task branch name;
-- exact runtime/framework/package-manager versions selected;
-- Docker/Compose version summary;
-- PostgreSQL and Prisma version summary;
-- `.env.example` variable names only, values redacted/placeholders;
-- proof there are no committed secrets;
-- proof no temporary VPS IP/hostname is hard-coded into application/business configuration;
-- Prisma validate/generate result;
-- lint result;
-- typecheck result;
-- automated test result;
-- production build result;
-- Docker build/start result;
-- health endpoint result;
-- database readiness result;
+- deployment topology summary;
+- `.env.example` variable names only with values redacted/placeholders;
+- proof no secrets/default credentials are committed;
+- proof temporary VPS IP/hostname is not hard-coded into SCA business configuration;
+- proof no vendor-core modification was made;
+- SCA proof extension/module path and evidence it loads;
+- database migration/status result;
+- application load result;
+- staff login smoke-test result without exposing credentials;
+- restart persistence result;
 - backup command/result;
-- restore proof or explicit safe reason it is deferred;
-- restart persistence/health proof;
+- isolated restore result or explicit safe reason deferred;
+- Composer validation/audit result;
+- relevant application/test/build results;
+- documented upstream upgrade/rollback strategy;
 - resulting implementation commit SHA;
-- resulting implementation PR URL/number;
-- proof the PR is still unmerged;
+- implementation PR URL/number;
+- proof PR remains unmerged;
 - security findings;
-- confirmation that no SCA product feature, Shopify connection, DNS change, or permanent QR publication occurred.
+- confirmation that no SCA product-domain tables/features, Shopify connection, DNS change, or permanent QR publication occurred.
 
 ## Prohibited Changes
 
-- Do not recover or import the old Ownership Bridge.
-- Do not build provenance product tables yet.
+- Do not build the old Next.js/PostgreSQL/Prisma foundation from SCA-FOUNDATION-001.
+- Do not recover/import the old Ownership Bridge.
+- Do not build eyewear/provenance product tables yet.
 - Do not build QR generation yet.
-- Do not build authentication/collector login yet.
-- Do not build claims or My Collection yet.
-- Do not build Admin/CRM product features yet.
+- Do not build collector authentication/claim/My Collection yet.
+- Do not build ownership transfer/service/lost-stolen features yet.
 - Do not connect or modify the live Shopify store.
-- Do not add or change Shopify scopes.
-- Do not deploy a public production SCA endpoint.
+- Do not add/change Shopify scopes.
 - Do not change DNS.
-- Do not generate or publish permanent lifetime QR codes.
+- Do not publish permanent lifetime QR codes.
 - Do not hard-code the temporary VPS IP/hostname.
-- Do not store durable media only in the application container.
-- Do not commit secrets or `.env` values.
-- Do not push implementation work directly to `main` except the minimum repository initialization required to establish the new private repo/base branch.
+- Do not commit secrets or real `.env` values.
+- Do not leave default/example admin credentials active.
+- Do not modify Krayin vendor/core files for convenience.
+- Do not introduce PostgreSQL as a second database without a new approved ADR.
 - Do not merge the implementation PR.
 - Do not invent the next task.
 - Do not self-approve.
 
 ## Completion Rule
 
-After returning all required evidence, **STOP**.
+After returning all required evidence, **STOP** and wait for ChatGPT architecture/security audit.
 
-Wait for ChatGPT architecture audit. The next SCA task will be issued only after the operator reviews/approves it.
+## Superseded Work
 
-## Last Completed / Superseded Work
-
-- `SCA-CTRL-001` generation 1: PASS.
-- `SCA-CTRL-002`: deferred; automatic live dispatch is not required for current delivery.
-- `SCA-RECOVERY-001`: accepted as `BLOCKED_SOURCE_ACCESS`, then superseded by the explicit greenfield-build decision in ADR-0005. The old implementation is no longer required.
+- `SCA-FOUNDATION-001` is superseded by ADR-0006 and this task before implementation acceptance.
+- `SCA-RECOVERY-001` remains superseded by the greenfield decision.
+- `SCA-CTRL-002` remains deferred.
