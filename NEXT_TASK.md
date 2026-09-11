@@ -2,194 +2,421 @@
 
 **STATUS:** READY
 
-**TASK_ID:** SCA-CRM-FOUNDATION-001
+**TASK_ID:** SCA-KRAYIN-INSTALL-001
 
 **RETRY_GENERATION:** 0
 
 ## Title
 
-Validate and deploy the Krayin CRM foundation for SCA on the temporary VPS
+Install Krayin CRM on the temporary SCA VPS and prove it is ready for SCA customization
 
 ## Implementer
 
 Claude
 
-## Owner Approval
+## Authority
 
-Jeremy's team has approved changing the initial SCA implementation strategy from building the staff CRM/admin foundation from scratch to using a mature MIT-licensed CRM foundation.
+This task is approved by Jeremy's team and issued by ChatGPT under the architecture defined in:
 
-Krayin CRM is the selected initial candidate. This task must validate the exact upstream version, license, requirements, security posture, deployment, persistence, backup/restore, and extension mechanism before SCA product features are built.
-
-## Objective
-
-Create a reproducible, portable, hardened Krayin foundation suitable for later SCA modules while proving that SCA can extend Krayin without invasive vendor-core modification.
-
-This is a foundation/validation task only. **Do not build SCA product-domain features yet.**
-
-## Architecture Inputs — Read First
-
-- `README.md`
-- `CLAUDE.md`
-- `docs/PRODUCT_REQUIREMENTS.md`
+- `docs/ADR-0006-KRAYIN-CRM-ADMIN-FOUNDATION.md`
 - `docs/ARCHITECTURE.md`
 - `docs/ROADMAP.md`
-- `docs/ADR-0005-GREENFIELD-PORTABLE-SCA-BUILD.md`
-- `docs/ADR-0006-KRAYIN-CRM-ADMIN-FOUNDATION.md`
-- `docs/INFRASTRUCTURE_BLUEPRINT.md` (apply portability/security principles; note its old PostgreSQL/Next.js specifics are superseded where ADR-0006 conflicts)
-- `docs/EXECUTION_WORKFLOW.md`
-- this `NEXT_TASK.md`
 
-## Required Technical Direction
+Krayin is now the approved staff-facing CRM/admin foundation for SCA.
 
-Use the selected Krayin release's supported stack. Expected baseline:
+## Primary Goal
 
-- Krayin CRM
-- Laravel / PHP
-- MySQL or MariaDB
-- Composer
-- Node/npm tooling only where required by Krayin assets
-- Docker / Docker Compose where practical and maintainable
+**Install a stable, pinned Krayin CRM release on the temporary VPS and make it operational.**
 
-Do not force PostgreSQL, Prisma, or Next.js into the admin foundation merely to preserve the superseded stack.
+At the end of this task we must have a working Krayin installation that:
 
-## Work
+- loads successfully;
+- has a working administrator login;
+- uses persistent MySQL or MariaDB storage;
+- survives restart;
+- can be backed up and restored;
+- contains no committed secrets;
+- can be extended by SCA without editing Krayin vendor/core files.
 
-1. Sync this architecture repository to current approved branch/main state and confirm ADR-0006 is present before implementation.
-2. Identify the official upstream Krayin repository and select a stable release/version rather than an unpinned moving target.
-3. Record evidence of the selected release's MIT license and official runtime/database requirements.
-4. Review the selected release for obvious deployment blockers before installation:
-   - open/known security concerns relevant to the selected version;
-   - unsupported/EOL PHP or framework requirements;
-   - database compatibility;
-   - required queues/cache/mail services;
-   - upgrade/migration mechanism.
-   Report findings; do not silently ignore material risks.
-5. Create or reuse the authorized private implementation repository `francisjonee/sca-platform`.
-   - Verify it is private.
-   - Application/custom SCA source belongs there, not in `Shopify-Jeremy`.
-6. Create task branch `chore/sca-crm-foundation-001` from implementation `main`.
-7. Establish a reproducible Krayin deployment in the private implementation repository.
-   - Pin dependencies/version sufficiently for repeatability.
-   - Prefer an installation structure that preserves a clean upstream/vendor boundary.
-   - Do not fork/edit vendor core merely for branding or convenience in this task.
-8. Configure MySQL or MariaDB using the selected Krayin version's supported path.
-   - persistent database storage;
-   - credentials from environment/secrets only;
-   - no real secrets committed.
-9. Add/maintain Docker and Docker Compose deployment for the temporary VPS if this can be done without creating a brittle unsupported Krayin installation.
-   - If official/runtime constraints make a different deployment materially safer, document the reason and stop for architecture review rather than improvising a permanent divergence.
-10. Keep the temporary deployment non-production.
-   - Do not publish a permanent QR route;
-   - do not connect the live Shopify store;
-   - do not change DNS;
-   - do not treat the temporary VPS as durable backup storage.
-11. Secure the initial CRM installation:
-   - no default/example admin credentials retained;
-   - no debug mode exposed publicly;
-   - secrets outside Git;
-   - least public exposure practical for staging;
-   - document writable directories/permissions;
-   - document scheduled jobs/queues if required.
-12. Add `.env.example` with variable names/placeholders only. Do not commit passwords, tokens, VPS IP, hostname, Shopify secrets, or real database URLs.
-13. Prove the CRM is operational with smoke tests:
-   - application loads;
-   - staff login works;
-   - database connectivity works;
-   - core CRM navigation works;
-   - restart returns to healthy state.
-14. Prove persistence through at least one controlled Docker/application restart.
-15. Add database backup/restore scripts or documented commands appropriate for MySQL/MariaDB.
-   - backup output ignored by Git;
-   - create a safe test backup;
-   - restore into an isolated temporary/test database when reasonably possible;
-   - do not claim the VPS copy is an off-server durable backup.
-16. Demonstrate the supported Krayin extension/package/module mechanism with a harmless SCA proof extension/module, for example an isolated package that registers an `SCA Foundation` admin marker/page/route.
-   - It must not create eyewear/authentication/ownership/provenance product tables yet.
-   - It must not modify vendor core.
-   - Its purpose is only to prove SCA can extend the CRM cleanly.
-17. Document the custom-code boundary:
-   - upstream/vendor Krayin code;
-   - SCA-owned module/package code;
-   - configuration/branding overrides;
-   - database migrations;
-   - future collector/public code.
-18. Document an upgrade strategy:
-   - how upstream Krayin updates will be evaluated/applied;
-   - how SCA modules remain isolated;
-   - how database backup/rollback occurs before upgrades;
-   - how unavoidable core patches, if ever approved later, will be tracked.
-19. Search the implementation tree for secrets, default credentials, temporary VPS IP/hostname, and accidental vendor-core modifications.
-20. Run available quality/security checks appropriate to the selected stack, including at minimum:
-   - Composer dependency validation/audit where supported;
-   - application/framework tests available for the deployed baseline or a documented smoke-test suite;
-   - frontend build if required by the selected Krayin release;
-   - configuration/cache clear/build checks appropriate to Laravel;
-   - database migration status.
-21. Commit only the foundation changes to `chore/sca-crm-foundation-001`, push the branch, and open a PR against implementation `main`.
-22. Do **not** merge the implementation PR. Return evidence and STOP for ChatGPT audit.
+Do not build the actual SCA eyewear/provenance features yet.
 
-## Acceptance Criteria
+---
 
-Return all of the following:
+## Read Before Doing Anything
 
-- `RESULT=PASS` or a specific `BLOCKED_*` result;
-- exact official Krayin upstream repository;
-- exact selected Krayin version/tag/commit;
-- MIT license evidence/reference;
-- PHP, Laravel, Composer, Node/npm (if used), and MySQL/MariaDB versions;
-- selected release support/compatibility evidence;
-- known material security/upgrade findings for the selected version;
-- private implementation repository name/URL and proof it is private;
-- implementation working path on temporary VPS;
-- task branch name;
-- deployment topology summary;
-- `.env.example` variable names only with values redacted/placeholders;
-- proof no secrets/default credentials are committed;
-- proof temporary VPS IP/hostname is not hard-coded into SCA business configuration;
-- proof no vendor-core modification was made;
-- SCA proof extension/module path and evidence it loads;
-- database migration/status result;
+Read these files first:
+
+1. `README.md`
+2. `CLAUDE.md`
+3. `docs/ADR-0006-KRAYIN-CRM-ADMIN-FOUNDATION.md`
+4. `docs/ARCHITECTURE.md`
+5. `docs/ROADMAP.md`
+6. `docs/PRODUCT_REQUIREMENTS.md`
+7. `docs/EXECUTION_WORKFLOW.md`
+8. this `NEXT_TASK.md`
+
+If any older document conflicts with ADR-0006 regarding Next.js, Prisma, PostgreSQL, or building the CRM from scratch, **ADR-0006 wins**.
+
+---
+
+# TASK
+
+## 1. Select and pin Krayin
+
+Use the **official Krayin CRM upstream project**.
+
+Before installation:
+
+- verify the repository is the official Krayin project;
+- verify its MIT license;
+- identify the latest appropriate stable release;
+- do not install an unpinned development branch;
+- record the exact tag/version/commit selected;
+- record required PHP, Laravel, Composer, Node/npm, and MySQL/MariaDB versions.
+
+If the newest stable release has a known material blocker, choose the most appropriate supported stable release and explain why.
+
+Do not continue if the license is not MIT.
+
+## 2. Use the SCA implementation repository
+
+Create or use the private repository:
+
+`francisjonee/sca-platform`
+
+Requirements:
+
+- repository must be **private**;
+- do not place application code in `Shopify-Jeremy`;
+- create branch:
+
+`chore/sca-krayin-install-001`
+
+Do not work directly on implementation `main` except minimum repository initialization if required.
+
+## 3. Install Krayin on the temporary VPS
+
+Install the pinned Krayin release on the existing temporary SCA VPS.
+
+Use a clean dedicated application directory.
+
+Prefer a portable deployment using:
+
+- Docker;
+- Docker Compose;
+- persistent named volumes;
+- environment-based configuration.
+
+If Krayin's supported installation method makes Docker materially unsafe or brittle, STOP and report `BLOCKED_DEPLOYMENT_ARCHITECTURE` rather than inventing an unsupported setup.
+
+The installation must include all runtime components required by the selected Krayin release.
+
+Expected components may include:
+
+- Krayin/Laravel application;
+- PHP runtime;
+- web server or reverse proxy as appropriate;
+- MySQL or MariaDB;
+- Composer dependencies;
+- frontend asset build/runtime requirements;
+- queue/scheduler only if required by Krayin.
+
+## 4. Configure persistent database storage
+
+Use **MySQL or MariaDB according to the supported Krayin release path**.
+
+Requirements:
+
+- persistent database volume;
+- database must not disappear when containers/app restart;
+- database credentials must come from environment/secrets;
+- no database password committed to Git;
+- no database port exposed publicly unless strictly required;
+- document database version.
+
+Do **not** add PostgreSQL.
+
+## 5. Configure environment safely
+
+Create `.env.example` in the private implementation repository.
+
+It must contain variable names/placeholders only.
+
+Do not commit:
+
+- real database credentials;
+- administrator password;
+- server IP;
+- VPS hostname;
+- Shopify tokens;
+- API keys;
+- SMTP credentials;
+- session/app secrets.
+
+Real `.env` must be Git ignored.
+
+## 6. Complete the Krayin installation
+
+Run the required Krayin/Laravel installation steps including, as applicable:
+
+- dependency installation;
+- application key/configuration;
+- database migrations;
+- seed/setup process;
+- storage permissions;
+- asset build;
+- cache/config preparation.
+
+Create a secure administrator account.
+
+Do not expose the administrator password in task evidence.
+
+Do not leave vendor/default/example credentials active.
+
+## 7. Start Krayin and prove it works
+
+Start the full stack.
+
+Prove all of the following:
+
+- HTTP application responds successfully;
+- Krayin login page loads;
+- administrator can log in;
+- Krayin dashboard/admin navigation loads;
+- database connection is healthy;
+- migrations are complete;
+- no fatal application errors are present in logs.
+
+A screenshot is optional. Terminal/output evidence is sufficient if clear.
+
+## 8. Restart test
+
+Perform a controlled restart of the application/database stack.
+
+After restart prove:
+
+- Krayin comes back online;
+- administrator login still works;
+- database data persists;
+- configuration remains correct.
+
+## 9. Backup and restore test
+
+Create a reusable database backup command/script for MySQL/MariaDB.
+
+Requirements:
+
+- backup files ignored by Git;
+- create one test backup;
+- restore that backup into an isolated test database if safely possible;
+- verify the restored database is readable.
+
+Do not call a backup stored only on the temporary VPS a durable production backup.
+
+Document how an off-server backup will later be implemented.
+
+## 10. Prove SCA can extend Krayin cleanly
+
+Create a **minimal SCA proof module/package/extension** using Krayin/Laravel's supported extension pattern.
+
+It may do only something harmless such as:
+
+- register an `SCA Foundation` admin menu entry;
+- register an SCA test page;
+- register an SCA namespaced route;
+- display `SCA Foundation Ready`.
+
+This proof must:
+
+- live in SCA-owned custom code;
+- be isolated from vendor/core code;
+- load successfully in Krayin;
+- require no modification to Krayin vendor/core files.
+
+Do **not** create the real eyewear/provenance schema yet.
+
+## 11. Confirm clean vendor boundary
+
+Document exactly where:
+
+- upstream Krayin code lives;
+- Composer/vendor code lives;
+- SCA custom modules live;
+- configuration overrides live;
+- future SCA migrations will live.
+
+Search for accidental edits to upstream/vendor core.
+
+If vendor/core was modified, task result is not PASS unless the change is reverted.
+
+## 12. Basic security validation
+
+At minimum check:
+
+- production/debug configuration appropriate for staging exposure;
+- no default passwords;
+- no secrets committed;
+- Composer dependency audit if supported;
+- application logs for obvious security/configuration errors;
+- writable-directory permissions;
+- database exposure;
+- public service exposure;
+- Git repository secret scan/search;
+- no temporary VPS hostname/IP embedded in SCA business logic.
+
+Do not connect Shopify during this task.
+
+## 13. Documentation
+
+Add implementation documentation to `sca-platform` covering:
+
+- selected Krayin version;
+- required runtime versions;
+- installation/start procedure;
+- stop/restart procedure;
+- environment variables;
+- administrator initialization procedure without passwords;
+- database migration procedure;
+- database backup procedure;
+- database restore procedure;
+- location of SCA custom modules;
+- Krayin upgrade procedure;
+- rollback procedure;
+- temporary VPS portability notes.
+
+## 14. Commit and create PR
+
+Commit the completed foundation to:
+
+`chore/sca-krayin-install-001`
+
+Push it to the private `francisjonee/sca-platform` repository.
+
+Open a pull request against `main`.
+
+**DO NOT MERGE THE PR.**
+
+ChatGPT must audit the implementation before merge.
+
+---
+
+# DO NOT DO THESE THINGS
+
+Do not:
+
+- build Next.js/Prisma/PostgreSQL foundation;
+- install another CRM instead of Krayin;
+- modify Krayin vendor/core files;
+- build SCA eyewear tables;
+- build authentication records;
+- build ownership/provenance tables;
+- build QR generation;
+- build collector accounts;
+- build My Collection;
+- build transfer workflow;
+- build service history;
+- connect Shopify;
+- change Shopify scopes;
+- change DNS;
+- publish permanent SCA QR codes;
+- hard-code temporary VPS IP/hostname;
+- commit secrets;
+- merge the implementation PR;
+- begin a second task after completing this one.
+
+---
+
+# REQUIRED RETURN EVIDENCE
+
+When finished, return one report with:
+
+## Result
+
+`RESULT=PASS`
+
+or one explicit blocker such as:
+
+`RESULT=BLOCKED_<REASON>`
+
+## Installation Evidence
+
+- official Krayin upstream repository;
+- MIT license confirmation;
+- selected exact Krayin version/tag/commit;
+- PHP version;
+- Laravel version;
+- Composer version;
+- Node/npm version if used;
+- MySQL/MariaDB version;
+- Docker and Docker Compose versions if used;
+- temporary VPS application path;
+- deployment topology.
+
+## Repository Evidence
+
+- private implementation repository URL/name;
+- proof repository is private;
+- branch name;
+- commit SHA;
+- PR URL/number;
+- proof PR is still unmerged.
+
+## Runtime Evidence
+
 - application load result;
-- staff login smoke-test result without exposing credentials;
-- restart persistence result;
-- backup command/result;
-- isolated restore result or explicit safe reason deferred;
-- Composer validation/audit result;
-- relevant application/test/build results;
-- documented upstream upgrade/rollback strategy;
-- resulting implementation commit SHA;
-- implementation PR URL/number;
-- proof PR remains unmerged;
-- security findings;
-- confirmation that no SCA product-domain tables/features, Shopify connection, DNS change, or permanent QR publication occurred.
+- login-page result;
+- administrator login success with credentials redacted;
+- database connectivity result;
+- migration result;
+- dashboard/navigation smoke-test result;
+- restart/persistence result.
 
-## Prohibited Changes
+## Backup Evidence
 
-- Do not build the old Next.js/PostgreSQL/Prisma foundation from SCA-FOUNDATION-001.
-- Do not recover/import the old Ownership Bridge.
-- Do not build eyewear/provenance product tables yet.
-- Do not build QR generation yet.
-- Do not build collector authentication/claim/My Collection yet.
-- Do not build ownership transfer/service/lost-stolen features yet.
-- Do not connect or modify the live Shopify store.
-- Do not add/change Shopify scopes.
-- Do not change DNS.
-- Do not publish permanent lifetime QR codes.
-- Do not hard-code the temporary VPS IP/hostname.
-- Do not commit secrets or real `.env` values.
-- Do not leave default/example admin credentials active.
-- Do not modify Krayin vendor/core files for convenience.
-- Do not introduce PostgreSQL as a second database without a new approved ADR.
-- Do not merge the implementation PR.
-- Do not invent the next task.
-- Do not self-approve.
+- backup command/script;
+- successful backup result;
+- restore test result;
+- restored database verification result.
 
-## Completion Rule
+## Extension Evidence
 
-After returning all required evidence, **STOP** and wait for ChatGPT architecture/security audit.
+- SCA proof extension/module path;
+- what it registers/displays;
+- proof it loads inside Krayin;
+- proof no vendor/core files were modified.
 
-## Superseded Work
+## Security Evidence
 
-- `SCA-FOUNDATION-001` is superseded by ADR-0006 and this task before implementation acceptance.
-- `SCA-RECOVERY-001` remains superseded by the greenfield decision.
-- `SCA-CTRL-002` remains deferred.
+- Composer audit result if available;
+- secret scan result;
+- default-credential check;
+- debug/public exposure check;
+- database exposure check;
+- material security findings;
+- any known risk requiring later action.
+
+## Scope Confirmation
+
+Explicitly confirm:
+
+- no SCA product-domain features were built;
+- no Shopify connection was made;
+- no DNS was changed;
+- no permanent QR was created/published;
+- no PostgreSQL was introduced;
+- no vendor/core modifications remain.
+
+---
+
+# COMPLETION RULE
+
+Once all required evidence is returned:
+
+**STOP.**
+
+Do not merge the PR.
+Do not start the next SCA feature.
+Do not rewrite this task.
+Do not self-approve.
+
+Wait for ChatGPT to audit the Krayin installation and issue the next task.
