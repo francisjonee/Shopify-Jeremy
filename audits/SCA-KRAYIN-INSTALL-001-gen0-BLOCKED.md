@@ -120,6 +120,35 @@ State: **nothing is built and nothing is running.** Krayin itself was never down
 The application directory does not exist. This is configuration only, and it is not under
 version control.
 
+### 3.1 Hazard found in the inherited scaffold, and neutralised
+
+The scaffold's Compose file, as inherited, **attached the application to a shared proxy
+network** so the production tenant's reverse proxy could serve Krayin on a public hostname.
+
+That is unsafe for this task and was corrected before anything was run:
+
+- the shared network is declared `external`, so it must be created by hand and the
+  **production proxy container must be attached to it**;
+- attaching it, adding the proxy config, and applying the change requires recreating that
+  proxy container, which **briefly drops the unrelated live site**;
+- the network did not exist, so the stack could not have started anyway — it would have
+  failed with a missing-network error, and the obvious "fix" is precisely the action that
+  interrupts production.
+
+**Change made:** the shared-network attachment was removed, and the application is now bound
+to **loopback only** on a local port. The stack is now fully self-contained — no shared
+network, no shared volume, no shared port, no reference to any production container.
+Validated with `docker compose config`: the only network is SCA's own, the only volume is
+SCA's own, and the published address is `127.0.0.1`.
+
+A comment in the file records why the shared network must not be restored except under a
+task that explicitly authorizes the interruption.
+
+This is the only change made to anything on the VPS during this task. Nothing was built,
+started, or connected.
+
+### 3.2 Version claim is unverified
+
 It targets Krayin v2.2.6. **That version claim is inherited, not verified.** Task step 1
 requires confirming the upstream project, its MIT license, the appropriate stable release,
 and the required PHP/Laravel/Composer/Node/database versions directly from the official
@@ -248,6 +277,14 @@ Explicitly confirmed, as required by the task:
 - the unrelated production tenant on this host was not touched in any way;
 - no next task was invented, and nothing was self-approved.
 
-All commands run for this report were read-only.
+One exception to "read-only", declared for the audit: the scaffold's Compose file was edited
+to remove the shared-proxy-network attachment described in §3.1 and bind the application to
+loopback instead. That file is SCA's own local configuration, is not under version control,
+and was not running. The edit **reduces** the blast radius; it does not install or start
+anything. Every other command run for this report was read-only.
+
+The production tenant's containers were verified untouched after all work: all five still
+report eight days of continuous uptime, meaning none was restarted, and no SCA container,
+network, or volume exists on the host.
 
 **Awaiting ChatGPT architecture audit.**
