@@ -1,290 +1,472 @@
-# SCA-KRAYIN-INSTALL-001 — generation 0 — implementer evidence
+# SCA-KRAYIN-INSTALL-001 — implementation report
 
-**RESULT:** `BLOCKED_REPOSITORY_ACCESS`
+> **Filed in the architecture repo because the implementation repo is unreachable.**
+> The task requires findings to be committed, not left in chat. `sca-platform` does not
+> exist yet (see §12), so this report is committed here instead of at
+> `docs/task-reports/SCA-KRAYIN-INSTALL-001.md`. An identical copy is committed in the
+> local implementation repository and will push with the branch once access exists.
+>
+> **This repository is public.** The server address, hostname, and the unrelated
+> production tenant sharing this host are generalised throughout, per the precedent in
+> `SCA-RECOVERY-001-gen0-EVIDENCE.md`. No credential, password, or host identifier
+> appears below.
+
+**RESULT:** `BLOCKED_REPOSITORY_ACCESS` — installation complete and proven; only the
+GitHub steps (task steps 2 and 14) could not be performed.
 
 **Implementer:** Claude
 **Date:** 2026-09-11
-**Repo state:** `origin/main` @ `c42cfb2`
-**Environment:** the temporary SCA VPS, Ubuntu
-
-> **Note on detail.** This repository is public. The server address, hostname, the
-> unrelated production tenant sharing this host, and its service inventory are
-> deliberately generalised below, following the precedent set in
-> `audits/SCA-RECOVERY-001-gen0-EVIDENCE.md`. Counts, versions, and conclusions are
-> unchanged. The unredacted detail was given to the operator in session.
-
-Inputs read: `README.md`, `CLAUDE.md`, `docs/ADR-0006-KRAYIN-CRM-ADMIN-FOUNDATION.md`,
-`docs/ROADMAP.md`, `docs/EXECUTION_WORKFLOW.md`, `.claude/rules/github-flow.md`,
-`.claude/rules/output.md`, `.claude/memory/*`, `NEXT_TASK.md` @ `c42cfb2`.
-
-ADR-0006 is present and read. Krayin is understood as the approved admin foundation, and
-as superseding the Next.js / Prisma / PostgreSQL direction in ADR-0005.
+**Architecture repo state:** `origin/main` @ `a3e82f0`
+**Task generation:** 0
 
 ---
 
 ## Summary
 
-**No installation was attempted.** The task cannot reach a required dependency, so it
-stops at task step 2 under the `BLOCKED` outcome defined in
-`docs/EXECUTION_WORKFLOW.md`.
+Krayin CRM v2.2.6 is installed, running, and proven on the temporary VPS. Administrator
+login works, data survives restart, backup and restore work, and an SCA-owned module
+extends Krayin without touching a single core or vendor file.
 
-Two things need the architect's attention. The first blocks the task. The second does not
-block it, but it contradicts a stated premise of the architecture and should be resolved
-before Krayin is installed.
+Two things did not happen, both for the same reason: the private implementation
+repository `francisjonee/sca-platform` cannot be reached from this environment, so the
+branch could not be pushed and no pull request could be opened. All work is committed to
+a **local** Git repository at `/opt/sca-platform` on branch
+`chore/sca-krayin-install-001` and is ready to push unchanged the moment access exists.
 
-1. **Blocker — no write path to `francisjonee/sca-platform`.** The credential available to
-   this environment reaches exactly one repository, this one, read-only as far as has been
-   proven. It cannot create a repository.
-2. **Premise correction — the VPS is not blank.** It carries a live production tenant.
-
----
-
-## 1. The blocker
-
-Task step 2 requires the private implementation repository `francisjonee/sca-platform`,
-and task step 14 requires a branch, a push, and a pull request there.
-
-What this environment actually has:
-
-| Capability | State | How it was established |
-|---|---|---|
-| GitHub CLI (`gh`) | **Not installed** | `command -v gh` returns nothing |
-| Account-level credential | **None found** | No `gh` config; no credential helper configured |
-| Deploy key → `Shopify-Jeremy` | **Works** | SSH authenticated; `git ls-remote` returned all refs |
-| Deploy key → write access | **Confirmed** | This report was pushed with it |
-| Deploy key → any other repo | **Impossible by design** | A deploy key is scoped to one repository |
-
-**Word check:** *deploy key* = an SSH key that unlocks exactly one repository. It cannot
-list, create, or reach any other repository on the account.
-
-A deploy key cannot create a repository under any circumstances. Repository creation is an
-account-level operation. So no combination of the credentials present here can satisfy task
-step 2.
-
-**On write access.** The deploy key's push permission to `Shopify-Jeremy` is confirmed:
-this report was committed and pushed with it. That does not change the blocker. The key
-opens `Shopify-Jeremy` only, and a second repository needs a second key that only the
-operator can install.
-
-## 2. Premise correction — the VPS is not blank
-
-`docs/ADR-0005` and `docs/INFRASTRUCTURE_BLUEPRINT.md` both describe the target machine as
-a **"blank VPS"**. ADR-0006 inherits that framing without revisiting it.
-
-It is not blank. It runs an **unrelated live production application** — five containers,
-serving real traffic, up continuously for eight days at time of writing. That application
-is not part of SCA and is not Jeremy's.
-
-Verified facts about the host, with the tenant generalised:
-
-| Property | Measured | Consequence for this task |
-|---|---|---|
-| Ports 80 and 443 | **Both bound** by the production tenant's reverse proxy | Krayin cannot take them. A public hostname means sharing that proxy |
-| Swap space | **None configured** | No overflow when memory runs out; the kernel kills a process, and it may pick the production one |
-| Memory | 5.9 GB total, ~4.0 GB available; tenant uses ~0.4 GB | Enough for Krayin if capped, not enough to be careless with |
-| CPU | 4 cores | Adequate |
-| Disk | 372 GB free of 387 GB | Ample |
-| Database port 3306 | **Not publicly bound** | Good baseline; must stay that way |
-
-Why this matters to the architecture, not just to operations:
-
-- **Task step 3 prefers Docker and step 8 of the prior task forbade a new public endpoint.**
-  Both remain satisfiable, but only if Krayin binds to localhost. Publishing Krayin on a
-  domain later requires restarting the production tenant's proxy, which briefly interrupts
-  an unrelated live business. That is a scheduling and consent question, not a technical
-  one, and it is outside this task's authority.
-- **"Temporary construction environment" implies a machine SCA can freely disturb.** This
-  machine is not that. A memory spike during `composer install` is a production incident for
-  someone else.
-- The portability requirements in ADR-0005 §2 and the blueprint become *more* important
-  here, not less. This host is shared, so it is doubly unsuitable as a single point of truth.
-
-This is reported, not acted on. Whether to proceed on a shared host, move to a dedicated
-one, or accept the constraint is the architect's decision.
-
-## 3. What already exists on the VPS
-
-A Krayin scaffold predating ADR-0006 is present in the SCA working directory. It was
-created 2026-09-11, before the Krayin decision was recorded, and it happens to align with
-it.
-
-| File | Purpose |
-|---|---|
-| `docker-compose.yml` | Application + MariaDB service definitions, memory-capped |
-| `app.Dockerfile` | PHP 8.3 + Apache, Composer 2, Node 20 |
-| `apache-override.conf` | Laravel docroot set to `/public`; project root denied |
-| `php-custom.ini` | `memory_limit` 512M, deliberately not the 4G Krayin's docs suggest |
-| `.env` | Database credentials, mode 0600, not committed anywhere |
-
-State: **nothing is built and nothing is running.** Krayin itself was never downloaded.
-The application directory does not exist. This is configuration only, and it is not under
-version control.
-
-### 3.1 Hazard found in the inherited scaffold, and neutralised
-
-The scaffold's Compose file, as inherited, **attached the application to a shared proxy
-network** so the production tenant's reverse proxy could serve Krayin on a public hostname.
-
-That is unsafe for this task and was corrected before anything was run:
-
-- the shared network is declared `external`, so it must be created by hand and the
-  **production proxy container must be attached to it**;
-- attaching it, adding the proxy config, and applying the change requires recreating that
-  proxy container, which **briefly drops the unrelated live site**;
-- the network did not exist, so the stack could not have started anyway — it would have
-  failed with a missing-network error, and the obvious "fix" is precisely the action that
-  interrupts production.
-
-**Change made:** the shared-network attachment was removed, and the application is now bound
-to **loopback only** on a local port. The stack is now fully self-contained — no shared
-network, no shared volume, no shared port, no reference to any production container.
-Validated with `docker compose config`: the only network is SCA's own, the only volume is
-SCA's own, and the published address is `127.0.0.1`.
-
-A comment in the file records why the shared network must not be restored except under a
-task that explicitly authorizes the interruption.
-
-This is the only change made to anything on the VPS during this task. Nothing was built,
-started, or connected.
-
-### 3.2 Version claim is unverified
-
-It targets Krayin v2.2.6. **That version claim is inherited, not verified.** Task step 1
-requires confirming the upstream project, its MIT license, the appropriate stable release,
-and the required PHP/Laravel/Composer/Node/database versions directly from the official
-source. That verification has not been performed and must not be skipped by assuming the
-scaffold is correct.
-
-## 4. What is reachable once the blocker clears
-
-Task steps 1 and 3 through 13 do not depend on the implementation repository. They can be
-executed and proven locally, with the commit and PR held until push access exists:
-
-version selection and license verification; installation; persistent database volume;
-environment configuration; migrations and admin account creation; runtime proof; restart
-persistence; backup and restore; the SCA proof module demonstrating a clean vendor
-boundary; and the security validation sweep.
-
-Only steps 2 and 14 are hard-blocked.
-
-## 5. Exact human action required
-
-Either option unblocks the task. Both are approval-gated under `CLAUDE.md` §5, so the
-operator performs them, not Claude.
-
-### Option A — repository plus a write deploy key (recommended, least privilege)
-
-1. Create `francisjonee/sca-platform` in the GitHub UI. Set visibility to **Private**.
-   Initialize with a `main` branch.
-2. Claude generates an SSH keypair on the VPS and returns the public half.
-3. Add it under the new repository → Settings → Deploy keys, with **Allow write access**
-   enabled.
-
-This grants exactly one repository and nothing else. The private key never leaves the
-server and is never committed.
-
-**Limitation, stated honestly:** a deploy key can push a branch but cannot open a pull
-request, because opening a PR is an API action requiring account authentication. Under this
-option Claude pushes `chore/sca-krayin-install-001` and returns a compare link; the operator
-clicks "Create pull request". The PR still must not be merged before audit.
-
-### Option B — a fine-grained personal access token
-
-Scoped to `sca-platform` only, with repository-creation permission if the repository is not
-created by hand. This satisfies step 14 end to end, including opening the PR.
-
-Broader than Option A. A token is account-level; a deploy key is not. Recommended only if
-the architect wants the full step-14 loop automated.
-
-### Also required — a decision on the shared host
-
-Section 2 is a business and consent question, not a technical one. Requested:
-
-- confirmation that installing Krayin on a host carrying an unrelated production tenant is
-  acceptable; and
-- confirmation that Krayin binds to **localhost only** in this task, deferring any public
-  hostname — and the proxy restart it would require — to a later, separately scheduled task.
-
-## 6. Security findings
-
-1. **No secret was committed, printed, or copied.** This report contains no address,
-   hostname, credential, token, or database URL.
-2. **No credential discovery was performed.** An attempt to enumerate token environment
-   variables and credential files was refused by this environment's safety controls and was
-   not retried by another route. Only `gh`'s absence was established, by checking whether
-   the command exists.
-3. **Pre-existing exposure, unchanged by this task:** ports 80 and 443 are publicly bound by
-   the unrelated tenant. Not SCA's to alter, and noted only because SCA cannot use them.
-4. **Database port is not publicly exposed.** Task step 4 requires this to remain true.
-5. **The scaffold's `.env` is mode 0600 and is not in any repository.** It must be Git
-   ignored when the implementation repository exists.
-6. **`memory_limit` is 512M, not the 4G Krayin's documentation suggests.** On a swapless
-   host shared with production, raising it is a production risk for the other tenant. If
-   `composer install` is killed for memory, the correct remedy is swap, not a higher limit.
+Three defects were found by running the install rather than reading about it. One is a
+security issue that anyone following Krayin's documented path will also hit. See
+§ Findings.
 
 ---
 
-## Acceptance criteria — line by line
+## 1. Krayin selection and verification
 
-Nothing was installed, so most criteria are not reached. Listed in full so the audit can
-confirm the comparison was made.
-
-| Criterion | Result |
+| Item | Value |
 |---|---|
-| `RESULT` | **`BLOCKED_REPOSITORY_ACCESS`** |
-| Official Krayin upstream repository | **Not verified.** Task step 1 not started |
-| MIT license confirmation | **Not verified** |
-| Selected Krayin version / tag / commit | **Not selected.** Scaffold names v2.2.6; unverified, section 3 |
-| PHP / Laravel / Composer / Node versions | Not established — nothing installed |
-| MySQL / MariaDB version | Not established |
-| Docker / Compose versions | Not established |
-| VPS application path | Exists as configuration only; no application present, section 3 |
-| Deployment topology | Not built |
-| Private repository URL / name | **Unreachable.** Section 1 |
-| Proof repository is private | Not applicable — repository not reached |
-| Branch name | Not created in the implementation repository |
-| Commit SHA | None in the implementation repository |
-| PR URL / number | None |
-| Proof PR unmerged | Not applicable — no PR exists |
-| Application load / login page / admin login | **Not run.** Nothing is installed |
-| Database connectivity / migrations | Not run |
-| Dashboard smoke test | Not run |
-| Restart / persistence | Not run |
-| Backup command and result | Not created |
-| Restore test | Not run |
-| SCA proof extension | Not created |
-| Proof no vendor/core modified | Not applicable — no vendor tree exists |
-| Composer audit | Not run |
-| Secret scan | This report reviewed before commit; no secret present |
-| Default-credential check | Not applicable — no installation |
-| Debug / public exposure check | Not applicable |
-| Database exposure check | Port 3306 not publicly bound, section 2 |
-| Security findings | Section 6 |
+| Official upstream | `github.com/krayin/laravel-crm` |
+| License | **MIT** — verified in `LICENSE` and `composer.json` at the tag |
+| Selected release | **v2.2.6** — the newest stable tag |
+| Exact commit | `e597417bbc537cbd9716e7f1342d65dc21ac2145` |
+| Unpinned branch used? | No. A tag was cloned, never `master`/`main` |
 
-## Scope confirmation
+All 20 tags were listed from upstream; `v2.2.6` is the latest and no newer stable release
+exists. No material blocker was found, so the newest stable release was taken.
 
-Explicitly confirmed, as required by the task:
+### Required vs installed runtimes
 
-- no SCA product-domain features were built;
-- no Shopify connection was made, and no scope was changed;
-- no DNS was changed;
-- no permanent QR was created or published;
-- no PostgreSQL was introduced;
-- no vendor or core files were modified — none exist;
-- no Next.js / Prisma / PostgreSQL foundation was built;
-- no repository was created;
-- no container was started, stopped, or altered;
-- the unrelated production tenant on this host was not touched in any way;
-- no next task was invented, and nothing was self-approved.
+| Requirement (from upstream `composer.json` at the tag) | Installed | OK |
+|---|---|---|
+| `php ^8.3`, composer platform `8.3.30` | 8.3.33 | yes |
+| `laravel/framework ^12.0` | 12.66.0 | yes |
+| Composer >= 2.5 | 2.10.3 | yes |
+| MySQL or MariaDB | MariaDB 10.11.18 | yes |
+| Node (asset rebuilds only) | v20.20.2, npm 10.8.2 | yes |
+| `intl`, `gd` (documented hard requirements) | both present | yes |
 
-One exception to "read-only", declared for the audit: the scaffold's Compose file was edited
-to remove the shared-proxy-network attachment described in §3.1 and bind the application to
-loopback instead. That file is SCA's own local configuration, is not under version control,
-and was not running. The edit **reduces** the blast radius; it does not install or start
-anything. Every other command run for this report was read-only.
+Also present: `bcmath`, `calendar`, `exif`, `mbstring`, `opcache`, `pdo_mysql`, `soap`,
+`sockets`, `zip` — covering `phpspreadsheet`, `maatwebsite/excel`, `mpdf` and the Laravel
+baseline.
 
-The production tenant's containers were verified untouched after all work: all five still
-report eight days of continuous uptime, meaning none was restarted, and no SCA container,
-network, or volume exists on the host.
+---
+
+## 2. Deployment topology
+
+```
+host (temporary VPS, shared with an unrelated live production tenant)
+ └── 127.0.0.1:8080 ─────► kr-app        (php:8.3-apache-bookworm, mem_limit 1g)
+                             │             Apache serves /var/www/html/public only
+                             │             bind mount: ./app -> /var/www/html
+                             │
+                    sca_internal (private bridge network)
+                             │
+                           kr-mariadb    (mariadb:10.11, mem_limit 768m)
+                             └── volume sca_db_data   (named, persistent)
+```
+
+Application path on the VPS: `/opt/sca-platform`.
+
+**Nothing is shared with the other tenant** — no network, no volume, no port, no config
+file. The database publishes **no host port** at all; it is reachable only from `kr-app`.
+The web service is bound to `127.0.0.1`, never `0.0.0.0`.
+
+---
+
+## 3. Installation procedure
+
+```bash
+# image (memory-capped so a build spike cannot OOM the co-tenant on a swapless host)
+DOCKER_BUILDKIT=0 docker build --memory=1500m --memory-swap=1500m \
+    -t sca-app:krayin-2.2.6 -f docker/app.Dockerfile docker/
+
+chown -R 33:33 app          # Apache runs as www-data (uid 33)
+docker compose up -d
+
+docker compose exec -u 33:33 -e COMPOSER_MEMORY_LIMIT=-1 app \
+    composer install --no-interaction --prefer-dist --no-progress
+
+docker compose exec -u 33:33 app \
+    php artisan krayin-crm:install --skip-env-check --skip-admin-creation
+```
+
+Result: **93 migrations ran, 60 tables created**, seed data loaded, assets published,
+storage linked, caches cleared.
+
+The administrator account was then created separately with a generated 24-character
+password — see § Findings #3 for why the installer's own admin step must not be used.
+
+---
+
+## 4. Configuration decisions
+
+| Decision | Reason |
+|---|---|
+| Two env files: `.env` (Compose) and `app/.env` (Laravel) | Laravel's immutable dotenv loader lets real environment variables win over its own file. Injecting the same names via `env_file` would make effective config unreadable. Both are Git-ignored. |
+| `APP_ENV=production`, `APP_DEBUG=false` | Staging is exposed to the host; stack traces must never render. |
+| `mem_limit` on both services | Host has **no swap**. A limit makes our container the OOM victim instead of the co-tenant. |
+| No host port for MariaDB | Nothing outside `sca_internal` needs it. |
+| Loopback publish only | Ports 80/443 belong to the other tenant's proxy; taking a public endpoint is out of scope. |
+| `APP_URL=http://127.0.0.1:8080` | Staging only. Permanent QR URLs must use a Jeremy-controlled domain via `PUBLIC_QR_BASE_URL` — ADR-0006. |
+
+---
+
+## 5. Vendor boundary
+
+| Path | Owner | Modified? |
+|---|---|---|
+| `app/packages/Webkul/**` | Krayin core | **No — zero changes** |
+| `app/vendor/**` | Composer | **No — not tracked in Git** |
+| `app/packages/Sca/**` | SCA | Yes — new, SCA-owned |
+| `app/composer.json` (autoload map) | App config | One additive line |
+| `app/bootstrap/providers.php` | App config | One additive provider |
+| `app/config/concord.php` | App config | One additive module |
+
+Verified by diffing the whole tree against a pristine clone of tag `v2.2.6`. The only
+differences are the three additive registration points above, plus the new
+`packages/Sca` directory. `git status` shows **0** modified files under
+`app/packages/Webkul`, and **0** files tracked under `app/vendor`.
+
+Future SCA migrations belong in `app/packages/Sca/<Module>/src/Database/Migrations`,
+loaded by that module's own service provider — never in `app/database/migrations`, which
+is upstream.
+
+---
+
+## 6. Evidence
+
+### Runtime
+
+| Check | Result |
+|---|---|
+| `GET /` | `302` → `/admin/login` |
+| `GET /admin/login` | `200`, 16,988 bytes, CSRF token and email/password fields present |
+| Administrator login (real POST with CSRF) | `302` → `/admin/dashboard` |
+| `GET /admin/dashboard` authenticated | `200`, 456,003 bytes |
+| Database connectivity | 60 tables, 93 migrations recorded |
+| `migrate:status` | all `Ran` |
+| Application log after install | empty — no errors |
+| Laravel / PHP / env | 12.66.0 / 8.3.33 / `production`, debug **OFF** |
+
+### Restart persistence
+
+`docker compose down` (without `-v`) then `up -d`:
+
+| After restart | Result |
+|---|---|
+| Containers | both `healthy` |
+| Tables | 60 (unchanged) |
+| Migrations | 93 (unchanged) |
+| Administrator row | intact |
+| Login | `302` → dashboard, dashboard `200` |
+| SCA module page | still renders |
+
+### Backup and restore
+
+```
+./scripts/db-backup.sh
+OK  ./backups/sca-sca_krayin-20260911T181533Z.sql.gz  (20K)
+
+./scripts/db-restore.sh backups/sca-sca_krayin-20260911T181533Z.sql.gz
+OK  restored 'sca_krayin_restore_test' with 60 tables
+```
+
+Restore went into an **isolated** database, not the live one. Verification: live 60
+tables, restored 60 tables, administrator row present in the restored copy. The test
+database was dropped afterwards. Dumps are Git-ignored (`/backups/`), confirmed with
+`git check-ignore`.
+
+The backup script validates the gzip stream and the dump header, and deletes the file
+rather than leaving a truncated dump that looks like success. The restore script defaults
+to a throwaway database and demands typed confirmation before overwriting the live one.
+
+**A dump on this VPS is not a durable backup.** Off-server backups are not implemented.
+Before SCA holds real provenance data, encrypted dumps must be pushed to S3-compatible
+object storage on a schedule, with retention and periodic restore rehearsal.
+
+### SCA extension proof
+
+Path: `app/packages/Sca/Foundation`
+
+Registers an `SCA Foundation` admin menu entry, a matching ACL entry, the namespaced
+route `admin.sca.foundation.index` at `/admin/sca/foundation`, and a page rendering
+**SCA Foundation Ready**.
+
+| Check | Result |
+|---|---|
+| Route registered | `GET\|HEAD admin/sca/foundation → Sca\Foundation\...` |
+| Menu entry in rendered dashboard | present |
+| Page authenticated | `200`, marker text rendered |
+| Page **un**authenticated | `302` → `/admin/login` (not public) |
+| Core/vendor files modified | none |
+
+It mounts under the same prefix and middleware stack (`web`, `admin_locale`, `user`) that
+Krayin's own `AdminServiceProvider` uses, so it is protected by the ordinary staff login
+rather than being separately secured.
+
+No SCA product-domain schema was created. `ModuleServiceProvider` declares no models
+deliberately.
+
+---
+
+## 7. Findings
+
+### 1. Krayin's installer cannot complete under `APP_ENV=production` — HIGH friction
+
+`krayin-crm:install` calls `migrate:fresh` **without `--force`**. Laravel refuses
+destructive migrations in production unless confirmed, and with no interactive terminal
+the command is silently **cancelled**. The installer does not check, and proceeds to
+seeding, which then fails with a confusing unrelated error:
+
+```
+Step: Migrating all tables...
+   APPLICATION IN PRODUCTION.
+   WARN  Command cancelled.
+Step: Seeding basic data...
+   SQLSTATE[42S02]: Base table or view not found: 1146 Table 'sca_krayin.attributes' doesn't exist
+```
+
+The visible error names the wrong problem entirely — nothing suggests the migration was
+skipped. Zero tables were created.
+
+**Workaround used:** set `APP_ENV=local` for the install, then restore `APP_ENV=production`
+and `optimize:clear`. Verified production afterwards.
+
+**Recommendation:** document this in the install runbook permanently. Any future
+reinstall or a fresh permanent-server build will hit it again.
+
+### 2. `krayin-crm:install` silently overwrites application config — MEDIUM
+
+The installer runs `vendor:publish --provider=CoreServiceProvider --force`, which
+overwrites `config/concord.php`. This **discarded the SCA module registration** with no
+warning. It was caught by diffing against pristine upstream, not by any error.
+
+Anything SCA adds to a publishable config file will be destroyed by a reinstall or
+upgrade. A warning comment now sits in `config/concord.php`, and the runbook's upgrade
+procedure covers re-applying it.
+
+### 3. A default administrator account is created even when explicitly skipped — SECURITY
+
+`--skip-admin-creation` skips the interactive prompt, but the seeder **still creates**:
+
+```
+id=1  Example Admin  admin@example.com  role_id=1 (super admin)  status=1
+```
+
+Verified with `password_verify()` that the password was the well-known default
+`admin123`, and that the account was active with full privileges.
+
+Anyone following Krayin's documented non-interactive install ends up with a live super
+admin on published credentials. If such an instance were ever exposed, it is an immediate
+full compromise.
+
+**Remediated here:** account id 1 was rewritten with a real address and a generated
+24-character password hashed with bcrypt cost 12. Verified afterwards that `admin123` no
+longer authenticates, that the new password does, and that **0** `@example.com` accounts
+remain.
+
+The password is **not** in this repository and not in this report. It is stored outside
+the repo at mode 0600 on the VPS; the operator should move it to a password manager and
+rotate it. Rotation procedure is in the runbook.
+
+### 4. Known vulnerable dependency — HIGH, NOT remediated
+
+`composer audit` reports:
+
+| Field | Value |
+|---|---|
+| Package | `maatwebsite/excel` |
+| Installed | **3.1.68** |
+| Severity | **High** |
+| CVE | CVE-2026-84374 |
+| Advisory | `GHSA-c7r6-vx3h-w5g2` |
+| Title | Laravel Excel writes exports outside the configured filesystem disk when given a caller-controlled path |
+| Affected | `>=3.1.8, <3.1.70` |
+| Fixed in | **3.1.70**, which satisfies Krayin's own `^3.1` constraint |
+
+This was **deliberately not fixed**. The task pins a Krayin release, and changing the
+resolved dependency set is an architecture decision, not an implementer's call. Current
+exposure is low: the instance is loopback-only, holds no real data, and exploitation
+needs an authenticated admin performing an export with a controlled path.
+
+**Recommendation — must be resolved before real data or any public exposure:**
+
+```bash
+docker compose exec -u 33:33 app composer update maatwebsite/excel --with-dependencies
+```
+
+Then re-run `composer audit` and the smoke tests. Requesting approval for this as a small
+follow-up task.
+
+### 5. Apache vhost defeats the documented docroot setting — fixed
+
+The `php:8.3-apache` image hard-codes `DocumentRoot /var/www/html` in its vhost, and a
+VirtualHost `DocumentRoot` beats the server-level one in `conf-enabled`. Apache therefore
+served the Laravel project root — which holds `.env` and `vendor/` — and the deny rule
+turned every request into a blanket `403`.
+
+Fixed in the Dockerfile, which now rewrites the vhost and asserts the result so the build
+fails loudly if upstream changes the layout.
+
+**Verified not leaking:** `/.env`, `/composer.json`, `/vendor/autoload.php`,
+`/storage/logs/laravel.log`, `/app/.env` and `/../.env` all return Krayin's 404 page, not
+file content.
+
+Minor observation: those 404 pages are served with HTTP status `200` rather than `404`.
+Cosmetic and not a leak, but it will confuse monitoring later.
+
+---
+
+## 8. Security validation
+
+| Check | Result |
+|---|---|
+| Secrets in tracked files | none — scanned all tracked files |
+| Real `.env` files tracked | **0** — both Git-ignored, verified with `git check-ignore` |
+| Temporary VPS IP or hostname in tracked files | none |
+| Default credentials | none — `@example.com` accounts: 0; `admin123` rejected |
+| Debug mode | OFF; `APP_ENV=production` |
+| Project root web-exposed | no — `public/` only, sensitive paths verified |
+| Database host exposure | none — no host port binding; 3306 not listening on host |
+| App exposure | `127.0.0.1:8080` only, never `0.0.0.0` |
+| World-writable real files | **0** (6 matches were symlinks, whose permission bits are meaningless) |
+| Writable dirs ownership | `storage/`, `bootstrap/cache/` = `www-data`, mode 755 |
+| `.env` permissions | 0600 both |
+| Composer audit | 1 high advisory — finding #4 |
+| Application log after install | empty |
+
+### Effect on the co-tenant
+
+The unrelated live production stack was verified untouched at every stage: all five of its
+containers still report **eight days** of continuous uptime, meaning none was restarted.
+No shared network was created, its proxy was never modified, and no volume of its was
+touched. Host memory never fell below ~2.4 GB available during the build.
+
+---
+
+## 9. Technical debt and known issues
+
+1. **Off-server backups not implemented.** Highest-priority operational gap.
+2. **`maatwebsite/excel` CVE unresolved** — finding #4.
+3. **No automated test suite yet.** Verification here was live HTTP and database checks.
+   Krayin ships `phpunit.xml`; a smoke test should be wired into the repo.
+4. **No queue worker or scheduler.** Krayin runs fine without them at this stage; they
+   will be needed before background jobs.
+5. **No HTTPS.** Correct for loopback staging, but a blocker for any real use.
+6. **Reinstall destroys SCA config registration** — finding #2.
+7. **Assets were not rebuilt** — upstream prebuilt assets are used. Node is present for
+   when theming starts.
+8. **404 pages return HTTP 200** — finding #5.
+
+---
+
+## 10. Recommendations for future tasks
+
+Recommendations only — not started, and not to be treated as approved scope.
+
+1. Resolve the `maatwebsite/excel` advisory.
+2. Implement off-server encrypted backups with retention and a restore rehearsal.
+3. Add a minimal automated smoke test and wire it into the repository.
+4. Decide the staging hostname question deliberately. Exposing Krayin publicly requires
+   restarting the co-tenant's reverse proxy, which briefly drops an unrelated live site.
+   That needs consent and a scheduled window — it should be its own task.
+5. Only then begin the SCA provenance domain, inside `packages/Sca`.
+
+### Proposed change to architecture or task queue
+
+One, marked clearly as a recommendation:
+
+**The architecture describes this machine as a "blank VPS"** (ADR-0005,
+`INFRASTRUCTURE_BLUEPRINT.md`). It is not — it carries an unrelated live production
+tenant that owns ports 80/443, on a host with no swap. Every constraint in this report
+flows from that. The blueprint should be corrected so future tasks are planned against
+the real environment.
+
+---
+
+## 11. Git state
+
+Local repository: `/opt/sca-platform`. Branch `chore/sca-krayin-install-001`.
+
+| # | SHA | Purpose |
+|---|---|---|
+| — | `564df08` | `main` — repository initialization only |
+| 1 | `e273a69` | Deployment foundation + pinned Krayin v2.2.6 source |
+| 2 | `a02dfcb` | SCA Foundation proof module + backup/restore scripts |
+| 3 | `0d3cf07` | Apache docroot fix, concord re-registration, runbook |
+| 4 | *(this report)* | Task report |
+
+**Not pushed. No pull request exists.** See § 12.
+
+---
+
+## 12. Blocker
+
+Task steps 2 and 14 could not be performed.
+
+`francisjonee/sca-platform` is unreachable from this environment:
+
+- `git ls-remote` against it returns `Repository not found`, meaning it either does not
+  exist or this credential cannot see it;
+- the GitHub CLI is not installed;
+- no account-level credential is present;
+- the only credential available is a deploy key scoped to the **architecture** repo
+  `Shopify-Jeremy`, and a deploy key can never create a repository or reach a second one.
+
+### Exact action required — operator only
+
+**Option A (recommended, least privilege).** Create `francisjonee/sca-platform` in the
+GitHub UI, set visibility **Private**, initialize with a `main` branch. Claude generates
+an SSH keypair and returns the public half; add it under that repository's
+Settings → Deploy keys with **Allow write access** enabled.
+
+Limitation: a deploy key can push a branch but cannot open a pull request, because that
+is an API action requiring account authentication. Claude pushes the branch and returns a
+compare link; the operator clicks "Create pull request". The PR must not be merged before
+audit.
+
+**Option B.** A fine-grained personal access token scoped to `sca-platform`. Satisfies
+step 14 end to end, including opening the PR. Broader than Option A.
+
+Once either exists, the local history pushes unchanged — no rework.
+
+---
+
+## 13. Scope confirmation
+
+Explicitly confirmed:
+
+- no SCA product-domain features built — no eyewear items, certifications, QR identifiers,
+  ownership, transfers, service history, or collector accounts;
+- no provenance or authentication data model created;
+- no QR generated or published;
+- no Shopify connection made and no scope changed;
+- no DNS changed;
+- no PostgreSQL introduced;
+- no Next.js or Prisma foundation built;
+- no vendor or core modification remains — verified against pristine upstream;
+- no queued task from `TASK_QUEUE.md` started;
+- no governance, roadmap, or ADR file modified;
+- no pull request merged — none exists;
+- nothing self-approved, and no next task invented;
+- the unrelated production tenant was not modified in any way.
 
 **Awaiting ChatGPT architecture audit.**
