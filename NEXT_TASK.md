@@ -2,195 +2,204 @@
 
 **STATUS:** READY
 
-**TASK_ID:** SCA-DEMO-IP-004
+**TASK_ID:** SCA-DOMAIN-CORE-004
 
 ## Title
 
-Expose the existing Krayin staging CRM on the temporary VPS as a governed living development preview
+Implement the canonical SCA provenance domain core
 
 ## Implementer
 
 Claude
 
+## Last completed
+
+`SCA-DEMO-IP-004` — PASS.
+
+PR #4 merged into implementation `main` with merge commit:
+
+`640f3d1b70066173f2e6bf681f819357c85396ce`
+
+Post-merge VPS verification confirmed:
+
+- deployed `HEAD == origin/main == 640f3d1b70066173f2e6bf681f819357c85396ce`;
+- preview remains at `http://195.26.255.80:8080`;
+- login/dashboard/Foundation/WIP banner pass;
+- uploads/storage writable;
+- MariaDB private;
+- ports 80/443 and unrelated tenant untouched;
+- `APP_ENV=production`, `APP_DEBUG=false`.
+
+The governed preview rule now applies: Claude builds and pushes branches; ChatGPT owns PR creation/audit/merge; accepted `main` is then deployed to the same preview when application changes require it.
+
 ## Authority
 
-ChatGPT accepted and merged `SCA-DOMAIN-DESIGN-003` PR #3 into `francisjonee/francisjonee-sca-platform-private` main.
+The accepted domain design is:
 
-Implementation merge commit:
+`docs/SCA-DOMAIN-DESIGN.md`
 
-`11f72ca2aa3b0c52badf8e4abfac431b378ebd7f`
-
-The user needs a temporary public demo endpoint now, before SCA domain/DNS access is available.
-
-This task temporarily takes priority over `SCA-DOMAIN-CORE-004`.
-
-Authoritative implementation repository:
+in:
 
 `francisjonee/francisjonee-sca-platform-private`
 
-Existing staging facts from the accepted installation/hardening reports:
+That document is authoritative for this task. Do not redesign the domain model during implementation unless a genuine implementation blocker is discovered. If a material contradiction/blocker appears, document it and STOP rather than silently changing architecture.
 
-- Krayin v2.2.6 is already installed at `/opt/sca-platform`;
-- app container originally published only to `127.0.0.1:8080`;
-- MariaDB has no host port and must remain private;
-- the VPS also hosts an unrelated live production tenant;
-- ports 80/443 may already be owned by that other tenant/proxy;
-- no real SCA/customer/provenance data may be added;
-- current permanent SCA domain is not available for this task.
+## Objective
 
-## Goal
+Implement the accepted SCA provenance schema as real Laravel/Krayin-compatible application code with database migrations, models/domain services, database-level integrity enforcement, deterministic current-state behavior, and automated tests proving the accepted invariants.
 
-Produce one externally reachable temporary development/demo URL using the VPS public IPv4 and a dedicated safe TCP port, for example:
+This is a domain-core task only. Do not jump ahead into staff UI, authentication workflow screens, QR/public passport UI, Shopify integration, collector portal, transfers UI, or production cutover.
 
-`http://<PUBLIC_IPV4>:8080`
+## Canonical domain tables
 
-or another non-conflicting port if 8080 cannot be used safely.
+Implement the accepted 16-table model:
 
-This endpoint is not a one-time static demo. It becomes the governed **SCA Development Preview** that Jeremy/client stakeholders can revisit to see approved progress while the product is being built.
+1. `sca_eyewear_items`
+2. `sca_authentications`
+3. `sca_certifications`
+4. `sca_certification_events`
+5. `sca_qr_identifiers`
+6. `sca_qr_lifecycle_events`
+7. `sca_collector_accounts`
+8. `sca_claims`
+9. `sca_ownership_events`
+10. `sca_transfer_requests`
+11. `sca_transfer_events`
+12. `sca_service_events`
+13. `sca_status_events`
+14. `sca_shopify_sale_links`
+15. `sca_media_assets`
+16. `sca_item_current_state`
 
-The preview must clearly identify itself as work in progress and must ultimately reflect only accepted/merged implementation work from `main`, never arbitrary unfinished feature branches.
+Also implement the integrity/immutability trigger set or equivalent database-enforced mechanism accepted by the design.
 
-## Living Preview Rule
+## Required invariants
 
-After this task is accepted and merged:
+At minimum preserve these accepted rules:
 
-`Claude implements -> PR -> ChatGPT audits -> accepted PR merges to main -> merged main is deployed to the same preview environment.`
-
-Requirements:
-
-- keep the same preview endpoint while this temporary IP environment remains in service;
-- future accepted SCA milestones must be deployable to this same preview environment;
-- do not auto-deploy unmerged branches or arbitrary commits;
-- do not expose a feature merely because Claude has pushed it;
-- the preview must represent governed/accepted work from `main` after the demo PR itself is merged;
-- deployment/update procedure must be repeatable and documented;
-- deployment must not reset/destroy required application state or permissions;
-- deployment must preserve upload/storage functionality needed by the preview;
-- the temporary IP must never become the permanent QR/public identity base URL.
+- issued certification rows are immutable; revoke/supersede via append-only certification events;
+- QR identity is immutable; QR lifecycle is append-only;
+- active QR consistency follows deterministic event fold order `(created_at, id)`;
+- reissue is atomic: revoke old active QR, create replacement linkage/event sequence, repoint projection in one transaction;
+- more than one active QR interval for an item is an integrity error;
+- `sca_item_current_state` is the only canonical current lifecycle/registry projection and must be rebuildable from history;
+- projection owner FK is not unique;
+- ownership history is append-only and must never overwrite prior ownership events;
+- claims are first-class records;
+- claim lifecycle: `pending -> verified -> completed`, and `pending|verified -> rejected`;
+- completed/rejected claims are terminal and immutable; retry after rejected requires a new claim;
+- Shopify claims require the correct sale-link source path;
+- external-intake claims require a valid source certification for the same item at claim time;
+- source entitlement references are retained permanently;
+- post-claim refund does not erase ownership history; disputed state is represented through status/event logic;
+- Shopify line-item uniqueness is shop-scoped;
+- frame serial is advisory/nonunique;
+- media private by default; explicit public opt-in only;
+- staff attribution uses soft historical refs with no hard DB FK to Krayin core users;
+- collector PII pseudonymization must preserve deidentified provenance;
+- certificate public opaque identifier is canonical; human-readable number is display-only;
+- transfer expiry default is 14 days but configurable;
+- temporary preview IP must not become a permanent QR/public identity base URL.
 
 ## Required Work
 
-1. Pull latest `Shopify-Jeremy/main` and this `NEXT_TASK.md` before completion. This amendment is authoritative even if implementation work began under the earlier task text.
-2. Pull/sync latest implementation `main` including merge commit `11f72ca2aa3b0c52badf8e4abfac431b378ebd7f`.
-3. Before changing anything, inspect and record:
-   - current VPS public IPv4 (`curl -4 ifconfig.me` or equivalent);
-   - `ss -lntp` for 80, 443, 8080 and candidate alternate ports;
-   - `docker ps` port mappings;
-   - active host firewall rules (`ufw status`, nftables/iptables as applicable);
-   - what currently owns ports 80/443;
-   - enough information to prove the unrelated live tenant will not be disturbed.
-4. Choose the least invasive demo exposure method:
-   - keep MariaDB private;
-   - publish only the Krayin web app on one explicit non-conflicting host port;
-   - do NOT take over ports 80/443 from the other tenant;
-   - do NOT reconfigure the other tenant's reverse proxy unless absolutely unavoidable; if unavoidable, STOP and report instead of making the change;
-   - do NOT require DNS.
-5. Update only the minimum SCA-owned deployment configuration needed so the app listens on the chosen public host port rather than loopback-only. Prefer an explicit mapping such as `<PUBLIC_INTERFACE_OR_0.0.0.0>:<DEMO_PORT>:80` at the Docker publish layer, while preserving database private-network isolation.
-6. If a host firewall is active, open only the chosen demo TCP port. Do not broadly disable the firewall.
-7. Ensure Laravel/Krayin configuration is compatible with access by IP and chosen port. Do not set or generate permanent QR URLs from this IP; `PUBLIC_QR_BASE_URL` remains out of scope.
-8. Add a visible development notice to the preview, using wording equivalent to:
+1. Pull latest `Shopify-Jeremy/main`, this `NEXT_TASK.md`, and implementation `main` before starting.
+2. Create branch:
 
-   **SCA Development Preview — Work in Progress**
+`feat/sca-domain-core-004`
 
-   `Features may be incomplete or temporarily unavailable while the platform is being built.`
+3. Re-read `docs/SCA-DOMAIN-DESIGN.md` completely before writing migrations.
+4. Implement version-controlled Laravel migrations for all 16 tables and required indexes/constraints/FKs.
+5. Implement database-level immutability/integrity enforcement where the design requires history to be append-only or immutable after issuance/finalization.
+6. Implement Laravel models and the minimum domain services/repositories needed to exercise the accepted lifecycle behavior cleanly. Keep SCA-owned code outside Krayin core/vendor packages.
+7. Implement deterministic projection/rebuild logic for `sca_item_current_state` from canonical event history.
+8. Implement transactional QR activation/reissue behavior with locking consistent with the accepted design.
+9. Implement claim entitlement validation for Shopify vs external-intake sources.
+10. Implement terminal claim-state enforcement and append-only ownership behavior.
+11. Add automated tests covering the accepted T1–T31 matrix from the design. If one design test maps to multiple concrete tests, document the mapping.
+12. Run a clean migration path on a disposable/test database and prove migrations apply successfully from the accepted base.
+13. Test rollback strategy where safe/applicable. Do not use destructive rollback against the stakeholder preview database.
+14. Run the full relevant application/domain test suite and capture exact results.
+15. Run dependency/security checks already established for the project and record results; do not opportunistically upgrade unrelated packages unless required to make this task work.
+16. Confirm no Krayin core/vendor modifications under `app/packages/Webkul/**` or tracked `app/vendor/**`.
+17. Confirm no UI-first work, Shopify live connection, permanent QR generation, real customer/provenance data, DNS, or production-infrastructure changes were introduced.
+18. Create/update:
 
-   It must be visible enough that Jeremy/client stakeholders understand this is an active build, not a finished production system.
-9. Restart only SCA containers/services required for the change. Do not restart the unrelated tenant.
-10. Verify locally on the VPS:
-   - `GET /` redirects to `/admin/login`;
-   - `/admin/login` returns 200;
-   - authenticated admin login reaches `/admin/dashboard`;
-   - SCA Foundation page works;
-   - development/WIP notice is present;
-   - MariaDB has no public host port.
-11. Verify externally against the PUBLIC IP and selected port, not only localhost. Confirm the login page and WIP identification are reachable from outside the VPS.
-12. Do not print or commit the administrator password. If credentials need rotation, store them securely as already established and report only where the operator can retrieve them, never the secret itself.
-13. Make the preview deployment repeatable. Add or update an SCA-owned deployment/update procedure or script so a future accepted `main` can be deployed safely to this same environment without manually re-creating demo fixes. It must include any required persistent permission repair/self-healing needed for uploads and runtime storage.
-14. Create/update the task report:
-
-`docs/task-reports/SCA-DEMO-IP-004.md`
+`docs/task-reports/SCA-DOMAIN-CORE-004.md`
 
 The report must include:
-   - public IPv4;
-   - exact demo URL;
-   - selected public port and why;
-   - before/after Docker port mappings;
-   - firewall change, if any;
-   - evidence ports 80/443 and unrelated tenant were untouched;
-   - external HTTP verification results;
-   - admin login/dashboard verification;
-   - WIP banner verification;
-   - DB privacy verification;
-   - upload/storage verification;
-   - exact repeatable procedure for deploying future accepted `main` changes to this same preview;
-   - proof that the procedure deploys governed `main`, not arbitrary feature branches;
-   - rollback instructions;
-   - security limitations of HTTP/IP staging;
-   - exact commit SHA(s).
-15. Make logical checkpoint commits for repository configuration/code/report changes. Push branch:
+- exact implementation base SHA;
+- migration/table/index/constraint summary;
+- trigger/integrity enforcement summary;
+- model/service summary;
+- T1–T31 mapping with PASS/FAIL evidence;
+- clean migration result;
+- projection rebuild test evidence;
+- QR atomicity/locking test evidence;
+- claim entitlement and terminality test evidence;
+- append-only ownership/certification evidence;
+- security/dependency check results;
+- known limitations/technical debt;
+- exact changed-file list;
+- exact branch head SHA;
+- scope confirmation.
 
-`chore/sca-demo-ip-004`
+19. Make logical checkpoint commits throughout implementation. Do not collapse all work into one final commit.
+20. Push branch `feat/sca-domain-core-004` to GitHub.
+21. STOP after push and report the branch/head SHA, task-report path, tests, and any blockers. ChatGPT will create the PR and perform the audit/merge gate.
 
-16. **Creating the pull request is part of the task, not an optional follow-up.** Open an actual GitHub PR into `main` with:
-   - head: `chore/sca-demo-ip-004`
-   - base: `main`
-   - title containing `SCA-DEMO-IP-004`
-   - task report included in the branch.
+## Test / Acceptance Gate
 
-   Confirm the PR exists in GitHub and record/provide its PR number or URL. Do not merely push the branch and say a PR is ready to be created.
-17. Leave the PR unmerged for ChatGPT audit and STOP.
+PASS requires all of the following:
 
-## Security / Safety Rules
+- all 16 canonical tables implemented;
+- accepted indexes/uniqueness/FKs implemented correctly;
+- accepted immutable/append-only behaviors enforced, not merely documented;
+- deterministic `sca_item_current_state` rebuild works from history;
+- QR active/reissue invariants enforced transactionally;
+- claim source entitlement rules enforced;
+- terminal claim states enforced;
+- ownership history cannot be overwritten as a mutable owner field;
+- certification event model preserves immutable issued certification rows;
+- staff refs remain soft historical references to avoid Krayin-core FK coupling;
+- media defaults private;
+- Shopify line-item uniqueness is shop-scoped;
+- T1–T31 accepted design matrix is implemented and passing or any unavoidable exception is explicitly documented as a blocker;
+- clean migration on disposable/test DB succeeds;
+- no SCA preview/production real data is destroyed;
+- no Krayin core/vendor code is modified;
+- no UI/Shopify/public-passport/collector-portal scope creep;
+- no permanent QR URL derives from `195.26.255.80` or any temporary IP;
+- task report is committed;
+- branch is pushed for ChatGPT audit.
 
-This is a temporary staging exposure. Therefore:
+## Prohibited Changes
 
-- NO real customer data;
-- NO real provenance records;
-- NO permanent QR codes/certificates;
-- NO Shopify live-store connection;
-- NO DNS changes;
-- NO changes to `secondchanceauthenticators.com`;
-- NO public MariaDB port;
-- NO port ranges; expose one TCP port only;
-- NO disabling the host firewall;
-- NO weakening admin credentials;
-- NO default `admin@example.com/admin123` account;
-- NO APP_DEBUG=true;
-- keep `APP_ENV=production` and debug off;
-- do not disturb the unrelated production tenant;
-- do not auto-deploy unmerged feature branches;
-- if safe exposure cannot be achieved without modifying/taking over the other tenant's 80/443 proxy, STOP and report the blocker instead of proceeding.
+Do NOT:
 
-## Acceptance Criteria
-
-PASS only if all are true:
-
-- a concrete externally reachable demo URL using the VPS public IPv4 exists;
-- Krayin login page is reachable externally;
-- authorized admin login/dashboard works;
-- SCA Foundation route works;
-- visible Development Preview / Work in Progress identification exists;
-- MariaDB remains private with no host/public port;
-- only one explicit demo TCP port is exposed for SCA;
-- ports 80/443 and the unrelated live tenant are untouched;
-- APP_ENV remains production and debug remains off;
-- uploads/runtime permissions survive the documented redeploy process;
-- a repeatable procedure exists for deploying future accepted `main` changes to the same preview;
-- preview governance explicitly prevents arbitrary unmerged branch deployment;
-- no domain/DNS/Shopify/real-data/provenance work is introduced;
-- rollback is documented;
-- an actual GitHub PR exists and its number/URL is provided;
-- PR is left unmerged for ChatGPT audit.
+- redesign the accepted 16-table architecture without stopping for architecture review;
+- collapse provenance into generic Krayin CRM entities;
+- add a mutable `current_owner` history replacement that bypasses ownership events;
+- make collector accounts depend on Krayin staff/admin users;
+- build staff UI beyond what is strictly required for automated/domain testing;
+- connect live Shopify;
+- create permanent public QR URLs;
+- change DNS/domain configuration;
+- add real customer/provenance data;
+- expose MariaDB publicly;
+- modify the unrelated production tenant;
+- start `SCA-ADMIN-ITEMS-005` or any later queue task;
+- create or merge the PR yourself under the normal workflow.
 
 ## Completion Rule
 
-When finished, report:
+When complete, report only the implementation handoff:
 
-1. exact externally reachable preview URL;
-2. exact implementation commit/head SHA;
-3. actual GitHub PR number/URL;
-4. confirmation that the PR remains unmerged.
+1. branch name;
+2. final branch head SHA;
+3. task report path;
+4. migration/test summary including T1–T31 result;
+5. important findings/blockers;
+6. confirmation everything is pushed.
 
-Then STOP.
-
-Do not start `SCA-DOMAIN-CORE-004` until ChatGPT audits and accepts this demo deployment task.
+Then STOP for ChatGPT audit.
