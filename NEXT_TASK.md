@@ -4,11 +4,11 @@
 
 **TASK_ID:** SCA-DOMAIN-DESIGN-003
 
-**RETRY_GENERATION:** 1
+**RETRY_GENERATION:** 2
 
 ## Title
 
-Resolve SCA provenance design inconsistencies in PR #3 before domain implementation
+Close the remaining provenance-integrity gaps in PR #3 before domain migrations
 
 ## Implementer
 
@@ -16,9 +16,9 @@ Claude
 
 ## Authority
 
-ChatGPT audited implementation PR #3 for `SCA-DOMAIN-DESIGN-003`.
+ChatGPT re-audited implementation PR #3 after remediation generation 1.
 
-The design direction is accepted in principle, but the document is not yet implementation-safe because several invariants contradict the proposed table behavior or leave ownership/claim semantics ambiguous.
+The major architecture corrections are accepted: certification and QR history are now append-only, claims are first-class, Shopify IDs are store-scoped, owner projection semantics are corrected, and the approved business defaults are encoded. The design is close, but several remaining integrity claims are still not implementation-safe.
 
 Authoritative implementation repository:
 
@@ -32,176 +32,142 @@ Continue on the existing branch:
 
 `design/sca-domain-design-003`
 
-PR #3 is open and must remain unmerged. This is still a DESIGN-ONLY task. Do not start `SCA-DOMAIN-CORE-004`.
+PR #3 is open and must remain unmerged. This remains DESIGN ONLY. Do not start `SCA-DOMAIN-CORE-004`.
 
-## Accepted Design Direction — Preserve
+## Preserve Accepted Generation-1 Work
 
-Do not discard the strong parts of the current design:
+Do not undo these accepted decisions:
 
-- the physical frame is the canonical durable identity;
-- SCA tables remain `sca_`-prefixed and separable from Krayin core/vendor;
-- collectors are SCA-native, separate from Krayin staff users and Shopify customers;
-- Shopify sale creates claim eligibility, not registered ownership;
-- provenance/history is append-oriented and must not be silently rewritten;
-- public passport uses an explicit allowlist and excludes PII/internal/Shopify identifiers;
-- MariaDB 10.11 constraints must drive the schema instead of assuming PostgreSQL features;
-- current-state projection may be used as a rebuildable transactional cache, never the sole provenance source;
-- no migrations/models/UI/QR/Shopify implementation in this task.
+- issued certification rows are immutable; revoke/supersede is append-only via `sca_certification_events`;
+- QR identity rows are immutable; lifecycle is append-only via `sca_qr_lifecycle_events`;
+- `sca_claims` is first-class;
+- `current_owner_collector_id` is not unique; one collector may own many items;
+- Shopify uniqueness is scoped by shop;
+- external intake requires explicit claim and never auto-registers ownership;
+- post-claim refund keeps ownership and raises `disputed`;
+- transfer expiry defaults to 14 days configurable;
+- frame serial is advisory/non-unique;
+- media is private by default with explicit public opt-in;
+- PII may be pseudonymized without deleting provenance;
+- certification uses opaque permanent public identity;
+- QR reissue is staff/admin only and preserves old history.
 
-## Audit Findings Requiring Remediation
+## Remaining Audit Findings
 
-### F1 — Certification model contradicts append-only semantics
+### F9 — Active-QR event history can still disagree with the projection
 
-The current design simultaneously says:
+The design says the current active QR is derived from `sca_qr_lifecycle_events`, but also says exactly one active QR per item is guaranteed by the single projection row.
 
-- issued/finalized certification history is immutable/append-only;
-- `sca_certifications` has mutable `state`, `updated_at`, and a prior certification may be set to `superseded`.
+The projection alone does not make the append-only event history internally unique. It is possible, unless the write contract forbids it, to append `activated` events for two different QR identifiers on the same item while the projection points at only one. That would make a rebuild from events ambiguous and violate the claim that the projection is rebuildable from canonical history.
 
-Choose and document one coherent model. Preferred architecture:
+Required correction:
 
-- a certification row may be mutable only while `draft`;
-- transition `draft -> issued` is one-way finalization;
-- once issued, the certification row is immutable;
-- later revocation/supersession must preserve the issued row and be represented by an explicit append-only mechanism, either a dedicated `sca_certification_events` table or a clearly-defined successor/version row whose relationship does not require updating the prior issued row;
-- certification number/public identity must never change after issuance.
+- define the QR activation/reissue transaction precisely;
+- lock `sca_item_current_state` for the item with `SELECT ... FOR UPDATE`;
+- ordinary activation must reject if another active QR exists for that item, unless the same transaction also revokes/replaces it under the approved reissue path;
+- reissue must append the new activation/reissue event(s), append revocation of the prior active QR, and update the projection in the same transaction;
+- define a deterministic event fold/order so rebuild produces exactly one active QR or raises an integrity error rather than silently picking one;
+- add a negative test for attempting to activate a second QR without revoking/reissuing the current active QR.
 
-If adding a certification-event table is cleaner, the total table count may increase. Integrity is more important than preserving the original count of 13.
+Do not claim the projection by itself proves canonical-history uniqueness.
 
-### F2 — QR lifecycle contradicts QR immutability
+### F10 — External-intake claim does not record the provenance record that authorized entitlement
 
-The design currently treats `sca_qr_identifiers` as both immutable provenance and a mutable lifecycle row (`reserved -> active -> revoked`).
+`sca_claims(external_intake)` currently has no sale-link, which is correct, but the design says entitlement is granted after successful authentication/certification without storing which certification/authentication authorized that claim.
 
-Clarify the contract. Required invariant:
+For a permanent provenance registry, the initial ownership claim must retain auditable authorization evidence even if certification later changes.
 
-- `public_token` is permanently immutable;
-- history of activation/revocation/reissue must never be lost;
-- if row state is mutable, explicitly classify which fields/state transitions are narrowly mutable and why they are not provenance rewriting;
-- preferred architecture is an immutable QR identity row plus append-only QR lifecycle/status events if that makes the invariant clearer;
-- replacement QR activation must preserve the prior token/history.
+Required correction:
 
-### F3 — Current-state projection does not enforce owner uniqueness the way described
+- add an explicit source reference for external-intake entitlement, preferably `source_certification_id` FK to the exact issued certification that authorized the claim;
+- if a different explicit entitlement entity is chosen, justify it and keep the provenance chain equally auditable;
+- enforce source-specific nullability/consistency: Shopify claims require `source_sale_link_id` and no external certification source; external-intake claims require the approved external source and no sale link;
+- completed external claims must prove that source certification belonged to the same eyewear item and was valid/issued at claim time;
+- preserve the source reference forever after claim finalization.
 
-Correct the wording and constraints around `sca_item_current_state`.
+### F11 — Claim terminal-state immutability is incomplete
 
-A single projection row per item provides exactly one `current_owner_collector_id` slot for that item. Do NOT add `UNIQUE(current_owner_collector_id)`, because one collector may own many eyewear items.
+`sca_claims` has states `pending`, `verified`, `completed`, `rejected`, but `finalized_at` is described as set only at completion. That leaves `rejected` ambiguous: it could remain mutable indefinitely even though rejection is a terminal business outcome.
 
-Required design statement:
+Required correction:
 
-- PK/UNIQUE on `eyewear_item_id` guarantees one projection row per item;
-- the owner field itself is a normal FK and may repeat across many item rows;
-- one current owner per item is enforced by serialized transactional writes to the single item projection row plus ownership-event invariants;
-- `UNIQUE(active_qr_identifier_id)` may be used to prevent one active QR row from being assigned to multiple items, but it is not the mechanism that creates one owner per item.
+- define legal transitions explicitly, e.g. `pending -> verified -> completed` and `pending|verified -> rejected`;
+- use a terminal timestamp (`finalized_at` is fine) for BOTH `completed` and `rejected`, or otherwise define an equivalent terminal mechanism;
+- completed/rejected claims must be immutable after terminalization;
+- a rejected claim cannot later become completed by mutating the same row; retry is a new claim record/idempotency attempt under defined rules;
+- add tests for mutation of completed/rejected claims and rejected->completed mutation attempts.
 
-### F4 — `source_claim_id` is dangling/ambiguous
+### F12 — Krayin staff attribution is called “soft” while schema declares hard FKs
 
-`sca_ownership_events.source_claim_id` currently references `claims/sale_link`, but no canonical claim table exists.
+Several SCA tables declare fields such as `performed_by_user_id` / `actor_user_id` as FK to Krayin `users`, but §18 says these are “soft staff attribution” and would simply become historical ids if Krayin is replaced.
 
-Resolve intentionally before migrations.
+A database FK to a Krayin-owned table is not a soft reference and can couple SCA provenance to Krayin user-row deletion/migration.
 
-Preferred architecture: introduce an SCA-native claim entity/event because claim is a business event distinct from Shopify commerce. Define a table such as `sca_claims` or `sca_claim_events` with enough fields to audit:
+Choose one coherent separability model. Preferred architecture:
 
-- eyewear item;
-- claimant collector;
-- claim source/type (`shopify_sale`, `external_intake`, future approved source);
-- optional source sale-link id;
-- state/result;
-- idempotency key/token where applicable;
-- created/finalized timestamps;
-- ownership event reference or transactional linkage.
+- keep the staff actor id as a nullable unsigned historical reference without a database FK to Krayin core, OR introduce an SCA-owned staff-actor snapshot/reference abstraction;
+- provenance validity must not depend on the continued existence of a Krayin user row;
+- if retaining hard FKs, explicitly justify the replacement/deletion migration contract and stop calling them soft references.
 
-Then `sca_ownership_events` should reference that exact claim record, not an ambiguous `claims/sale_link` target.
+Reconcile every affected schema row and §18.
 
-If you choose not to add a claim table, justify why and rename the FK unambiguously (for example `source_sale_link_id`), while proving external-intake claim auditability is still complete. Do not leave a polymorphic/dangling pseudo-FK.
+### F13 — Current-state duplication must have one clear cache contract
 
-### F5 — Shopify line-item uniqueness must be store-scoped
+`sca_eyewear_items` stores `lifecycle_state` and `registry_status`, while `sca_item_current_state` also stores those mirrors. Both are described as derived/rebuildable.
 
-Do not assume Shopify numeric/reference IDs are globally unique across every Shopify shop SCA may ever integrate.
+Two writable cache locations for the same derived values create avoidable drift risk.
 
-Add a canonical Shopify shop/store identifier to the linkage boundary and define composite uniqueness, for example:
+Required correction:
 
-`UNIQUE(shopify_shop_id, shopify_line_item_id)`
+- choose one canonical current-state projection location for lifecycle/registry status, preferably `sca_item_current_state`;
+- if fields remain duplicated on `sca_eyewear_items`, explicitly define them as denormalized read caches updated atomically from the same transaction and included in drift checks; otherwise remove them from the proposed item table;
+- the event log remains source of truth either way;
+- update migration/schema/test language consistently.
 
-Also scope any order/webhook idempotency assumptions appropriately. The initial deployment may use one store, but the provenance schema should not bake in a false global-ID invariant.
+### F14 — Reconcile stale task-report current-state wording
 
-### F6 — External-intake initial ownership authorization is underspecified
+The task report still contains generation-0 current-state text such as:
 
-Make the non-Shopify path implementation-safe.
+- `PR: to be opened into main` even though PR #3 is already open;
+- an `Unresolved questions` section and follow-on recommendation saying Q1-Q8 still require decisions, while generation 1 says those decisions are approved and encoded.
 
-Accepted policy for this design:
-
-- external intake does NOT automatically create ownership merely because someone submitted or paid for authentication;
-- after authentication/certification, the authorized submitting/paying collector receives an explicit SCA claim entitlement/claim source;
-- registered ownership is still created only by an explicit successful claim event;
-- no Shopify sale link is required for that path;
-- the claim model must therefore support both Shopify-backed and external-intake-backed eligibility without conflating them.
-
-### F7 — Resolve the surfaced business decisions now where architecture can safely choose defaults
-
-Use the following approved defaults in the design so `SCA-DOMAIN-CORE-004` does not have to invent them:
-
-1. **External intake claim:** explicit claim entitlement after successful authentication/certification; never auto-register ownership.
-2. **Post-claim Shopify refund/return:** never erase or auto-unregister ownership; record commerce reversal and raise `disputed` for staff resolution.
-3. **Transfer expiry:** default 14 days, configurable; store concrete `expires_at` on each request.
-4. **Frame serial:** advisory/non-unique by default; optional non-unique search index such as `(brand, frame_serial)` is allowed. No blanket unique constraint.
-5. **Inspection media:** private by default; explicit per-asset public opt-in only.
-6. **Collector PII deletion/privacy:** preserve de-identified provenance and ownership-event references; collector PII may be pseudonymized/anonymized subject to later legal/privacy implementation. Never delete provenance merely to delete PII.
-7. **Certification identity:** use an opaque permanent public identifier/token as canonical security identity. A human-readable certificate number may exist as a display/reference number, but must not be the security boundary and must remain immutable after issue.
-8. **QR reissue authority:** staff/admin only initially; activating a replacement must retire/revoke the previous active QR in the same transaction while preserving both histories.
-
-If a genuinely legal/compliance-specific question still requires counsel or Jeremy input, keep it marked as an implementation/policy note, but do not leave the core schema unable to represent the approved safe behavior above.
-
-### F8 — Reconcile every affected section, not just the table list
-
-After changing the schema contract, update all dependent sections so the document has no stale contradictions:
-
-- ER overview;
-- table count and table-by-table schema;
-- append-only invariants;
-- authentication/certification state machines;
-- QR lifecycle/reissue semantics;
-- claim/ownership semantics;
-- transfer semantics if claim references change;
-- Shopify linkage/idempotency;
-- migration order;
-- integrity/concurrency section;
-- test/invariant matrix;
-- unresolved-decisions section;
-- task report recommendations.
+Historical notes may remain only if clearly labeled as historical. Current-state sections must not contradict the final design.
 
 ## Required Remediation Work
 
 1. Pull latest `Shopify-Jeremy/main` and read this `NEXT_TASK.md`.
-2. Stay on `design/sca-domain-design-003`; do not create a new task branch.
-3. Edit only design/task-report documentation. No product code, migrations, models, services, controllers, UI, dependencies, Docker, security middleware, QR issuance, Shopify connection, or real data.
-4. Resolve F1–F8 above in `docs/SCA-DOMAIN-DESIGN.md`.
-5. Update `docs/task-reports/SCA-DOMAIN-DESIGN-003.md` with a clearly labeled remediation generation 1 section summarizing the changed architecture decisions, files changed, commit SHA(s), and PR #3 reference.
-6. Explicitly state the final authoritative table/entity list after remediation. It may exceed 13 tables if claim/certification/QR event integrity requires it.
-7. Expand/adjust the invariant test matrix to cover at minimum:
-   - issued certification cannot be mutated;
-   - certification revoke/supersede preserves original issued row;
-   - QR token cannot change;
-   - QR reissue preserves previous token/history and leaves exactly one active QR projection for the item;
-   - one collector may own multiple items;
-   - concurrent claims on one item yield one owner;
-   - external-intake claim works without Shopify sale linkage but still requires explicit claim;
-   - two Shopify shops may contain the same line-item id without collision;
-   - post-claim refund cannot delete ownership;
-   - public output remains PII-free after claim/transfer/status changes.
-8. Keep PR #3 open and unmerged.
-9. STOP for ChatGPT re-audit. Do not start `SCA-DOMAIN-CORE-004`.
+2. Stay on `design/sca-domain-design-003`; do not create another task branch.
+3. Edit only:
+   - `docs/SCA-DOMAIN-DESIGN.md`
+   - `docs/task-reports/SCA-DOMAIN-DESIGN-003.md`
+4. Resolve F9-F14 without changing the accepted generation-1 architecture except where required for integrity.
+5. Keep the final authoritative entity/table list synchronized if fields or an SCA-owned actor/entitlement abstraction changes it.
+6. Update migration order and test matrix as needed. Add at minimum tests for:
+   - second QR activation without revoking/reissuing current active QR -> rejected;
+   - QR event-log rebuild produces exactly the projection or flags integrity violation;
+   - external-intake claim references the exact authorizing certification/entitlement for the same item;
+   - source-type mismatch on claim (Shopify claim without sale link, external claim with wrong/no approved source) -> rejected;
+   - completed and rejected claims are immutable;
+   - rejected claim cannot be mutated to completed;
+   - provenance remains valid if the referenced Krayin staff user is absent/replaced according to the chosen separability model;
+   - duplicated current-state cache drift, if duplication is retained, is detected/rebuilt.
+7. Update the task report with a clearly labeled remediation generation 2 section, exact architecture changes, commit SHAs, and correct current PR #3 status.
+8. No migrations, models, services, controllers, UI, dependencies, Docker, middleware, Shopify connection, QR issuance, or real data.
+9. Leave PR #3 open and unmerged.
+10. STOP for ChatGPT re-audit. Do not start `SCA-DOMAIN-CORE-004`.
 
 ## Acceptance Criteria
 
-Return PASS only if:
+PASS only if:
 
-- certification and QR history semantics are internally consistent with append-only provenance;
-- the projection guarantees are technically accurate and do not prevent collectors owning multiple items;
-- claim is modeled with an unambiguous auditable source for both Shopify and external intake;
-- Shopify uniqueness/idempotency is store-scoped;
-- the approved business defaults above are encoded into the design rather than left for the implementation task to invent;
-- all dependent sections/migration order/tests are reconciled;
-- the design remains separable from Krayin;
-- no product implementation code is introduced;
+- QR canonical event history and projection cannot silently disagree about active QR;
+- external-intake ownership claims retain immutable evidence of what authorized the claim;
+- claim terminal states are explicit and immutable;
+- Krayin staff attribution is genuinely consistent with the stated separability model;
+- derived current-state caching has one coherent drift/rebuild contract;
+- task report current-state wording is reconciled;
+- generation-1 accepted decisions remain preserved;
+- no implementation code is introduced;
 - PR #3 remains open/unmerged.
 
 ## Prohibited Changes
