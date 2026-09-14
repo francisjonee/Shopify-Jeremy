@@ -5,10 +5,9 @@ This file is the ordered implementation backlog for Second Chance Authenticators
 ## Authority and execution rule
 
 - `NEXT_TASK.md` contains the **only executable task**.
-- Items in this queue are **planned only** and are not authorization for Claude to start them.
+- Items in this queue are planned only and are not authorization for Claude to start them.
 - Claude must never skip ahead into this queue.
 - After ChatGPT audits the current task, ChatGPT may promote exactly one queued item into `NEXT_TASK.md`.
-- The queue may be reordered when implementation findings, security issues, architecture decisions, or Jeremy's priorities require it.
 - Every task must produce committed implementation evidence/findings before it can be accepted.
 
 ## Status legend
@@ -17,7 +16,7 @@ This file is the ordered implementation backlog for Second Chance Authenticators
 - `QUEUED` — planned but not executable.
 - `BLOCKED` — cannot begin until dependency is resolved.
 - `DONE` — accepted after ChatGPT audit.
-- `SUPERSEDED` — intentionally replaced by another task/architecture decision.
+- `SUPERSEDED` — intentionally replaced.
 
 ---
 
@@ -34,31 +33,46 @@ Accepted after ChatGPT audit and merged into implementation `main`.
 **Status:** DONE
 **Depends on:** SCA-KRAYIN-INSTALL-001 PASS
 
-Accepted after ChatGPT security audit. PR #2 merged. Standing production gates remain documented: no real provenance data or public exposure until the required production prerequisites, including off-server encrypted backup and public-edge hardening, are completed.
+Accepted after ChatGPT security audit. Standing production gates remain: no real provenance data or production exposure until required backup/public-edge hardening is complete.
+
+### SCA-DOMAIN-DESIGN-003 — Design SCA provenance schema and invariants
+**Phase:** 2 — SCA Domain
+**Status:** DONE
+**Depends on:** hardened Krayin foundation — PASS
+
+Accepted design defines the canonical 16-table SCA provenance model, append-only invariants, lifecycle rules, projection rules, and T1–T31 validation matrix. Implementation PR #3 merged to `main`.
+
+### SCA-DEMO-IP-004 — Governed living development preview
+**Phase:** Delivery / Preview
+**Status:** DONE
+**Depends on:** SCA-DOMAIN-DESIGN-003 PASS
+
+Accepted and merged as PR #4. Implementation merge commit: `640f3d1b70066173f2e6bf681f819357c85396ce`.
+
+Post-merge verification confirmed the live preview is running accepted `main` at:
+
+`http://195.26.255.80:8080`
+
+Verified: login/dashboard/Foundation page, WIP banner, writable storage, private MariaDB, only SCA port 8080 exposed, ports 80/443 and unrelated tenant untouched, `APP_ENV=production`, `APP_DEBUG=false`.
+
+The preview is governed: future accepted application work should be merged by ChatGPT and then deployed from accepted `main` to the same preview. Temporary IP must never become the permanent QR/public identity base.
 
 ---
 
 ## ACTIVE
 
-### SCA-DOMAIN-DESIGN-003 — Design SCA provenance schema and invariants
+### SCA-DOMAIN-CORE-004 — Implement core SCA domain migrations and models
 **Phase:** 2 — SCA Domain
 **Status:** ACTIVE
-**Depends on:** hardened Krayin foundation — PASS
+**Depends on:** SCA-DOMAIN-DESIGN-003 PASS
 
-Define and document the exact SCA domain schema and state machines for physical eyewear, authentication, certification, QR identity, ownership, transfer, service, status, collector identity, and Shopify sale linkage. No UI-first shortcuts and no collapsing provenance into generic CRM records.
+Implement the accepted canonical SCA provenance schema in version-controlled Laravel migrations/models/domain services with append-only rules, integrity enforcement, deterministic projection behavior, and automated tests matching the accepted T1–T31 matrix.
 
-**Exit gate:** ChatGPT audits the schema, invariants, lifecycle/state-machine decisions, migration plan, privacy boundaries, and evidence report before implementation of domain migrations/models begins.
+**Exit gate:** ChatGPT audits the pushed implementation branch and task report against `docs/SCA-DOMAIN-DESIGN.md`, creates/uses the PR, verifies migrations/tests/integrity behavior, and only then merges.
 
 ---
 
 ## QUEUED
-
-### SCA-DOMAIN-CORE-004 — Implement core SCA domain migrations and models
-**Phase:** 2 — SCA Domain
-**Status:** QUEUED
-**Depends on:** SCA-DOMAIN-DESIGN-003 PASS
-
-Implement version-controlled SCA migrations/models/services with append-only provenance rules, uniqueness constraints, current-state derivation, and automated tests.
 
 ### SCA-ADMIN-ITEMS-005 — Build physical eyewear intake and search
 **Phase:** 3 — Staff Admin
@@ -86,14 +100,14 @@ Implement certification issuance and stable SCA QR identifiers with staging prot
 **Status:** QUEUED
 **Depends on:** SCA-CERT-QR-007 PASS
 
-Build the public verification surface with explicit privacy allowlist, authenticity/certification status, approved item details, condition summary, provenance summary, registry status, and lost/stolen warning capability.
+Build the public verification surface with an explicit privacy allowlist, authenticity/certification status, approved item details, condition summary, provenance summary, registry status, and lost/stolen warning capability.
 
 ### SCA-SHOPIFY-CONNECT-009 — Connect live Second Chance Eyewear Shopify store safely
 **Phase:** 5 — Shopify Integration
 **Status:** QUEUED
 **Depends on:** stable SCA physical-item/QR model
 
-Verify exact live Shopify store identity, configure approved least-privilege scopes, install/connect the existing SCA Shopify app, and establish signed/idempotent webhook handling without granting unnecessary write access.
+Verify exact live Shopify store identity, configure approved least-privilege scopes, install/connect the existing SCA Shopify app, and establish signed/idempotent webhook handling without unnecessary write access.
 
 ### SCA-SHOPIFY-SALELINK-010 — Link paid order lines to exact physical SCA items
 **Phase:** 5 — Shopify Integration
@@ -121,7 +135,7 @@ Implement scan/sign-in/eligibility verification/claim and append the initial reg
 **Status:** QUEUED
 **Depends on:** SCA-CLAIM-012 PASS
 
-Show claimed authenticated eyewear, certification/provenance information, service history, and appropriate owner actions in an SCA-branded customer experience separate from Krayin staff admin.
+Show claimed authenticated eyewear, certification/provenance information, service history, and appropriate owner actions in an SCA-branded experience separate from Krayin staff admin.
 
 ### SCA-TRANSFER-014 — Ownership transfer lifecycle
 **Phase:** 7 — Transfers
@@ -135,7 +149,7 @@ Implement authenticated transfer initiation/acceptance/cancellation/expiry and a
 **Status:** QUEUED
 **Depends on:** ownership/provenance core stable
 
-Implement append-only service events for repair, lens work, polish, tune-up, inspection, and other approved service categories.
+Implement append-only service events for repair, lens work, polish, tune-up, inspection, and approved service categories.
 
 ### SCA-STATUS-016 — Lost/stolen/recovered registry
 **Phase:** 8 — Registry Status
@@ -156,7 +170,7 @@ Generate versioned authentication certificates, ownership certificates, provenan
 **Status:** QUEUED
 **Depends on:** core product acceptance
 
-Harden permanent infrastructure, configure off-server backups/durable media, rehearse full restore, configure Jeremy-controlled production QR route, perform DNS/cutover/rollback plan, and migrate without regenerating permanent IDs or rewriting provenance. This task must also close all standing public-exposure/real-data gates recorded by SCA-KRAYIN-HARDEN-001 before production use.
+Harden permanent infrastructure, configure off-server backups/durable media, rehearse restore, configure Jeremy-controlled production QR route, perform DNS/cutover/rollback, and close standing hardening gates before real production use.
 
 ### SCA-EXPANSION-019 — Market history, collector profiles, paid external authentication
 **Phase:** 11 — Expansion
@@ -170,8 +184,8 @@ Plan post-core features including market history/value tracking, collector profi
 ## Queue maintenance rules
 
 1. ChatGPT updates this file after every audit that changes task ordering, dependencies, status, or architecture.
-2. Claude may recommend new tasks in its committed findings report, but must not add them to this queue unless the current task explicitly authorizes governance-file edits.
-3. Findings that reveal security/data-integrity risk take priority over feature work.
+2. Claude may recommend new tasks in its committed findings report, but must not self-promote them.
+3. Security/data-integrity findings take priority over feature work.
 4. Any architecture-changing task requires an ADR before implementation.
-5. Tasks should be kept small enough to audit independently; if a queued task becomes too large, split it before promotion to `NEXT_TASK.md`.
-6. `ROADMAP.md` describes phases and destination; `TASK_QUEUE.md` describes ordered actionable backlog; `NEXT_TASK.md` describes the single current executable unit.
+5. Tasks should remain small enough to audit independently.
+6. `ROADMAP.md` describes phases; `TASK_QUEUE.md` describes ordered backlog; `NEXT_TASK.md` describes the single executable unit.
