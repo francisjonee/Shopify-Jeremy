@@ -70,36 +70,38 @@ Accepted after ChatGPT audit/remediation. PR #6 merged/deployed at `14614d14ce6b
 
 Accepted after ChatGPT audit/remediation. PR #7 accepted head `bb0b04140cf09d38b84e5f44374ce82e6d6190ba` merged and deployed to implementation `main` at `44301d69f31e3665aa07d332a5614d52a9789442`.
 
-Post-merge living-preview verification confirmed staff authentication inspection, passed authentication with condition grading, rejection of contradictory failed/inconclusive grades, exact-item binding, real nonexistent-authentication HTTP 404, finalized-authentication DB immutability, and the rule that authentication does not create certification. The retained DEMO item now has one clearly marked finalized DEMO authentication (`passed`, grade A) and lifecycle `AUTHENTICATED`. The 16 provenance tables / 22 integrity triggers remain intact, MariaDB remains private, and the unrelated tenant/ports 80/443 remain untouched.
+Post-merge living-preview verification confirmed staff authentication inspection, condition grading, exact-item binding, real 404 semantics, finalized-history immutability, and that authentication does not create certification.
+
+### SCA-CERT-QR-007 — Certification ID and permanent QR identity
+**Phase:** 4 — Certification / QR
+**Status:** DONE
+**Depends on:** SCA-ADMIN-AUTH-006 PASS
+
+Accepted after ChatGPT audit. PR #8 accepted head `53c2f1ea002c123fbe51ca2fffd84dafd561a9fd` merged/deployed at `0f7f08f5512115f6f7cc9b319740ffa52d928cbd`.
+
+Post-merge preview verification confirmed same-item certification from the retained finalized DEMO passed authentication, lifecycle `CERTIFIED`, exactly one certification and one active QR identity, duplicate/retry protection, immutable authentication evidence, real 404 resource hiding, and host-independent stored identity tokens containing no preview IP/port/URL. The DEMO item now carries certification `SCA-CERT-2026-1F6322A1` and one active opaque QR identity. No public passport or permanent preview-IP QR URL exists.
 
 ---
 
 ## ACTIVE
 
-### SCA-CERT-QR-007 — Certification ID and permanent QR identity
-**Phase:** 4 — Certification / QR
+### SCA-PUBLIC-PASSPORT-008 — Public SCA registry/passport
+**Phase:** 4 — Public Registry
 **Status:** ACTIVE
-**Depends on:** SCA-ADMIN-AUTH-006 PASS
+**Depends on:** SCA-CERT-QR-007 PASS
 
-Implement staff certification issuance from an eligible finalized passed authentication and establish stable SCA QR identity records. Certification must remain distinct from authentication. Permanent identity must be host-independent at the data layer, and the temporary preview IP must never become the lifetime QR destination.
+Build the public verification surface resolved from the permanent opaque QR identity, with an explicit privacy allowlist, authenticity/certification status, approved item details, condition summary, provenance summary, and registry-status warning capability. Public rendering must never expose staff/private/ownership-sensitive fields.
 
-**Exit gate:** Claude pushes implementation/report and stops; ChatGPT creates/audits the PR; after explicit PASS Claude may merge/deploy only when authorized; ChatGPT verifies preview evidence before promoting the public passport task.
+**Exit gate:** Claude pushes implementation/report and stops; ChatGPT creates/audits the PR; after explicit PASS Claude may merge/deploy only when authorized; ChatGPT verifies preview evidence before promoting Shopify connection.
 
 ---
 
 ## QUEUED
 
-### SCA-PUBLIC-PASSPORT-008 — Public SCA registry/passport
-**Phase:** 4 — Public Registry
-**Status:** QUEUED
-**Depends on:** SCA-CERT-QR-007 PASS
-
-Build the public verification surface with an explicit privacy allowlist, authenticity/certification status, approved item details, condition summary, provenance summary, registry status, and lost/stolen warning capability.
-
 ### SCA-SHOPIFY-CONNECT-009 — Connect live Second Chance Eyewear Shopify store safely
 **Phase:** 5 — Shopify Integration
 **Status:** QUEUED
-**Depends on:** stable SCA physical-item/QR model
+**Depends on:** stable SCA physical-item/QR model and public passport PASS
 
 Verify exact live Shopify store identity, configure approved least-privilege scopes, install/connect the existing SCA Shopify app, and establish signed/idempotent webhook handling without unnecessary write access.
 
