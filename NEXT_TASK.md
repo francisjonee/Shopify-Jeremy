@@ -2,11 +2,11 @@
 
 **STATUS:** READY
 
-**TASK_ID:** SCA-DOMAIN-CORE-004
+**TASK_ID:** SCA-ADMIN-ITEMS-005
 
 ## Title
 
-Implement the canonical SCA provenance domain core
+Build the first SCA staff physical-eyewear intake, detail, and search workflow
 
 ## Implementer
 
@@ -14,191 +14,136 @@ Claude
 
 ## Last completed
 
-`SCA-DEMO-IP-004` — PASS.
+`SCA-DOMAIN-CORE-004` — PASS.
 
-PR #4 merged into implementation `main` with merge commit:
+PR #5 merged into implementation `main` with merge commit:
 
-`640f3d1b70066173f2e6bf681f819357c85396ce`
+`0426bd6f9c9150b7ee728357e2c9c5830c75fc20`
 
-Post-merge VPS verification confirmed:
+Post-merge preview verification confirmed:
 
-- deployed `HEAD == origin/main == 640f3d1b70066173f2e6bf681f819357c85396ce`;
-- preview remains at `http://195.26.255.80:8080`;
-- login/dashboard/Foundation/WIP banner pass;
-- uploads/storage writable;
+- deployed `HEAD == origin/main == 0426bd6f9c9150b7ee728357e2c9c5830c75fc20`;
+- 17 provenance migrations applied;
+- 16 canonical SCA provenance tables present;
+- 22 integrity triggers present;
+- existing Krayin data intact (60 base + 16 SCA tables);
+- no real customer/provenance data present;
+- preview/login/dashboard/Foundation/WIP banner healthy;
+- storage writable;
 - MariaDB private;
-- ports 80/443 and unrelated tenant untouched;
-- `APP_ENV=production`, `APP_DEBUG=false`.
+- ports 80/443 and unrelated tenant untouched.
 
-The governed preview rule now applies: Claude builds and pushes branches; ChatGPT owns PR creation/audit/merge; accepted `main` is then deployed to the same preview when application changes require it.
+Operational note: `scripts/deploy-preview.sh` lacks its executable bit; `bash scripts/deploy-preview.sh` works. Do not make an unrelated standalone change for this unless needed while touching that script in an approved task.
 
 ## Authority
 
-The accepted domain design is:
+Use the accepted SCA domain implementation on implementation `main` and `docs/SCA-DOMAIN-DESIGN.md` as the source of truth for physical-item fields and invariants.
 
-`docs/SCA-DOMAIN-DESIGN.md`
-
-in:
-
-`francisjonee/francisjonee-sca-platform-private`
-
-That document is authoritative for this task. Do not redesign the domain model during implementation unless a genuine implementation blocker is discovered. If a material contradiction/blocker appears, document it and STOP rather than silently changing architecture.
+Krayin is the staff operational shell. SCA remains the product/domain. Do not replace `sca_eyewear_items` with Krayin leads/products/contacts or duplicate canonical SCA provenance data into generic CRM entities.
 
 ## Objective
 
-Implement the accepted SCA provenance schema as real Laravel/Krayin-compatible application code with database migrations, models/domain services, database-level integrity enforcement, deterministic current-state behavior, and automated tests proving the accepted invariants.
+Create the first usable SCA staff workflow inside the existing authenticated Krayin admin experience so authorized staff can:
 
-This is a domain-core task only. Do not jump ahead into staff UI, authentication workflow screens, QR/public passport UI, Shopify integration, collector portal, transfers UI, or production cutover.
+1. create a physical eyewear item;
+2. view its SCA item detail;
+3. search/filter existing eyewear items;
+4. optionally record Shopify reference metadata already supported by the accepted item schema, without connecting to Shopify;
+5. see enough current-state/provenance context to understand that this is a physical SCA registry record, not a generic CRM record.
 
-## Canonical domain tables
-
-Implement the accepted 16-table model:
-
-1. `sca_eyewear_items`
-2. `sca_authentications`
-3. `sca_certifications`
-4. `sca_certification_events`
-5. `sca_qr_identifiers`
-6. `sca_qr_lifecycle_events`
-7. `sca_collector_accounts`
-8. `sca_claims`
-9. `sca_ownership_events`
-10. `sca_transfer_requests`
-11. `sca_transfer_events`
-12. `sca_service_events`
-13. `sca_status_events`
-14. `sca_shopify_sale_links`
-15. `sca_media_assets`
-16. `sca_item_current_state`
-
-Also implement the integrity/immutability trigger set or equivalent database-enforced mechanism accepted by the design.
-
-## Required invariants
-
-At minimum preserve these accepted rules:
-
-- issued certification rows are immutable; revoke/supersede via append-only certification events;
-- QR identity is immutable; QR lifecycle is append-only;
-- active QR consistency follows deterministic event fold order `(created_at, id)`;
-- reissue is atomic: revoke old active QR, create replacement linkage/event sequence, repoint projection in one transaction;
-- more than one active QR interval for an item is an integrity error;
-- `sca_item_current_state` is the only canonical current lifecycle/registry projection and must be rebuildable from history;
-- projection owner FK is not unique;
-- ownership history is append-only and must never overwrite prior ownership events;
-- claims are first-class records;
-- claim lifecycle: `pending -> verified -> completed`, and `pending|verified -> rejected`;
-- completed/rejected claims are terminal and immutable; retry after rejected requires a new claim;
-- Shopify claims require the correct sale-link source path;
-- external-intake claims require a valid source certification for the same item at claim time;
-- source entitlement references are retained permanently;
-- post-claim refund does not erase ownership history; disputed state is represented through status/event logic;
-- Shopify line-item uniqueness is shop-scoped;
-- frame serial is advisory/nonunique;
-- media private by default; explicit public opt-in only;
-- staff attribution uses soft historical refs with no hard DB FK to Krayin core users;
-- collector PII pseudonymization must preserve deidentified provenance;
-- certificate public opaque identifier is canonical; human-readable number is display-only;
-- transfer expiry default is 14 days but configurable;
-- temporary preview IP must not become a permanent QR/public identity base URL.
+This task should make visible progress on the living preview while remaining strictly an intake/search task. Authentication/grading, certification issuance, QR publication, collector ownership, and Shopify live integration are later tasks.
 
 ## Required Work
 
 1. Pull latest `Shopify-Jeremy/main`, this `NEXT_TASK.md`, and implementation `main` before starting.
 2. Create branch:
 
-`feat/sca-domain-core-004`
+`feat/sca-admin-items-005`
 
-3. Re-read `docs/SCA-DOMAIN-DESIGN.md` completely before writing migrations.
-4. Implement version-controlled Laravel migrations for all 16 tables and required indexes/constraints/FKs.
-5. Implement database-level immutability/integrity enforcement where the design requires history to be append-only or immutable after issuance/finalization.
-6. Implement Laravel models and the minimum domain services/repositories needed to exercise the accepted lifecycle behavior cleanly. Keep SCA-owned code outside Krayin core/vendor packages.
-7. Implement deterministic projection/rebuild logic for `sca_item_current_state` from canonical event history.
-8. Implement transactional QR activation/reissue behavior with locking consistent with the accepted design.
-9. Implement claim entitlement validation for Shopify vs external-intake sources.
-10. Implement terminal claim-state enforcement and append-only ownership behavior.
-11. Add automated tests covering the accepted T1–T31 matrix from the design. If one design test maps to multiple concrete tests, document the mapping.
-12. Run a clean migration path on a disposable/test database and prove migrations apply successfully from the accepted base.
-13. Test rollback strategy where safe/applicable. Do not use destructive rollback against the stakeholder preview database.
-14. Run the full relevant application/domain test suite and capture exact results.
-15. Run dependency/security checks already established for the project and record results; do not opportunistically upgrade unrelated packages unless required to make this task work.
-16. Confirm no Krayin core/vendor modifications under `app/packages/Webkul/**` or tracked `app/vendor/**`.
-17. Confirm no UI-first work, Shopify live connection, permanent QR generation, real customer/provenance data, DNS, or production-infrastructure changes were introduced.
-18. Create/update:
+3. Re-read the accepted item/domain schema before implementing UI. Do not invent a parallel item table.
+4. Build SCA-owned staff/admin routes/controllers/services/views integrated into the authenticated Krayin admin shell. Keep SCA code under SCA-owned packages/modules; do not modify `app/packages/Webkul/**` or tracked vendor code.
+5. Add an obvious SCA staff navigation entry for the eyewear registry/intake workflow using the supported extension mechanism rather than hard-editing Krayin core navigation.
+6. Build an eyewear list/search page. At minimum support practical search/filtering by fields that exist in the accepted schema such as SCA public reference, brand, model, frame serial, and relevant optional Shopify/SKU references where available. Avoid unbounded or unsafe query construction.
+7. Build a create/intake form using the canonical `sca_eyewear_items` fields. Validate required fields, lengths/types, accepted enum/state values where applicable, and normalize optional values appropriately.
+8. Persist new items through SCA-owned application/domain logic. Do not bypass accepted database constraints/invariants.
+9. Generate any SCA item `public_ref` through the established SCA token/reference mechanism rather than user-entered arbitrary identity.
+10. Build an item detail page showing the canonical physical-item data and appropriate read-only current-state/provenance summary if available. Empty provenance should be represented clearly for newly created items.
+11. Staff/admin pages must require authenticated Krayin staff access. Verify unauthenticated access redirects/rejects appropriately.
+12. Respect Krayin authorization/permissions. Do not assume every authenticated staff role should automatically gain destructive or administrative access. Document the permission strategy and test at least an authorized vs unauthorized/restricted path if the current Krayin role model supports it.
+13. Do not add hard-delete behavior for physical SCA items. Provenance records must not become disposable CRM rows. If no delete workflow is required, omit delete entirely.
+14. Add automated feature/integration tests covering at minimum:
+    - unauthenticated access protection;
+    - authorized list page;
+    - create form display;
+    - successful valid item creation;
+    - generated unique public reference;
+    - validation failure does not create an item;
+    - duplicate/advisory frame serial behavior remains allowed according to accepted design;
+    - search by public ref;
+    - search by brand/model;
+    - search by frame serial;
+    - item detail displays the correct item;
+    - one item cannot expose another item's data through route/query mistakes;
+    - no hard-delete staff action is exposed;
+    - existing provenance-domain tests remain passing.
+15. Test against a disposable/test database. Do not seed real customer/provenance data into the living preview as part of implementation/testing.
+16. Run the full relevant test suite including the accepted provenance-domain suite and capture exact results.
+17. Run `composer validate` and `composer audit` and record results.
+18. Confirm no Krayin core/vendor changes, no live Shopify connection, no QR/permanent URL generation, no collector portal, no authentication/certification workflow scope creep, no DNS/infrastructure changes, and no real customer data.
+19. Create/update:
 
-`docs/task-reports/SCA-DOMAIN-CORE-004.md`
+`docs/task-reports/SCA-ADMIN-ITEMS-005.md`
 
 The report must include:
 - exact implementation base SHA;
-- migration/table/index/constraint summary;
-- trigger/integrity enforcement summary;
-- model/service summary;
-- T1–T31 mapping with PASS/FAIL evidence;
-- clean migration result;
-- projection rebuild test evidence;
-- QR atomicity/locking test evidence;
-- claim entitlement and terminality test evidence;
-- append-only ownership/certification evidence;
-- security/dependency check results;
+- routes/controllers/services/views/navigation changed;
+- exact item fields exposed for create/list/detail and why;
+- permission/authentication strategy;
+- validation rules;
+- search/filter behavior;
+- public-ref generation behavior;
+- test mapping and exact PASS/FAIL results;
+- regression result for provenance-domain tests;
+- dependency/security checks;
 - known limitations/technical debt;
 - exact changed-file list;
-- exact branch head SHA;
+- branch/head SHA;
 - scope confirmation.
+20. Make logical checkpoint commits throughout implementation.
+21. Push `feat/sca-admin-items-005` to GitHub.
+22. STOP after push. Do not create/merge a PR and do not start `SCA-ADMIN-AUTH-006`. ChatGPT owns PR creation, audit, merge, queue promotion, and post-merge deployment gate.
 
-19. Make logical checkpoint commits throughout implementation. Do not collapse all work into one final commit.
-20. Push branch `feat/sca-domain-core-004` to GitHub.
-21. STOP after push and report the branch/head SHA, task-report path, tests, and any blockers. ChatGPT will create the PR and perform the audit/merge gate.
+## Acceptance Gate
 
-## Test / Acceptance Gate
+PASS requires:
 
-PASS requires all of the following:
+- staff can create a real canonical `sca_eyewear_items` record through SCA-owned UI/application logic;
+- staff can list/search and open the correct physical item detail;
+- no duplicate/parallel item storage is introduced;
+- generated SCA public reference is unique and not arbitrary user input;
+- validation is enforced;
+- unauthenticated access is blocked;
+- authorization strategy is appropriate for staff roles and tested;
+- no hard-delete UI/action is introduced;
+- existing domain/provenance tests still pass;
+- no Krayin core/vendor modification;
+- no live Shopify connection;
+- no certification/authentication/QR/collector workflow scope creep;
+- no permanent identity URL derives from the temporary IP;
+- task report is committed and branch pushed.
 
-- all 16 canonical tables implemented;
-- accepted indexes/uniqueness/FKs implemented correctly;
-- accepted immutable/append-only behaviors enforced, not merely documented;
-- deterministic `sca_item_current_state` rebuild works from history;
-- QR active/reissue invariants enforced transactionally;
-- claim source entitlement rules enforced;
-- terminal claim states enforced;
-- ownership history cannot be overwritten as a mutable owner field;
-- certification event model preserves immutable issued certification rows;
-- staff refs remain soft historical references to avoid Krayin-core FK coupling;
-- media defaults private;
-- Shopify line-item uniqueness is shop-scoped;
-- T1–T31 accepted design matrix is implemented and passing or any unavoidable exception is explicitly documented as a blocker;
-- clean migration on disposable/test DB succeeds;
-- no SCA preview/production real data is destroyed;
-- no Krayin core/vendor code is modified;
-- no UI/Shopify/public-passport/collector-portal scope creep;
-- no permanent QR URL derives from `195.26.255.80` or any temporary IP;
-- task report is committed;
-- branch is pushed for ChatGPT audit.
+## Preview rule
 
-## Prohibited Changes
-
-Do NOT:
-
-- redesign the accepted 16-table architecture without stopping for architecture review;
-- collapse provenance into generic Krayin CRM entities;
-- add a mutable `current_owner` history replacement that bypasses ownership events;
-- make collector accounts depend on Krayin staff/admin users;
-- build staff UI beyond what is strictly required for automated/domain testing;
-- connect live Shopify;
-- create permanent public QR URLs;
-- change DNS/domain configuration;
-- add real customer/provenance data;
-- expose MariaDB publicly;
-- modify the unrelated production tenant;
-- start `SCA-ADMIN-ITEMS-005` or any later queue task;
-- create or merge the PR yourself under the normal workflow.
+Do not deploy the feature branch directly to the living preview. After Claude pushes and stops, ChatGPT audits it. Only accepted/merged implementation `main` may then be deployed to `http://195.26.255.80:8080`.
 
 ## Completion Rule
 
-When complete, report only the implementation handoff:
+When complete, report only:
 
 1. branch name;
 2. final branch head SHA;
 3. task report path;
-4. migration/test summary including T1–T31 result;
+4. test summary;
 5. important findings/blockers;
 6. confirmation everything is pushed.
 
