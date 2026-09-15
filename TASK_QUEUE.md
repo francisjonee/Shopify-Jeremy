@@ -40,7 +40,7 @@ Accepted after ChatGPT security audit. Standing production gates remain: no real
 **Status:** DONE
 **Depends on:** hardened Krayin foundation — PASS
 
-Accepted design defines the canonical 16-table SCA provenance model, append-only invariants, lifecycle rules, projection rules, and T1–T31 validation matrix. Implementation PR #3 merged to `main`.
+Accepted design defines the canonical 16-table SCA provenance model, append-only invariants, lifecycle rules, projection rules, and validation matrix.
 
 ### SCA-DEMO-IP-004 — Governed living development preview
 **Phase:** Delivery / Preview
@@ -54,40 +54,40 @@ Accepted and merged as PR #4. Implementation merge commit: `640f3d1b70066173f2e6
 **Status:** DONE
 **Depends on:** SCA-DOMAIN-DESIGN-003 PASS
 
-Accepted after ChatGPT audit and remediation. PR #5 merged into implementation `main` at `0426bd6f9c9150b7ee728357e2c9c5830c75fc20`. Post-merge preview verification confirmed 16 canonical SCA tables and 22 integrity triggers with Krayin data intact.
+Accepted after ChatGPT audit and remediation. PR #5 merged at `0426bd6f9c9150b7ee728357e2c9c5830c75fc20`. Preview verification confirmed 16 canonical SCA tables and 22 integrity triggers.
 
 ### SCA-ADMIN-ITEMS-005 — Build physical eyewear intake and search
 **Phase:** 3 — Staff Admin
 **Status:** DONE
 **Depends on:** SCA-DOMAIN-CORE-004 PASS
 
-Accepted after ChatGPT audit/remediation. PR #6 accepted head `75af06aa0960c9990707b23a21acaf0e6e90b1c1` merged to implementation `main` at `14614d14ce6b35aa0d917a3a4227c474d574f257`.
+Accepted after ChatGPT audit/remediation. PR #6 merged/deployed at `14614d14ce6b35aa0d917a3a4227c474d574f257`. Registry navigation, intake, list, detail, search, and real 403/404 behavior verified live.
 
-Post-merge deployment verified on the living preview: SCA Eyewear Registry navigation, list, create, detail, search, real restricted-staff HTTP 403, real nonexistent-item HTTP 404, Foundation/WIP banner, 16 provenance tables, and 22 integrity triggers all pass. MariaDB remains private and the unrelated tenant/ports 80/443 are untouched. One clearly marked `DEMO-DO-NOT-USE` eyewear item is intentionally retained for preview demonstration.
+### SCA-ADMIN-AUTH-006 — Build authentication and condition grading workflow
+**Phase:** 3 — Staff Admin
+**Status:** DONE
+**Depends on:** SCA-ADMIN-ITEMS-005 PASS
+
+Accepted after ChatGPT audit/remediation. PR #7 accepted head `bb0b04140cf09d38b84e5f44374ce82e6d6190ba` merged and deployed to implementation `main` at `44301d69f31e3665aa07d332a5614d52a9789442`.
+
+Post-merge living-preview verification confirmed staff authentication inspection, passed authentication with condition grading, rejection of contradictory failed/inconclusive grades, exact-item binding, real nonexistent-authentication HTTP 404, finalized-authentication DB immutability, and the rule that authentication does not create certification. The retained DEMO item now has one clearly marked finalized DEMO authentication (`passed`, grade A) and lifecycle `AUTHENTICATED`. The 16 provenance tables / 22 integrity triggers remain intact, MariaDB remains private, and the unrelated tenant/ports 80/443 remain untouched.
 
 ---
 
 ## ACTIVE
 
-### SCA-ADMIN-AUTH-006 — Build authentication and condition grading workflow
-**Phase:** 3 — Staff Admin
+### SCA-CERT-QR-007 — Certification ID and permanent QR identity
+**Phase:** 4 — Certification / QR
 **Status:** ACTIVE
-**Depends on:** SCA-ADMIN-ITEMS-005 PASS
+**Depends on:** SCA-ADMIN-AUTH-006 PASS
 
-Add staff authentication inspection workflow against canonical SCA eyewear items: inspector/grader attribution, append-only authentication result/history, condition grade, inspection notes, approved inspection media references, and appropriate item-detail history/current-state presentation. Authentication and certification remain separate state machines; this task must not issue certifications or permanent QR identities.
+Implement staff certification issuance from an eligible finalized passed authentication and establish stable SCA QR identity records. Certification must remain distinct from authentication. Permanent identity must be host-independent at the data layer, and the temporary preview IP must never become the lifetime QR destination.
 
-**Exit gate:** Claude pushes implementation/report and stops; ChatGPT creates/audits the PR and remediation if needed; after explicit ChatGPT PASS, Claude may perform the governed merge/deployment when authorized; ChatGPT verifies post-merge preview evidence before promoting the next task.
+**Exit gate:** Claude pushes implementation/report and stops; ChatGPT creates/audits the PR; after explicit PASS Claude may merge/deploy only when authorized; ChatGPT verifies preview evidence before promoting the public passport task.
 
 ---
 
 ## QUEUED
-
-### SCA-CERT-QR-007 — Certification ID and permanent QR identity
-**Phase:** 4 — Certification / QR
-**Status:** QUEUED
-**Depends on:** SCA-ADMIN-AUTH-006 PASS
-
-Implement certification issuance and stable SCA QR identifiers with staging protection. Do not print/publish permanent lifetime QR until the Jeremy-controlled production route is approved.
 
 ### SCA-PUBLIC-PASSPORT-008 — Public SCA registry/passport
 **Phase:** 4 — Public Registry
