@@ -2,11 +2,11 @@
 
 **STATUS:** READY
 
-**TASK_ID:** SCA-ADMIN-ITEMS-005
+**TASK_ID:** SCA-ADMIN-AUTH-006
 
 ## Title
 
-Build the first SCA staff physical-eyewear intake, detail, and search workflow
+Build the SCA staff authentication inspection and condition-grading workflow
 
 ## Implementer
 
@@ -14,137 +14,139 @@ Claude
 
 ## Last completed
 
-`SCA-DOMAIN-CORE-004` — PASS.
+`SCA-ADMIN-ITEMS-005` — PASS.
 
-PR #5 merged into implementation `main` with merge commit:
+PR #6 accepted head:
 
-`0426bd6f9c9150b7ee728357e2c9c5830c75fc20`
+`75af06aa0960c9990707b23a21acaf0e6e90b1c1`
 
-Post-merge preview verification confirmed:
+Merged/deployed implementation `main`:
 
-- deployed `HEAD == origin/main == 0426bd6f9c9150b7ee728357e2c9c5830c75fc20`;
-- 17 provenance migrations applied;
-- 16 canonical SCA provenance tables present;
-- 22 integrity triggers present;
-- existing Krayin data intact (60 base + 16 SCA tables);
-- no real customer/provenance data present;
-- preview/login/dashboard/Foundation/WIP banner healthy;
-- storage writable;
-- MariaDB private;
-- ports 80/443 and unrelated tenant untouched.
+`14614d14ce6b35aa0d917a3a4227c474d574f257`
 
-Operational note: `scripts/deploy-preview.sh` lacks its executable bit; `bash scripts/deploy-preview.sh` works. Do not make an unrelated standalone change for this unless needed while touching that script in an approved task.
+Post-merge living-preview verification confirmed the SCA Eyewear Registry navigation, intake, list, detail, search, real 403/404 semantics, Foundation/WIP banner, 16 provenance tables, and 22 integrity triggers. One clearly marked `DEMO-DO-NOT-USE` item is intentionally retained for preview demonstration.
 
 ## Authority
 
-Use the accepted SCA domain implementation on implementation `main` and `docs/SCA-DOMAIN-DESIGN.md` as the source of truth for physical-item fields and invariants.
+Use implementation `main`, `docs/SCA-DOMAIN-DESIGN.md`, the accepted provenance migrations/models/services, and the existing SCA Registry module as the source of truth.
 
-Krayin is the staff operational shell. SCA remains the product/domain. Do not replace `sca_eyewear_items` with Krayin leads/products/contacts or duplicate canonical SCA provenance data into generic CRM entities.
+Do not invent parallel authentication, item, current-state, media, or audit storage. Reuse the canonical `sca_authentications`, `sca_authentication_events`, `sca_media_assets`, `sca_current_state`, and related accepted SCA domain structures exactly as designed.
+
+Authentication and certification are separate state machines. A passed authentication is evidence that may later permit certification; this task must never issue a certification, QR identity, ownership record, or Shopify sale/claim state.
 
 ## Objective
 
-Create the first usable SCA staff workflow inside the existing authenticated Krayin admin experience so authorized staff can:
+Create the next staff-facing workflow inside the authenticated Krayin operational shell so authorized SCA staff can inspect a physical eyewear item, record authentication/condition evidence, finalize an authentication outcome, and view immutable authentication history from the item detail page.
 
-1. create a physical eyewear item;
-2. view its SCA item detail;
-3. search/filter existing eyewear items;
-4. optionally record Shopify reference metadata already supported by the accepted item schema, without connecting to Shopify;
-5. see enough current-state/provenance context to understand that this is a physical SCA registry record, not a generic CRM record.
-
-This task should make visible progress on the living preview while remaining strictly an intake/search task. Authentication/grading, certification issuance, QR publication, collector ownership, and Shopify live integration are later tasks.
+The workflow must preserve provenance: finalized historical authentication records/events are append-only and cannot be silently edited or deleted.
 
 ## Required Work
 
 1. Pull latest `Shopify-Jeremy/main`, this `NEXT_TASK.md`, and implementation `main` before starting.
 2. Create branch:
 
-`feat/sca-admin-items-005`
+`feat/sca-admin-auth-006`
 
-3. Re-read the accepted item/domain schema before implementing UI. Do not invent a parallel item table.
-4. Build SCA-owned staff/admin routes/controllers/services/views integrated into the authenticated Krayin admin shell. Keep SCA code under SCA-owned packages/modules; do not modify `app/packages/Webkul/**` or tracked vendor code.
-5. Add an obvious SCA staff navigation entry for the eyewear registry/intake workflow using the supported extension mechanism rather than hard-editing Krayin core navigation.
-6. Build an eyewear list/search page. At minimum support practical search/filtering by fields that exist in the accepted schema such as SCA public reference, brand, model, frame serial, and relevant optional Shopify/SKU references where available. Avoid unbounded or unsafe query construction.
-7. Build a create/intake form using the canonical `sca_eyewear_items` fields. Validate required fields, lengths/types, accepted enum/state values where applicable, and normalize optional values appropriately.
-8. Persist new items through SCA-owned application/domain logic. Do not bypass accepted database constraints/invariants.
-9. Generate any SCA item `public_ref` through the established SCA token/reference mechanism rather than user-entered arbitrary identity.
-10. Build an item detail page showing the canonical physical-item data and appropriate read-only current-state/provenance summary if available. Empty provenance should be represented clearly for newly created items.
-11. Staff/admin pages must require authenticated Krayin staff access. Verify unauthenticated access redirects/rejects appropriately.
-12. Respect Krayin authorization/permissions. Do not assume every authenticated staff role should automatically gain destructive or administrative access. Document the permission strategy and test at least an authorized vs unauthorized/restricted path if the current Krayin role model supports it.
-13. Do not add hard-delete behavior for physical SCA items. Provenance records must not become disposable CRM rows. If no delete workflow is required, omit delete entirely.
-14. Add automated feature/integration tests covering at minimum:
-    - unauthenticated access protection;
-    - authorized list page;
-    - create form display;
-    - successful valid item creation;
-    - generated unique public reference;
-    - validation failure does not create an item;
-    - duplicate/advisory frame serial behavior remains allowed according to accepted design;
-    - search by public ref;
-    - search by brand/model;
-    - search by frame serial;
-    - item detail displays the correct item;
-    - one item cannot expose another item's data through route/query mistakes;
-    - no hard-delete staff action is exposed;
+3. Inspect the exact accepted authentication/event/media/current-state schemas and existing domain services/triggers before coding. Document any mismatch between this task wording and the canonical schema; canonical accepted design wins unless a genuine blocker requires stopping for architecture review.
+4. Extend only SCA-owned code/modules. Do not modify `app/packages/Webkul/**`, vendor code, or generic Krayin tables to store canonical SCA authentication data.
+5. Integrate authentication into the existing SCA eyewear item detail workflow. Authorized staff should be able to start/view an authentication inspection for the exact item they are viewing.
+6. Implement SCA-specific ACL permissions for authentication viewing/recording/finalizing as appropriate. Preserve existing registry permissions. Unauthenticated access must be rejected/redirected correctly; authenticated staff lacking required SCA permission must receive real HTTP 403 semantics.
+7. Record inspector/grader attribution using the canonical schema. The server must derive/validate staff attribution; do not trust arbitrary client-submitted staff identity when the current authenticated employee should be authoritative.
+8. Implement condition grading using only canonical accepted values/fields. Do not invent a second condition system. Validate result/state/grade values and required evidence according to the accepted schema/invariants.
+9. Implement inspection notes and the accepted authentication result lifecycle. Make draft/in-progress versus finalized behavior explicit if supported by the canonical model.
+10. Support inspection media references through canonical `sca_media_assets` only to the extent safely supported by the existing schema. If actual binary upload/storage policy is not yet approved, implement safe metadata/reference handling and clearly defer binary-media infrastructure rather than inventing permanent storage architecture. No public permanent URLs may derive from the temporary preview IP.
+11. Finalization must use the accepted SCA domain/service/integrity layer and must append required authentication events. Do not update historical finalized event rows in place.
+12. Enforce exact-item binding throughout. An authentication/event/media record for Item A must never be attachable, displayed, or finalized as evidence for Item B.
+13. Preserve the accepted rule that failed authentication can never become certification. Do not add certification actions or imply that `passed` itself equals certified.
+14. Update the item detail page to show an authentication section with appropriate current/latest summary plus chronological immutable history. Clearly distinguish `not authenticated`, in-progress/draft if applicable, passed, failed, and finalized states according to the canonical model.
+15. Do not add hard-delete UI/actions for authentication records/events/media provenance. Do not permit editing finalized historical authentication evidence in place.
+16. Keep the retained `DEMO-DO-NOT-USE` item available on the living preview; do not use the living preview DB for automated tests. Use disposable/test DB fixtures.
+17. Add automated feature/integration/domain tests covering at minimum:
+    - unauthenticated authentication routes are protected;
+    - authenticated staff without authentication permission receives real HTTP 403;
+    - authorized staff can open the authentication workflow for the correct item;
+    - nonexistent item/authentication resources return real HTTP 404;
+    - inspector attribution cannot be spoofed by client input;
+    - valid authentication inspection can be created for an item;
+    - invalid result/state/condition values are rejected without persistence;
+    - exact-item binding: Item A authentication cannot appear/attach/finalize under Item B;
+    - finalization appends the required authentication event(s);
+    - finalized history cannot be updated or deleted through staff UI/application paths;
+    - failed authentication remains failed/finalized according to canonical lifecycle and no certification is created;
+    - passed authentication still creates no certification in this task;
+    - condition grade and notes display on the correct item detail/history;
+    - media metadata/reference, if implemented, binds to the correct authentication/item and rejects cross-item misuse;
+    - one item's authentication history cannot leak into another item's detail page;
+    - existing SCA Registry tests remain passing;
     - existing provenance-domain tests remain passing.
-15. Test against a disposable/test database. Do not seed real customer/provenance data into the living preview as part of implementation/testing.
-16. Run the full relevant test suite including the accepted provenance-domain suite and capture exact results.
-17. Run `composer validate` and `composer audit` and record results.
-18. Confirm no Krayin core/vendor changes, no live Shopify connection, no QR/permanent URL generation, no collector portal, no authentication/certification workflow scope creep, no DNS/infrastructure changes, and no real customer data.
-19. Create/update:
+18. Include direct database/integrity regression tests where application-only tests could mask trigger/invariant failures. Do not weaken existing triggers to make UI behavior easier.
+19. Run the complete relevant SCA test suite and record exact test/assertion counts.
+20. Run `composer validate` and `composer audit` and record exact results.
+21. Confirm the implementation adds no certification issuance, QR publication/permanent identity URL, Shopify connection, collector auth/claim/ownership, transfer/service/status/document workflow, DNS/infrastructure change, Krayin core/vendor edit, or real customer data.
+22. Create/update:
 
-`docs/task-reports/SCA-ADMIN-ITEMS-005.md`
+`docs/task-reports/SCA-ADMIN-AUTH-006.md`
 
 The report must include:
 - exact implementation base SHA;
-- routes/controllers/services/views/navigation changed;
-- exact item fields exposed for create/list/detail and why;
-- permission/authentication strategy;
-- validation rules;
-- search/filter behavior;
-- public-ref generation behavior;
-- test mapping and exact PASS/FAIL results;
-- regression result for provenance-domain tests;
-- dependency/security checks;
+- canonical tables/models/services/triggers inspected and reused;
+- routes/controllers/services/views/navigation/ACL changed;
+- authentication lifecycle implemented;
+- inspector attribution strategy;
+- exact condition/result/state validation rules;
+- event/finalization behavior;
+- media-reference behavior and any intentionally deferred binary-storage work;
+- exact-item/cross-item protections;
+- immutable-history protections;
+- UI behavior on item detail;
+- test mapping and exact PASS/FAIL/assertion counts;
+- Registry and provenance regression results;
+- `composer validate` / `composer audit` results;
 - known limitations/technical debt;
 - exact changed-file list;
-- branch/head SHA;
-- scope confirmation.
-20. Make logical checkpoint commits throughout implementation.
-21. Push `feat/sca-admin-items-005` to GitHub.
-22. STOP after push. Do not create/merge a PR and do not start `SCA-ADMIN-AUTH-006`. ChatGPT owns PR creation, audit, merge, queue promotion, and post-merge deployment gate.
+- branch/final head SHA;
+- explicit scope confirmation.
+23. Make logical checkpoint commits throughout implementation.
+24. Push `feat/sca-admin-auth-006` to GitHub.
+25. STOP after push. Do not create/merge a PR during implementation. Do not deploy the feature branch. Do not start `SCA-CERT-QR-007`.
 
 ## Acceptance Gate
 
 PASS requires:
 
-- staff can create a real canonical `sca_eyewear_items` record through SCA-owned UI/application logic;
-- staff can list/search and open the correct physical item detail;
-- no duplicate/parallel item storage is introduced;
-- generated SCA public reference is unique and not arbitrary user input;
-- validation is enforced;
-- unauthenticated access is blocked;
-- authorization strategy is appropriate for staff roles and tested;
-- no hard-delete UI/action is introduced;
-- existing domain/provenance tests still pass;
-- no Krayin core/vendor modification;
-- no live Shopify connection;
-- no certification/authentication/QR/collector workflow scope creep;
-- no permanent identity URL derives from the temporary IP;
+- authentication is recorded against canonical SCA physical items and canonical authentication/event structures;
+- authorized staff can use the workflow from the item detail surface;
+- staff identity/inspector attribution cannot be spoofed;
+- authentication result/condition validation is enforced;
+- exact-item binding prevents cross-item evidence/history misuse;
+- finalization/event behavior respects the accepted append-only model;
+- finalized history cannot be edited/deleted through the workflow;
+- real 403/404 HTTP semantics are preserved;
+- passed/failed authentication does not create certification;
+- no certification/QR/ownership/Shopify scope creep;
+- existing registry and provenance suites remain passing;
+- no Krayin core/vendor changes;
 - task report is committed and branch pushed.
 
-## Preview rule
+## Merge / deployment workflow
 
-Do not deploy the feature branch directly to the living preview. After Claude pushes and stops, ChatGPT audits it. Only accepted/merged implementation `main` may then be deployed to `http://195.26.255.80:8080`.
+Claude implements/tests/commits/pushes and then STOPS. ChatGPT creates/audits the PR. If remediation is required, Claude fixes only the audited issues on the same branch and stops again. After ChatGPT explicitly declares AUDIT PASS, Claude may merge the exact accepted head into `main` and deploy accepted `main` only when ChatGPT explicitly authorizes that merge/deployment step.
+
+The living preview remains:
+
+`http://195.26.255.80:8080`
+
+Never deploy an unaudited feature branch to it.
 
 ## Completion Rule
 
-When complete, report only:
+When implementation is complete, report only:
 
 1. branch name;
 2. final branch head SHA;
 3. task report path;
-4. test summary;
-5. important findings/blockers;
+4. exact test/assertion summary;
+5. important findings/blockers/deferrals;
 6. confirmation everything is pushed.
 
 Then STOP for ChatGPT audit.
