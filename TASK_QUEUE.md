@@ -49,47 +49,43 @@ Accepted design defines the canonical 16-table SCA provenance model, append-only
 
 Accepted and merged as PR #4. Implementation merge commit: `640f3d1b70066173f2e6bf681f819357c85396ce`.
 
-Post-merge verification confirmed the live preview is running accepted `main` at `http://195.26.255.80:8080`, with login/dashboard/Foundation/WIP banner passing, writable storage, private MariaDB, port 8080 exposed for SCA only, and unrelated ports 80/443 and tenant untouched.
-
 ### SCA-DOMAIN-CORE-004 — Implement core SCA domain migrations and models
 **Phase:** 2 — SCA Domain
 **Status:** DONE
 **Depends on:** SCA-DOMAIN-DESIGN-003 PASS
 
-Accepted after ChatGPT audit and remediation. PR #5 merged into implementation `main` at `0426bd6f9c9150b7ee728357e2c9c5830c75fc20`.
+Accepted after ChatGPT audit and remediation. PR #5 merged into implementation `main` at `0426bd6f9c9150b7ee728357e2c9c5830c75fc20`. Post-merge preview verification confirmed 16 canonical SCA tables and 22 integrity triggers with Krayin data intact.
 
-Post-merge preview deployment verified: 17 migrations applied, all 16 canonical SCA provenance tables present, 22 integrity triggers present, Krayin data intact (60 base tables + 16 SCA tables), no real provenance/customer rows, preview/login/dashboard/Foundation/WIP banner healthy, storage writable, MariaDB private, and unrelated tenant/ports 80/443 untouched.
+### SCA-ADMIN-ITEMS-005 — Build physical eyewear intake and search
+**Phase:** 3 — Staff Admin
+**Status:** DONE
+**Depends on:** SCA-DOMAIN-CORE-004 PASS
 
-Operational note: `scripts/deploy-preview.sh` currently lacks its Git executable bit; invoking it with `bash scripts/deploy-preview.sh` works. This is non-blocking and may be corrected in a later governed change.
+Accepted after ChatGPT audit/remediation. PR #6 accepted head `75af06aa0960c9990707b23a21acaf0e6e90b1c1` merged to implementation `main` at `14614d14ce6b35aa0d917a3a4227c474d574f257`.
+
+Post-merge deployment verified on the living preview: SCA Eyewear Registry navigation, list, create, detail, search, real restricted-staff HTTP 403, real nonexistent-item HTTP 404, Foundation/WIP banner, 16 provenance tables, and 22 integrity triggers all pass. MariaDB remains private and the unrelated tenant/ports 80/443 are untouched. One clearly marked `DEMO-DO-NOT-USE` eyewear item is intentionally retained for preview demonstration.
 
 ---
 
 ## ACTIVE
 
-### SCA-ADMIN-ITEMS-005 — Build physical eyewear intake and search
+### SCA-ADMIN-AUTH-006 — Build authentication and condition grading workflow
 **Phase:** 3 — Staff Admin
 **Status:** ACTIVE
-**Depends on:** SCA-DOMAIN-CORE-004 PASS
+**Depends on:** SCA-ADMIN-ITEMS-005 PASS
 
-Add the first SCA staff-facing workflow in the Krayin operational shell for creating, viewing, and searching physical eyewear records against the accepted SCA provenance domain. Preserve SCA-owned data and invariants; do not collapse physical items into generic CRM entities.
+Add staff authentication inspection workflow against canonical SCA eyewear items: inspector/grader attribution, append-only authentication result/history, condition grade, inspection notes, approved inspection media references, and appropriate item-detail history/current-state presentation. Authentication and certification remain separate state machines; this task must not issue certifications or permanent QR identities.
 
-**Exit gate:** ChatGPT audits the pushed implementation branch/task report, creates/uses the PR, verifies authorization, validation, persistence/search behavior, regression tests, and scope, then merges accepted work and deploys accepted `main` to the living preview.
+**Exit gate:** Claude pushes implementation/report and stops; ChatGPT creates/audits the PR and remediation if needed; after explicit ChatGPT PASS, Claude may perform the governed merge/deployment when authorized; ChatGPT verifies post-merge preview evidence before promoting the next task.
 
 ---
 
 ## QUEUED
 
-### SCA-ADMIN-AUTH-006 — Build authentication and condition grading workflow
-**Phase:** 3 — Staff Admin
-**Status:** QUEUED
-**Depends on:** SCA-ADMIN-ITEMS-005 PASS
-
-Add authentication result, grader/inspector, inspection notes, condition grade, inspection media references, audit events, and immutable historical inspection behavior.
-
 ### SCA-CERT-QR-007 — Certification ID and permanent QR identity
 **Phase:** 4 — Certification / QR
 **Status:** QUEUED
-**Depends on:** authentication workflow PASS
+**Depends on:** SCA-ADMIN-AUTH-006 PASS
 
 Implement certification issuance and stable SCA QR identifiers with staging protection. Do not print/publish permanent lifetime QR until the Jeremy-controlled production route is approved.
 
