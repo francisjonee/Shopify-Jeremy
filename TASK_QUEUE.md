@@ -49,37 +49,35 @@ Accepted design defines the canonical 16-table SCA provenance model, append-only
 
 Accepted and merged as PR #4. Implementation merge commit: `640f3d1b70066173f2e6bf681f819357c85396ce`.
 
-Post-merge verification confirmed the live preview is running accepted `main` at:
+Post-merge verification confirmed the live preview is running accepted `main` at `http://195.26.255.80:8080`, with login/dashboard/Foundation/WIP banner passing, writable storage, private MariaDB, port 8080 exposed for SCA only, and unrelated ports 80/443 and tenant untouched.
 
-`http://195.26.255.80:8080`
+### SCA-DOMAIN-CORE-004 — Implement core SCA domain migrations and models
+**Phase:** 2 — SCA Domain
+**Status:** DONE
+**Depends on:** SCA-DOMAIN-DESIGN-003 PASS
 
-Verified: login/dashboard/Foundation page, WIP banner, writable storage, private MariaDB, only SCA port 8080 exposed, ports 80/443 and unrelated tenant untouched, `APP_ENV=production`, `APP_DEBUG=false`.
+Accepted after ChatGPT audit and remediation. PR #5 merged into implementation `main` at `0426bd6f9c9150b7ee728357e2c9c5830c75fc20`.
 
-The preview is governed: future accepted application work should be merged by ChatGPT and then deployed from accepted `main` to the same preview. Temporary IP must never become the permanent QR/public identity base.
+Post-merge preview deployment verified: 17 migrations applied, all 16 canonical SCA provenance tables present, 22 integrity triggers present, Krayin data intact (60 base tables + 16 SCA tables), no real provenance/customer rows, preview/login/dashboard/Foundation/WIP banner healthy, storage writable, MariaDB private, and unrelated tenant/ports 80/443 untouched.
+
+Operational note: `scripts/deploy-preview.sh` currently lacks its Git executable bit; invoking it with `bash scripts/deploy-preview.sh` works. This is non-blocking and may be corrected in a later governed change.
 
 ---
 
 ## ACTIVE
 
-### SCA-DOMAIN-CORE-004 — Implement core SCA domain migrations and models
-**Phase:** 2 — SCA Domain
+### SCA-ADMIN-ITEMS-005 — Build physical eyewear intake and search
+**Phase:** 3 — Staff Admin
 **Status:** ACTIVE
-**Depends on:** SCA-DOMAIN-DESIGN-003 PASS
+**Depends on:** SCA-DOMAIN-CORE-004 PASS
 
-Implement the accepted canonical SCA provenance schema in version-controlled Laravel migrations/models/domain services with append-only rules, integrity enforcement, deterministic projection behavior, and automated tests matching the accepted T1–T31 matrix.
+Add the first SCA staff-facing workflow in the Krayin operational shell for creating, viewing, and searching physical eyewear records against the accepted SCA provenance domain. Preserve SCA-owned data and invariants; do not collapse physical items into generic CRM entities.
 
-**Exit gate:** ChatGPT audits the pushed implementation branch and task report against `docs/SCA-DOMAIN-DESIGN.md`, creates/uses the PR, verifies migrations/tests/integrity behavior, and only then merges.
+**Exit gate:** ChatGPT audits the pushed implementation branch/task report, creates/uses the PR, verifies authorization, validation, persistence/search behavior, regression tests, and scope, then merges accepted work and deploys accepted `main` to the living preview.
 
 ---
 
 ## QUEUED
-
-### SCA-ADMIN-ITEMS-005 — Build physical eyewear intake and search
-**Phase:** 3 — Staff Admin
-**Status:** QUEUED
-**Depends on:** SCA-DOMAIN-CORE-004 PASS
-
-Add SCA staff module screens for creating/searching uniquely certified physical eyewear records and mapping optional Shopify product/variant/SKU references.
 
 ### SCA-ADMIN-AUTH-006 — Build authentication and condition grading workflow
 **Phase:** 3 — Staff Admin
