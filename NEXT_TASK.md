@@ -2,11 +2,11 @@
 
 **STATUS:** READY
 
-**TASK_ID:** SCA-PUBLIC-PASSPORT-008
+**TASK_ID:** SCA-SHOPIFY-CONNECT-009
 
 ## Title
 
-Build the public SCA verification passport resolved by permanent QR identity
+Verify and connect the live Second Chance Eyewear Shopify store safely
 
 ## Implementer
 
@@ -14,134 +14,154 @@ Claude
 
 ## Last completed
 
-`SCA-CERT-QR-007` — PASS.
+`SCA-PUBLIC-PASSPORT-008` — PASS.
 
-PR #8 accepted head:
+PR #9 accepted head:
 
-`53c2f1ea002c123fbe51ca2fffd84dafd561a9fd`
+`a11a726351e861fcda0ad6c0178314e357fdc6e0`
 
 Merged/deployed implementation `main`:
 
-`0f7f08f5512115f6f7cc9b319740ffa52d928cbd`
+`ae2a994bd8eb2f41c58effd54e8798c819f2709a`
 
-Post-merge preview verification confirmed the retained DEMO item is `CERTIFIED`, with one issued certification and one active opaque QR identity. Stored identity values contain no host/IP/port/URL. The existing finalized passed authentication remains immutable. No public passport currently exists.
+Post-merge preview verification confirmed the public passport is live, unauthenticated/read-only, privacy allowlisted, and resolved from the permanent opaque QR identity without exposing private/staff/owner/Shopify/internal data.
 
-## Authority
+## Authority and safety boundary
 
-Use implementation `main`, `docs/SCA-DOMAIN-DESIGN.md`, the accepted privacy classification/allowlist, canonical `sca_qr_identifiers`, certification/authentication/current-state structures, and existing SCA services/triggers as source of truth.
+This task establishes the Shopify CONNECTION FOUNDATION only.
 
-This task is the public READ surface only. It must resolve a certified item from the permanent opaque QR/public identity without exposing internal/private data or creating ownership/Shopify behavior.
+Do NOT implement physical-item sale linking, ownership/claim, inventory mutation, product/order mutation, refunds, fulfillment, customer mutation, or automatic lifecycle changes. Those belong to later tasks.
+
+The live Shopify store is an external production system. Never guess its identity, credentials, app installation, API version, scopes, webhook secret, or callback URL. Never commit credentials or secrets.
+
+If required live-store credentials or exact store/app identity are unavailable, implement and test the safe connection/webhook foundation locally, document the exact missing inputs, and STOP rather than fabricating or weakening verification.
 
 ## Objective
 
-Build a public, unauthenticated SCA verification/passport page that resolves a valid active QR identity token to the correct certified eyewear item and displays only explicitly approved public provenance information.
+Establish a least-privilege, auditable Shopify integration foundation that can:
 
-The temporary preview can host a DEVELOPMENT demonstration route, but the stored QR token must remain host-independent. No database field may be rewritten to contain the preview IP/host. Production-domain binding remains a deployment concern.
+1. verify the exact intended Shopify store/app identity;
+2. authenticate safely to Shopify with secrets held outside source control;
+3. perform a read-only connectivity/store-identity check;
+4. receive and cryptographically verify Shopify webhooks;
+5. reject forged/replayed/malformed webhook requests safely;
+6. record only minimal integration/webhook metadata needed for idempotency/audit;
+7. leave physical SCA item linking and sale-state behavior completely untouched.
 
 ## Required Work
 
 1. Pull latest `Shopify-Jeremy/main`, this `NEXT_TASK.md`, and implementation `main` before starting.
 2. Create branch:
 
-`feat/sca-public-passport-008`
+`feat/sca-shopify-connect-009`
 
-3. Inspect the accepted privacy classification in `docs/SCA-DOMAIN-DESIGN.md` and the exact canonical schemas before coding. Create a committed public-field allowlist in SCA-owned code. Default deny: a field is public only if explicitly allowlisted.
-4. Build the passport in SCA-owned code only. Do not modify `app/packages/Webkul/**` or vendor code.
-5. Add an unauthenticated public route resolved by the opaque active QR identity token. Use a neutral route shape such as `/verify/{token}` unless the accepted architecture already defines one. Do not expose internal numeric IDs in the public route.
-6. Resolution must require an ACTIVE canonical QR identifier and bind through canonical current-state/certification/item relationships. Unknown, inactive, malformed, or wrong-item tokens must return a real public HTTP 404 with no existence leak.
-7. Do not make certification public merely because a token exists. The resolved item must satisfy the accepted current certification/state requirements. Stale/inactive identities must not resolve as current certified passports.
-8. The public response must be assembled through an explicit presenter/DTO/view-model containing only allowlisted fields. Do not pass raw DB rows/models wholesale to the public view.
-9. Publicly display only fields explicitly approved by the canonical privacy policy. Expected categories, subject to the accepted design, include:
-   - public SCA identity/certification reference;
-   - authenticity/certification status;
-   - approved eyewear descriptive fields such as brand/model/frame serial only where classified public;
-   - approved condition grade/summary from the qualifying authentication;
-   - approved certification/authentication dates/status summary;
-   - high-level provenance/registry status intended for public verification.
-10. Explicitly exclude staff IDs/names unless canonical policy specifically marks a public display identity; internal database IDs; private notes; authentication inspection notes; customer/contact data; emails/phones/addresses; owner/collector identity; Shopify customer/order identifiers; internal timestamps not allowlisted; internal ACL/role data; raw event payloads; secrets/configuration; and non-public media metadata.
-11. Never expose the opaque QR token in page copy, HTML debug output, analytics payloads, page title, logs intentionally added by this task, or links beyond what is inherently present in the requested URL. Do not render certification `public_token` if it is security-sensitive unless the accepted privacy policy explicitly requires it; prefer the human-safe certification number/public reference.
-12. Add safe cache behavior for a public verification surface. Do not allow personalized/staff data to be cached into the passport. If caching is introduced, key only on safe public identity and ensure status changes can invalidate/bypass stale certified results. Simpler no-store/no-cache behavior is acceptable for this task if safer.
-13. Add basic abuse-resistant input handling: strict token format/length validation before lookup, constant-shape 404 behavior for malformed/unknown/inactive tokens, no SQL wildcard/prefix search, and no public enumeration/search endpoint.
-14. Build a clean SCA-branded passport UI separate from Krayin admin chrome. It should clearly communicate:
-   - Second Chance Authenticators verification;
-   - certification/authenticity status;
-   - item identity/details allowed publicly;
-   - condition summary;
-   - provenance/registry summary;
-   - a clear DEVELOPMENT PREVIEW indicator when served from the current preview environment so clients do not mistake the IP for the permanent QR destination.
-15. Do not expose an admin login/navigation surface on the public passport.
-16. Registry/lost-stolen warning capability: inspect canonical current-state/status structures. If the current schema already supports an allowlisted public registry status, render it safely. If lost/stolen transitions are not yet implemented (`SCA-STATUS-016`), show only a truthful neutral current registry status supported by existing data and explicitly document that lost/stolen lifecycle management is deferred. Do not invent status rows.
-17. Public provenance summary must be derived from canonical trusted records and should not reveal private event details. Prefer high-level facts/counts/statuses explicitly allowlisted by design rather than dumping event histories.
-18. Preserve exact-item binding throughout token -> QR -> item -> certification -> authentication resolution. Never allow a token for Item A to render Item B data even if crafted parameters are supplied. The public route should need no item-id parameter at all.
-19. The route/render layer must be read-only. No claim, ownership, transfer, Shopify, certification mutation, authentication mutation, or staff action may be available from the public passport.
-20. Keep the retained DEMO certified item/QR available for post-merge preview verification. Automated tests must use disposable test DB fixtures, not the preview DB.
-21. Add automated feature/integration/domain tests covering at minimum:
-   - public passport route works without login for a valid active certified identity;
-   - valid token resolves exact correct item;
-   - malformed token -> real 404;
-   - unknown well-formed token -> same real 404 behavior;
-   - inactive QR token -> 404;
-   - token whose item lacks current issued certification -> 404;
-   - stale/non-current QR cannot resolve after identity changes where canonical lifecycle permits;
-   - exact-item binding prevents cross-item certification/authentication data leak;
-   - public HTML contains approved public fields/status only;
-   - public HTML does NOT contain staff identifiers, private notes, authentication notes, owner/contact data, internal DB ids, Shopify refs, raw event payloads, or secrets;
-   - opaque QR token is not rendered in page body/title/debug content;
-   - no numeric item id is required/exposed by route;
-   - no public enumeration/search route exists;
-   - public route exposes no mutation actions;
-   - DEVELOPMENT PREVIEW indicator appears under preview/non-production configuration and can be disabled for production configuration;
-   - public response has safe cache headers;
-   - existing certification tests remain passing;
-   - existing authentication tests remain passing;
-   - existing Registry tests remain passing;
-   - existing provenance-domain tests remain passing.
-22. Include direct DB/integrity regression coverage where needed to prove inactive/stale/wrong-item identity cannot be presented as current certification. Do not weaken triggers.
-23. Run the complete relevant SCA test suite and record exact test/assertion counts.
-24. Run `composer validate` and `composer audit` and record exact results.
-25. Confirm no Shopify connection, collector account/claim/ownership, transfer/service/status mutation, certificate PDF/document generation, DNS/permanent-domain change, infrastructure change, Krayin core/vendor edit, or real customer data is introduced.
-26. Create/update:
+3. Inspect before coding:
+   - `docs/SCA-DOMAIN-DESIGN.md` Shopify reference policy;
+   - existing `sca_shopify_sale_links` schema/triggers/models/services, if present;
+   - current SCA module architecture and config patterns;
+   - repository history/config for any existing Shopify app integration;
+   - `.env.example`, secret handling, deployment scripts, and ignored files;
+   - current official Shopify Admin API/webhook requirements applicable to the app type actually being used.
+4. Do not assume whether this is a custom app, public app, development app, or another installation model. Determine it from existing project evidence and/or verified live credentials. Document the result.
+5. Determine and document the exact intended store identity before any live API action. At minimum capture non-secret canonical identity such as the verified `*.myshopify.com` domain/store identifier returned by Shopify. Do not rely only on a vanity storefront domain.
+6. Add SCA-owned Shopify integration configuration with secrets read only from environment/runtime secret storage. No access token, client secret, webhook secret, session secret, private key, or credential may be committed, printed in reports, logged, rendered in UI, or returned in errors.
+7. Update `.env.example` with variable NAMES/placeholders only. Never insert real secret values.
+8. Use the least privileges required for THIS task. Prefer read-only scopes sufficient to verify store/app connectivity. Do not request product/order/customer write scopes. If webhook registration itself requires additional permission, document it and do not broaden scopes beyond what is actually required.
+9. Implement a safe Shopify client/service abstraction in SCA-owned code. It must:
+   - use the verified store domain rather than arbitrary user-controlled hosts;
+   - use HTTPS only;
+   - use an explicit supported API version rather than an unbounded/latest endpoint;
+   - have sane connect/request timeouts;
+   - fail closed on authentication/TLS/API errors;
+   - redact secrets from logs/exceptions;
+   - not follow redirects to arbitrary hosts if that could leak authorization headers.
+10. Implement a read-only connectivity/store-identity verification operation. It should confirm the authenticated Shopify shop identity and compare it to the configured expected store. A mismatch must fail closed and must not continue into webhook registration or later integration behavior.
+11. If credentials are available and verified, perform only the minimal safe live read required to establish store identity/connectivity. Do not mutate products, orders, customers, inventory, fulfillment, refunds, discounts, or SCA provenance data.
+12. Build an unauthenticated Shopify webhook endpoint in SCA-owned code, isolated from public passport/admin behavior. The endpoint must verify the webhook HMAC against the RAW request body before parsing/trusting payload data.
+13. Webhook verification must use constant-time comparison and fail closed. Missing/invalid HMAC must return an appropriate non-success response and must create no trusted event record or SCA domain mutation.
+14. Validate relevant Shopify webhook metadata/headers defensively. Do not trust topic/shop domain/event identifiers solely because they are headers; enforce expected store identity where applicable.
+15. Add idempotency/replay protection using Shopify's webhook/event identifier where available, with a database uniqueness guarantee. Duplicate delivery must be acknowledged safely without processing twice.
+16. Add the minimum SCA-owned persistence necessary for integration audit/idempotency if no suitable canonical table exists. If a new table is required, keep it integration-specific and minimal, for example: event UUID/idempotency key, verified shop domain, topic, received timestamp, processing status, safe payload hash. Do NOT persist entire customer/order payloads merely for convenience.
+17. Do not place Shopify webhook events into provenance tables as ownership/sale/authentication/certification events during this task. Connection events are integration evidence only.
+18. Treat webhook payload content as untrusted even after HMAC verification. This task may verify/record receipt metadata but must not link an order line to an eyewear item or change item lifecycle/current state.
+19. Do not log raw webhook bodies by default. If a payload hash is useful for audit/idempotency, use a one-way cryptographic digest. Do not store unnecessary customer PII.
+20. Add explicit supported webhook topic allowlisting for the foundation. Unknown/unneeded topics must not trigger domain processing. Keep the allowlist as narrow as possible for the next planned sale-link task and document why each topic is needed. Do not subscribe/register topics speculatively.
+21. Do not register live webhooks to the temporary plain-HTTP preview IP. `http://195.26.255.80:8080` is NOT an acceptable permanent Shopify webhook callback. If Shopify requires a publicly trusted HTTPS callback and none is available, defer live webhook registration and document the blocker. Local/automated webhook verification tests are still required.
+22. Do not alter the permanent SCA QR identity or public passport routing as part of Shopify integration.
+23. Add admin/staff diagnostics only if needed, protected by SCA ACL. Diagnostics must show safe non-secret state only, e.g. configured/not configured, verified store domain, API version, last safe verification result. Never show access tokens/secrets.
+24. Add automated tests covering at minimum:
+   - Shopify config requires HTTPS/canonical expected store domain;
+   - secrets are not exposed through config diagnostics/views/errors/logging added by this task;
+   - read-only store identity verification succeeds for matching mocked Shopify response;
+   - mismatched Shopify store identity fails closed;
+   - API auth/network/error responses fail closed;
+   - webhook with valid HMAC over exact raw body is accepted;
+   - missing HMAC rejected;
+   - invalid HMAC rejected;
+   - body changed after HMAC generation rejected;
+   - webhook from unexpected shop domain rejected;
+   - malformed/unexpected topic rejected or safely ignored according to documented contract;
+   - duplicate webhook/event identifier is idempotent and cannot create duplicate trusted event records;
+   - payload hash is deterministic and raw payload/PII is not persisted by the integration audit record;
+   - webhook receipt causes NO SCA item lifecycle/current-state/certification/authentication/ownership mutation;
+   - no physical-item Shopify sale link is created by this task;
+   - public passport tests remain passing;
+   - certification/authentication/Registry/provenance suites remain passing.
+25. Include direct DB tests for any new idempotency uniqueness constraint and confirm duplicate delivery cannot bypass application logic.
+26. Run the complete relevant SCA test suite and record exact test/assertion counts.
+27. Run `composer validate` and `composer audit` and record exact results.
+28. Run a repository secret-safety check on the task diff. Confirm no real Shopify token/secret/private key/webhook secret has entered tracked files or task reports.
+29. If a safe verified live connectivity check is possible with credentials already present in the server environment, record only NON-SECRET evidence in the report: verified canonical shop domain/store identity, API version, HTTP success/failure category, and time. Never copy tokens or secret-bearing headers.
+30. If live credentials/store identity are not available, STOP short of live connection and state exactly what Jeremy/user must provide or configure. Do not ask for secrets to be pasted into GitHub, task reports, source files, or chat. Prefer server environment/secret storage.
+31. Create/update:
 
-`docs/task-reports/SCA-PUBLIC-PASSPORT-008.md`
+`docs/task-reports/SCA-SHOPIFY-CONNECT-009.md`
 
 The report must include:
 - exact implementation base SHA;
-- canonical privacy policy/schema/services inspected;
-- exact public allowlist implemented and rationale/source for each field;
-- route/controller/presenter/view/config changed;
-- token validation/resolution behavior;
-- exact-item and stale/inactive protections;
-- public cache/security headers;
-- DEVELOPMENT PREVIEW behavior;
-- public registry-status behavior and lost/stolen deferral if applicable;
-- explicit negative list of private fields verified absent;
-- test mapping and exact PASS/FAIL/assertion counts;
-- certification/authentication/Registry/provenance regression results;
+- evidence inspected to determine Shopify app/store model;
+- canonical expected store identity, if safely verified;
+- API version and rationale;
+- exact requested/required scopes and why each is necessary;
+- secret-storage/environment variable names only, never values;
+- Shopify client/service architecture;
+- live connectivity check result if safely performed;
+- webhook route and HMAC verification design;
+- supported topic allowlist;
+- idempotency/replay design and DB uniqueness enforcement;
+- exact data persisted for webhook audit and explicit PII/raw-payload exclusions;
+- confirmation webhook receipt performs no SCA domain mutation;
+- callback HTTPS/domain status and whether live webhook registration was deferred;
+- tests and exact PASS/FAIL/assertion counts;
+- public-passport/cert/auth/registry/provenance regression results;
 - `composer validate` / `composer audit` results;
-- known limitations/technical debt;
+- secret-safety diff check;
+- blockers/missing external inputs;
 - exact changed-file list;
 - branch/final head SHA;
 - explicit scope confirmation.
-27. Make logical checkpoint commits throughout implementation.
-28. Push `feat/sca-public-passport-008` to GitHub.
-29. STOP after push. Do not create/merge a PR during implementation. Do not deploy the feature branch. Do not start `SCA-SHOPIFY-CONNECT-009`.
+32. Make logical checkpoint commits throughout implementation.
+33. Push `feat/sca-shopify-connect-009` to GitHub.
+34. STOP after push. Do not create/merge a PR during implementation. Do not deploy the feature branch. Do not start `SCA-SHOPIFY-SALELINK-010`.
 
 ## Acceptance Gate
 
 PASS requires:
 
-- unauthenticated valid active QR identity resolves the exact certified item;
-- malformed/unknown/inactive/stale/ineligible identities return real 404 without enumeration leak;
-- public data is default-deny and emitted only through an explicit allowlisted presenter/DTO;
-- no staff/private/owner/contact/Shopify/internal-event data leaks;
-- opaque QR security token is not rendered in page content;
-- public route is read-only, separate from admin chrome, and exposes no item-id enumeration/search;
-- preview environment is clearly labeled DEVELOPMENT PREVIEW without changing permanent stored identity;
-- safe cache behavior is present;
-- exact-item binding remains intact;
-- existing cert/auth/registry/provenance suites remain passing;
-- no later-task scope creep or Krayin core/vendor changes;
-- task report is committed and branch pushed.
+- exact intended Shopify store identity is verified or the absence of required external credentials is explicitly and safely blocked/documented;
+- integration secrets remain outside source control and are not exposed;
+- least-privilege/read-only connection foundation is implemented;
+- Shopify client is pinned to an explicit supported API version and verified expected HTTPS store host;
+- webhook HMAC is verified against raw body before payload trust;
+- unexpected store/topic and invalid/missing HMAC fail closed;
+- duplicate webhook delivery is idempotent with DB uniqueness enforcement;
+- no unnecessary raw payload/customer PII persistence;
+- webhook receipt makes zero SCA provenance/lifecycle/ownership/sale-link mutations;
+- temporary preview IP is not registered/stored as permanent webhook callback;
+- existing SCA suites remain passing;
+- no Krayin core/vendor changes;
+- no real credentials in git/report;
+- task report committed and branch pushed.
 
 ## Merge / deployment workflow
 
@@ -151,7 +171,7 @@ Living preview:
 
 `http://195.26.255.80:8080`
 
-A preview verification URL may be composed at runtime from the DEMO item's active QR token after merge. The preview URL is non-permanent and must never be stored as the item's identity.
+The preview may be used for non-secret diagnostics after accepted merge, but must NOT be registered as the permanent Shopify webhook callback because it is plain HTTP and temporary.
 
 ## Completion Rule
 
@@ -161,7 +181,8 @@ When implementation is complete, report only:
 2. final branch head SHA;
 3. task report path;
 4. exact test/assertion summary;
-5. important findings/blockers/deferrals;
-6. confirmation everything is pushed.
+5. verified non-secret Shopify identity/connectivity evidence OR exact external blocker;
+6. important findings/deferrals;
+7. confirmation everything is pushed.
 
 Then STOP for ChatGPT audit.
