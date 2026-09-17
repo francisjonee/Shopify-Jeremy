@@ -84,31 +84,31 @@ Accepted after ChatGPT audit. PR #8 accepted head `53c2f1ea002c123fbe51ca2fffd84
 
 Accepted after ChatGPT audit. PR #9 accepted head `a11a726351e861fcda0ad6c0178314e357fdc6e0` merged/deployed at `ae2a994bd8eb2f41c58effd54e8798c819f2709a`.
 
-Post-merge living-preview verification confirmed unauthenticated exact-token passport resolution, default-deny public privacy boundary, real passport token 404s, safe cache/security headers, no opaque token/private/staff/owner/Shopify/internal-ID leakage, and no mutation/search surface. The certified DEMO passport is live on the development preview. Pre-existing Krayin unmatched route/method soft-status behavior is tracked as a platform observation and was not introduced by this task.
+Post-merge living-preview verification confirmed unauthenticated exact-token passport resolution, default-deny public privacy boundary, real passport token 404s, safe cache/security headers, no opaque token/private/staff/owner/Shopify/internal-ID leakage, and no mutation/search surface.
+
+### SCA-SHOPIFY-CONNECT-009 — Connect live Second Chance Eyewear Shopify store safely
+**Phase:** 5 — Shopify Integration
+**Status:** DONE
+**Depends on:** SCA-PUBLIC-PASSPORT-008 PASS
+
+Accepted after ChatGPT audit/remediation. Connection/webhook foundation merged/deployed, followed by the external-merchant OAuth authorization-code implementation in PR #11. Accepted PR #11 head `830c8a18b5c40c10f43e5fd2b6d84a08ed9ab399` merged/deployed to implementation `main` at `044c910fad457b83b47874001babdb3df6a270f1`.
+
+Live OAuth activation and live webhook registration are intentionally deferred until a permanent publicly trusted SCA HTTPS endpoint and server-side credentials are available. This deferred external configuration does not block mocked/signed-event development of sale linking. The temporary plain-HTTP preview IP must not be used as an OAuth/webhook callback.
 
 ---
 
 ## ACTIVE
 
-### SCA-SHOPIFY-CONNECT-009 — Connect live Second Chance Eyewear Shopify store safely
+### SCA-SHOPIFY-SALELINK-010 — Link paid order lines to exact physical SCA items
 **Phase:** 5 — Shopify Integration
 **Status:** ACTIVE
-**Depends on:** SCA-PUBLIC-PASSPORT-008 PASS
+**Depends on:** SCA-SHOPIFY-CONNECT-009 PASS
 
-Verify the exact Shopify store and existing app identity, establish least-privilege authenticated connectivity, and implement signed/idempotent webhook intake foundations without linking sales to physical SCA items yet.
-
-**Exit gate:** Claude pushes implementation/report and stops; ChatGPT creates/audits the PR. No live-store mutation or production webhook registration is authorized unless the executable task explicitly permits it and required credentials/store identity are verified.
+Implement sale eligibility state, exact physical-item mapping, paid/cancelled/refunded/returned behavior, safe retries, and idempotent Shopify sale links. A Shopify sale must not create or transfer SCA ownership.
 
 ---
 
 ## QUEUED
-
-### SCA-SHOPIFY-SALELINK-010 — Link paid order lines to exact physical SCA items
-**Phase:** 5 — Shopify Integration
-**Status:** QUEUED
-**Depends on:** SCA-SHOPIFY-CONNECT-009 PASS
-
-Implement sale eligibility state, exact physical-item mapping, paid/cancelled/refunded/returned behavior, safe retries, and idempotent Shopify sale links.
 
 ### SCA-COLLECTOR-AUTH-011 — Collector account authentication
 **Phase:** 6 — Collector Portal
