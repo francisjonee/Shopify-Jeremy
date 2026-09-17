@@ -95,27 +95,27 @@ Accepted after ChatGPT audit/remediation. Connection/webhook foundation merged/d
 
 Live OAuth activation and live webhook registration are intentionally deferred until a permanent publicly trusted SCA HTTPS endpoint and server-side credentials are available. This deferred external configuration does not block mocked/signed-event development of sale linking. The temporary plain-HTTP preview IP must not be used as an OAuth/webhook callback.
 
+### SCA-SHOPIFY-SALELINK-010 — Link paid order lines to exact physical SCA items
+**Phase:** 5 — Shopify Integration
+**Status:** DONE
+**Depends on:** SCA-SHOPIFY-CONNECT-009 PASS
+
+Accepted after ChatGPT audit/remediation. PR #12 accepted head `5914aabeb885ec544c0807d1fddd9ec5ddec6738` merged/deployed to implementation `main` at `58b0d6c8f36ba5d294a52378f5af3b9c0d05cd1c`. Exact physical-item mapping, retry-safe atomic webhook processing, paid/cancel/refund evidence, idempotency, and the no-ownership boundary were verified after deployment. Live Shopify OAuth/webhook activation remains deferred pending the permanent HTTPS SCA endpoint.
+
 ---
 
 ## ACTIVE
 
-### SCA-SHOPIFY-SALELINK-010 — Link paid order lines to exact physical SCA items
-**Phase:** 5 — Shopify Integration
+### SCA-COLLECTOR-AUTH-011 — Collector account authentication
+**Phase:** 6 — Collector Portal
 **Status:** ACTIVE
-**Depends on:** SCA-SHOPIFY-CONNECT-009 PASS
+**Depends on:** stable claim-eligibility model
 
-Implement sale eligibility state, exact physical-item mapping, paid/cancelled/refunded/returned behavior, safe retries, and idempotent Shopify sale links. A Shopify sale must not create or transfer SCA ownership.
+Build independent SCA collector accounts and secure sign-in. Shopify customer identity may be linked later but must not become the canonical SCA ownership identity.
 
 ---
 
 ## QUEUED
-
-### SCA-COLLECTOR-AUTH-011 — Collector account authentication
-**Phase:** 6 — Collector Portal
-**Status:** QUEUED
-**Depends on:** stable claim-eligibility model
-
-Build independent SCA collector accounts and secure sign-in. Shopify customer identity may be linked but must not become the canonical SCA ownership identity.
 
 ### SCA-CLAIM-012 — QR claim ownership workflow
 **Phase:** 6 — Claim
