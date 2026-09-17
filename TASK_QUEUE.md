@@ -26,103 +26,72 @@ This file is the ordered implementation backlog for Second Chance Authenticators
 **Phase:** 1 — CRM Foundation
 **Status:** DONE
 
-Accepted after ChatGPT audit and merged into implementation `main`.
-
 ### SCA-KRAYIN-HARDEN-001 — Security hardening of Krayin foundation
 **Phase:** 1 — CRM Foundation
 **Status:** DONE
-**Depends on:** SCA-KRAYIN-INSTALL-001 PASS
-
-Accepted after ChatGPT security audit. Standing production gates remain: no real provenance data or production exposure until required backup/public-edge hardening is complete.
 
 ### SCA-DOMAIN-DESIGN-003 — Design SCA provenance schema and invariants
 **Phase:** 2 — SCA Domain
 **Status:** DONE
-**Depends on:** hardened Krayin foundation — PASS
-
-Accepted design defines the canonical 16-table SCA provenance model, append-only invariants, lifecycle rules, projection rules, and validation matrix.
 
 ### SCA-DEMO-IP-004 — Governed living development preview
 **Phase:** Delivery / Preview
 **Status:** DONE
-**Depends on:** SCA-DOMAIN-DESIGN-003 PASS
-
-Accepted and merged as PR #4. Implementation merge commit: `640f3d1b70066173f2e6bf681f819357c85396ce`.
 
 ### SCA-DOMAIN-CORE-004 — Implement core SCA domain migrations and models
 **Phase:** 2 — SCA Domain
 **Status:** DONE
-**Depends on:** SCA-DOMAIN-DESIGN-003 PASS
-
-Accepted after ChatGPT audit and remediation. PR #5 merged at `0426bd6f9c9150b7ee728357e2c9c5830c75fc20`. Preview verification confirmed 16 canonical SCA tables and 22 integrity triggers.
 
 ### SCA-ADMIN-ITEMS-005 — Build physical eyewear intake and search
 **Phase:** 3 — Staff Admin
 **Status:** DONE
-**Depends on:** SCA-DOMAIN-CORE-004 PASS
-
-Accepted after ChatGPT audit/remediation. PR #6 merged/deployed at `14614d14ce6b35aa0d917a3a4227c474d574f257`. Registry navigation, intake, list, detail, search, and real 403/404 behavior verified live.
 
 ### SCA-ADMIN-AUTH-006 — Build authentication and condition grading workflow
 **Phase:** 3 — Staff Admin
 **Status:** DONE
-**Depends on:** SCA-ADMIN-ITEMS-005 PASS
-
-Accepted after ChatGPT audit/remediation. PR #7 accepted head `bb0b04140cf09d38b84e5f44374ce82e6d6190ba` merged and deployed to implementation `main` at `44301d69f31e3665aa07d332a5614d52a9789442`.
 
 ### SCA-CERT-QR-007 — Certification ID and permanent QR identity
 **Phase:** 4 — Certification / QR
 **Status:** DONE
-**Depends on:** SCA-ADMIN-AUTH-006 PASS
-
-Accepted after ChatGPT audit. PR #8 accepted head `53c2f1ea002c123fbe51ca2fffd84dafd561a9fd` merged/deployed at `0f7f08f5512115f6f7cc9b319740ffa52d928cbd`.
 
 ### SCA-PUBLIC-PASSPORT-008 — Public SCA registry/passport
 **Phase:** 4 — Public Registry
 **Status:** DONE
-**Depends on:** SCA-CERT-QR-007 PASS
-
-Accepted after ChatGPT audit. PR #9 accepted head `a11a726351e861fcda0ad6c0178314e357fdc6e0` merged/deployed at `ae2a994bd8eb2f41c58effd54e8798c819f2709a`.
-
-Post-merge living-preview verification confirmed unauthenticated exact-token passport resolution, default-deny public privacy boundary, real passport token 404s, safe cache/security headers, no opaque token/private/staff/owner/Shopify/internal-ID leakage, and no mutation/search surface.
 
 ### SCA-SHOPIFY-CONNECT-009 — Connect live Second Chance Eyewear Shopify store safely
 **Phase:** 5 — Shopify Integration
 **Status:** DONE
-**Depends on:** SCA-PUBLIC-PASSPORT-008 PASS
 
-Accepted after ChatGPT audit/remediation. Connection/webhook foundation merged/deployed, followed by the external-merchant OAuth authorization-code implementation in PR #11. Accepted PR #11 head `830c8a18b5c40c10f43e5fd2b6d84a08ed9ab399` merged/deployed to implementation `main` at `044c910fad457b83b47874001babdb3df6a270f1`.
-
-Live OAuth activation and live webhook registration are intentionally deferred until a permanent publicly trusted SCA HTTPS endpoint and server-side credentials are available. This deferred external configuration does not block mocked/signed-event development of sale linking. The temporary plain-HTTP preview IP must not be used as an OAuth/webhook callback.
+Live OAuth activation/webhook registration remain intentionally deferred until a permanent publicly trusted SCA HTTPS endpoint and secure server-side credentials are available.
 
 ### SCA-SHOPIFY-SALELINK-010 — Link paid order lines to exact physical SCA items
 **Phase:** 5 — Shopify Integration
 **Status:** DONE
 **Depends on:** SCA-SHOPIFY-CONNECT-009 PASS
 
-Accepted after ChatGPT audit/remediation. PR #12 accepted head `5914aabeb885ec544c0807d1fddd9ec5ddec6738` merged/deployed to implementation `main` at `58b0d6c8f36ba5d294a52378f5af3b9c0d05cd1c`. Exact physical-item mapping, retry-safe atomic webhook processing, paid/cancel/refund evidence, idempotency, and the no-ownership boundary were verified after deployment. Live Shopify OAuth/webhook activation remains deferred pending the permanent HTTPS SCA endpoint.
+Accepted after ChatGPT audit/remediation. PR #12 accepted head `5914aabeb885ec544c0807d1fddd9ec5ddec6738` merged/deployed to implementation `main` at `58b0d6c8f36ba5d294a52378f5af3b9c0d05cd1c`.
+
+### SCA-COLLECTOR-AUTH-011 — Collector account authentication
+**Phase:** 6 — Collector Portal
+**Status:** DONE
+**Depends on:** stable claim-eligibility model
+
+Accepted after ChatGPT audit. PR #13 accepted head `2675d9620775619aea7009c5258f0bac05fa4c5a` merged/deployed to implementation `main` at `500df276e33f6b102f69154b83c577eae8439d45`. Independent collector registration/login/session/logout is live and remains separate from Krayin staff authentication. Deployment verified zero collector accounts and zero ownership/claim/sale-link side effects.
 
 ---
 
 ## ACTIVE
 
-### SCA-COLLECTOR-AUTH-011 — Collector account authentication
-**Phase:** 6 — Collector Portal
+### SCA-CLAIM-012 — QR claim ownership workflow
+**Phase:** 6 — Claim
 **Status:** ACTIVE
-**Depends on:** stable claim-eligibility model
+**Depends on:** SCA-COLLECTOR-AUTH-011 PASS + SCA-SHOPIFY-SALELINK-010 PASS
 
-Build independent SCA collector accounts and secure sign-in. Shopify customer identity may be linked later but must not become the canonical SCA ownership identity.
+Implement scan/sign-in/eligibility verification/claim and append the initial registered ownership event. A Shopify sale alone must never register permanent ownership.
 
 ---
 
 ## QUEUED
-
-### SCA-CLAIM-012 — QR claim ownership workflow
-**Phase:** 6 — Claim
-**Status:** QUEUED
-**Depends on:** collector auth + Shopify sale links
-
-Implement scan/sign-in/eligibility verification/claim and append the initial registered ownership event. A sale alone must not register permanent ownership.
 
 ### SCA-MY-COLLECTION-013 — Collector My Collection portal
 **Phase:** 6 — Collector Portal
