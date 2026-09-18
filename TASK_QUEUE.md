@@ -76,29 +76,29 @@ Accepted after ChatGPT audit/remediation. PR #12 accepted head `5914aabeb885ec54
 **Status:** DONE
 **Depends on:** stable claim-eligibility model
 
-Accepted after ChatGPT audit. PR #13 accepted head `2675d9620775619aea7009c5258f0bac05fa4c5a` merged/deployed to implementation `main` at `500df276e33f6b102f69154b83c577eae8439d45`. Independent collector registration/login/session/logout is live and remains separate from Krayin staff authentication. Deployment verified zero collector accounts and zero ownership/claim/sale-link side effects.
+Accepted after ChatGPT audit. PR #13 accepted head `2675d9620775619aea7009c5258f0bac05fa4c5a` merged/deployed to implementation `main` at `500df276e33f6b102f69154b83c577eae8439d45`.
+
+### SCA-CLAIM-012 — QR claim ownership workflow
+**Phase:** 6 — Claim
+**Status:** DONE
+**Depends on:** SCA-COLLECTOR-AUTH-011 PASS + SCA-SHOPIFY-SALELINK-010 PASS
+
+Accepted after ChatGPT audit/remediation. PR #14 accepted head `b94fce3f907e03606b31e29642d9fafbb807b3dc` merged/deployed to implementation `main` at `0d6994094bd86974e710b39e991147f1a7a038fc`. Exact QR/item claim eligibility, atomic initial ownership creation, idempotency/concurrency protection, rollback safety, collector identity binding, and privacy boundaries were verified. Deployment itself created no claims, owners, collectors, or sale links.
 
 ---
 
 ## ACTIVE
 
-### SCA-CLAIM-012 — QR claim ownership workflow
-**Phase:** 6 — Claim
+### SCA-MY-COLLECTION-013 — Collector My Collection portal
+**Phase:** 6 — Collector Portal
 **Status:** ACTIVE
-**Depends on:** SCA-COLLECTOR-AUTH-011 PASS + SCA-SHOPIFY-SALELINK-010 PASS
+**Depends on:** SCA-CLAIM-012 PASS
 
-Implement scan/sign-in/eligibility verification/claim and append the initial registered ownership event. A Shopify sale alone must never register permanent ownership.
+Show only eyewear currently owned by the authenticated collector, with trusted certification/provenance information and privacy-safe owner-facing detail in an SCA-branded experience separate from Krayin staff admin. This task is read-only with respect to ownership/lifecycle; transfer and later service/status mutations remain separate tasks.
 
 ---
 
 ## QUEUED
-
-### SCA-MY-COLLECTION-013 — Collector My Collection portal
-**Phase:** 6 — Collector Portal
-**Status:** QUEUED
-**Depends on:** SCA-CLAIM-012 PASS
-
-Show claimed authenticated eyewear, certification/provenance information, service history, and appropriate owner actions in an SCA-branded experience separate from Krayin staff admin.
 
 ### SCA-TRANSFER-014 — Ownership transfer lifecycle
 **Phase:** 7 — Transfers
