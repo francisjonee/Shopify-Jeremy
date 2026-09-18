@@ -2,11 +2,11 @@
 
 **STATUS:** READY
 
-**TASK_ID:** SCA-CLAIM-012
+**TASK_ID:** SCA-MY-COLLECTION-013
 
 ## Title
 
-Build QR claim ownership workflow
+Build collector My Collection portal
 
 ## Implementer
 
@@ -14,81 +14,79 @@ Claude
 
 ## Last completed
 
-`SCA-COLLECTOR-AUTH-011` — PASS.
+`SCA-CLAIM-012` — PASS.
 
-Accepted PR #13 head:
+Accepted PR #14 head:
 
-`2675d9620775619aea7009c5258f0bac05fa4c5a`
+`b94fce3f907e03606b31e29642d9fafbb807b3dc`
 
 Merged/deployed implementation `main`:
 
-`500df276e33f6b102f69154b83c577eae8439d45`
+`0d6994094bd86974e710b39e991147f1a7a038fc`
 
-Independent SCA collector registration/login/session/logout is live and separated from Krayin staff authentication. Deployment verified zero collector accounts and zero ownership/claim/sale-link side effects.
+The explicit QR claim workflow is live: exact active QR + valid certification/authentication + eligible sale evidence + authenticated collector can atomically create the initial registered ownership event. Sale evidence alone still creates no ownership. Deployment verified zero claim/ownership/collector/sale-link side effects.
 
 ## Authority and safety boundary
 
-This task implements the INITIAL QR CLAIM OWNERSHIP workflow only.
+This task implements the authenticated collector **My Collection read experience** only.
 
-A Shopify sale is eligibility evidence only. A sale MUST NOT automatically establish SCA ownership. Ownership begins only after an authenticated SCA collector successfully completes the governed claim flow for the exact eligible physical item.
+It must show the authenticated collector only the physical eyewear they currently own according to canonical ownership/current-state evidence. Do not infer ownership from Shopify customer/order identity, historical ownership alone, email, claim attempts, sale links, or client-supplied item IDs.
 
-Do not implement ownership transfer, My Collection beyond the minimum claim-success destination, service history, lost/stolen, Shopify customer synchronization, social login, or later lifecycle features.
+Do not implement ownership transfer, service-event creation, lost/stolen/recovered mutations, document generation, resale, Shopify customer synchronization, or other lifecycle mutations. Those remain later tasks.
 
 Live Shopify OAuth activation/webhook registration remain deferred pending a permanent publicly trusted SCA HTTPS endpoint. Do not reopen that blocker and do not mutate Jeremy's live Shopify store.
 
 ## Objective
 
-Allow an authenticated SCA collector who possesses/scans the permanent QR identity for an eligible sold physical eyewear item to claim that exact item once, producing the canonical initial registered ownership evidence atomically and idempotently without exposing private sale/customer information.
+Give an authenticated SCA collector a privacy-safe, SCA-branded My Collection area where they can list and inspect the authenticated/certified physical eyewear they currently own, using canonical provenance/current-state data without exposing staff/private/internal/Shopify information or weakening public-passport privacy.
 
 ## Required Work
 
-1. Pull latest governance `main`, this task, and implementation `main` (`500df276e33f6b102f69154b83c577eae8439d45`) before coding.
-2. Create branch `feat/sca-claim-012`.
-3. Inspect only the relevant accepted claim/ownership/current-state schema and services, public passport/QR resolver, collector guard, Shopify sale-link eligibility contract, integrity triggers, and related SCA tests. Reuse accepted structures and do not redesign unrelated modules.
-4. Implement the claim flow in an SCA-owned collector surface using the independent `collector` guard. The public QR/passport may lead toward claim, but mutation requires an authenticated collector session.
-5. Resolve the item from the permanent opaque QR identity/current active QR projection. Do not accept a client-supplied internal item ID, collector ID, Shopify customer ID, brand/model/SKU/title, or fuzzy identity as authoritative mapping.
-6. If an unauthenticated visitor initiates claim from a valid QR/passport, preserve only the minimum safe claim continuation context through collector login/registration, then return them to the exact claim flow. Do not expose the opaque token unnecessarily in rendered content/logging.
-7. Eligibility must be evaluated server-side for the exact physical item and must require the accepted prerequisites: current valid certification/authentication/active QR as defined by canonical projection; an active eligible Shopify sale-link for that exact item under the accepted 010 contract; and no existing current registered owner/consumed successful claim that would make an initial claim invalid.
-8. Do not require or infer Shopify customer identity/email equality for the claimant. The Shopify sale proves sale eligibility, not who the canonical SCA owner is. The authenticated collector performing the valid claim becomes the registered owner only through this explicit claim transaction.
-9. Claim completion must be atomic. In one transaction/locked invariant path, create the canonical claim evidence and append the initial ownership event for the authenticated collector, then update/recompute the accepted current-state projection as required. Partial claim-without-ownership or ownership-without-claim must not survive failure.
-10. Enforce one successful initial claim for the physical item. Double-submit, browser retry, concurrent claim attempts, and replay must converge safely without duplicate ownership events or two collectors becoming current owner.
-11. A second different collector attempting to claim an already registered item must fail closed without leaking the current owner's private identity/contact data.
-12. If the eligible sale-link has been cancelled/refunded/revoked before successful claim, claim must fail closed and create no ownership. Do not invent return semantics beyond the accepted sale-link states.
-13. Successful claim must use the canonical collector account identity from the authenticated session, never a collector reference supplied by the client.
-14. Preserve append-only provenance/history. Do not overwrite/delete prior claim/ownership evidence to resolve retries or conflicts.
-15. Do not expose Shopify order/customer identifiers, sale-link internals, staff IDs, password/session data, private collector data, or internal DB IDs on public/claim failure surfaces.
-16. Keep the public passport privacy boundary intact. If claim affordance is added to the passport, it must not make the passport require login and must not reveal ownership/private eligibility details to anonymous visitors.
-17. Do not create ownership merely by scanning QR, viewing passport, registering/logging in, or having an eligible Shopify sale. Only explicit successful claim completion creates ownership.
-18. Add focused automated tests covering at minimum: valid eligible authenticated claim; unauthenticated claim redirects safely through collector auth; exact QR-to-item binding; nonexistent/malformed/inactive QR fails safely; missing/ineligible/cancelled/refunded sale-link rejected; uncertified/ineligible item rejected; successful claim creates exactly one canonical claim + initial ownership event and correct current projection; retry/double-submit idempotency; concurrent/two-collector conflict allows only one current owner; already-owned item rejected without owner PII leakage; authenticated collector identity cannot be spoofed by request input; claim transaction rollback on injected/internal failure leaves neither partial claim nor ownership; scan/passport/login alone creates no ownership; no Shopify/customer auto-link; passport remains public/privacy-safe; collector/staff auth separation remains intact; real 404/403/409 behavior where appropriate.
-19. Include direct DB/invariant tests for one-current-owner/claim uniqueness and append-only integrity where relevant to the canonical schema.
-20. Run claim-focused tests plus relevant collector-auth, passport, sale-link, ownership/provenance regressions and mandatory repository checks. Match testing depth to the risk of this ownership mutation; do not broaden into unrelated suites without reason.
+1. Pull latest governance `main`, this task, and implementation `main` (`0d6994094bd86974e710b39e991147f1a7a038fc`) before coding.
+2. Create branch `feat/sca-my-collection-013`.
+3. Inspect only the relevant accepted collector auth, ownership/current-state projection, claim evidence, certification/authentication, public passport presenter/allowlist, service-event schema if already present, routes/views, and related tests. Reuse accepted structures; do not redesign unrelated modules.
+4. Implement My Collection inside an SCA-owned collector surface protected by the independent `collector` guard and separate from Krayin staff/admin chrome.
+5. Collection membership must derive from canonical **current ownership/current-state** for the authenticated collector. Historical owners must not continue to see an item after ownership later changes. Do not use Shopify sale/customer data as the ownership source.
+6. Provide a collection/list page with safe owner-facing summary information for each currently owned item. Keep the minimum useful fields consistent with accepted SCA provenance and privacy rules.
+7. Provide an owner-only item detail page resolved through an opaque/public-safe item reference or another accepted non-enumerable route identity. Do not expose internal numeric DB IDs in URLs or rendered output.
+8. The detail page may show trusted item identity, certification/authentication status, condition grade/summary, current lifecycle/status, certification number, and provenance/history that the authenticated current owner is authorized to see. Reuse canonical presenters/services where practical rather than trusting client data.
+9. If service-history records already exist in the accepted schema, display only safe existing records appropriate to the owner. Do **not** create service events or invent placeholder provenance. If none exist, render an honest empty state; service creation belongs to `SCA-SERVICE-015`.
+10. Do not expose staff IDs/names unless explicitly approved by the accepted owner-facing data policy; do not expose authentication private notes, raw Shopify order/customer identifiers, sale-link internals, password/session data, private data belonging to another collector, internal DB IDs, security/QR tokens, or other secrets.
+11. Enforce ownership authorization server-side on every owner detail request. An authenticated collector requesting another collector's item must receive a privacy-safe real 404 (preferred to avoid confirming another collector's ownership) or an already-established equivalent non-leaking response.
+12. Unauthenticated collection/detail access must redirect/fail safely through collector sign-in. A Krayin staff session alone must not satisfy collector authentication. A collector session must not gain staff/admin access.
+13. Keep the public passport `/p/{token}` behavior and allowlist unchanged unless a minimal non-private navigation affordance is strictly necessary. My Collection must not make public passport pages reveal owner identity, ownership contact data, or private collector information.
+14. My Collection is read-only with respect to provenance and ownership in this task. Viewing/listing/detail must create zero claims, ownership events, transfers, service events, sale-link changes, certifications, authentications, QR events, or lifecycle/current-state mutations.
+15. Do not add owner mutation buttons that imply unfinished functionality. Transfer actions belong to `SCA-TRANSFER-014`; service mutations belong to `SCA-SERVICE-015`; status mutations belong to `SCA-STATUS-016`.
+16. Handle empty collections cleanly and safely. Do not reveal whether other collectors/items exist.
+17. Avoid N+1/unbounded history loading where practical. Use scoped queries/pagination or sensible limits if the accepted architecture/data volume requires them; do not over-engineer a new query layer for this task.
+18. Add focused automated tests covering at minimum: authenticated collector sees their currently owned claimed item; empty collection; unauthenticated redirect; staff session does not imply collector access; collector session cannot access admin; another collector's item is absent from list and owner-detail request fails without leakage; internal IDs/private owner data/staff/private auth notes/Shopify identifiers/security tokens are absent; certification/authentication/condition data shown is canonical; historical/non-current ownership does not grant collection access where testable with accepted ownership events; list/detail views create no domain mutations; public passport remains unauthenticated and owner-private; no Shopify identity auto-link/inference; safe real 404/redirect behavior.
+19. Include direct query/invariant tests where useful to prove collection membership follows current ownership rather than historical claim/sale evidence.
+20. Run My Collection focused tests plus relevant collector-auth, claim/ownership, passport/privacy, certification/authentication regressions and mandatory repository checks. Match testing depth to the read-only/privacy risk; do not broaden unnecessarily.
 21. Run `composer validate`, `composer audit`, and repository secret-safety checks for the task diff.
-22. Create/update `docs/task-reports/SCA-CLAIM-012.md` with concise evidence: claim eligibility contract, exact QR/item mapping, transaction/idempotency/concurrency behavior, ownership event produced, privacy boundary, tests/checks, changed files, findings/deferrals, base SHA, final branch SHA.
-23. Make logical checkpoint commits and push `feat/sca-claim-012`.
-24. STOP after push for ChatGPT review. Do not create/merge a PR, do not deploy the feature branch, and do not start `SCA-MY-COLLECTION-013` or later tasks.
+22. Create/update `docs/task-reports/SCA-MY-COLLECTION-013.md` with concise evidence: membership/authorization contract, displayed fields/privacy boundary, read-only/no-mutation evidence, test counts, changed files, findings/deferrals, base SHA, final branch SHA.
+23. Make logical checkpoint commits and push `feat/sca-my-collection-013`.
+24. STOP after push for ChatGPT review. Do not create/merge a PR, do not deploy the feature branch, and do not start `SCA-TRANSFER-014` or later tasks.
 
 ## Acceptance Gate
 
 PASS requires:
 
-- only an authenticated SCA collector can complete a claim;
-- exact physical item is resolved from its permanent active QR identity, never fuzzy/client-authoritative mapping;
-- eligible sale evidence is required but never automatically creates ownership;
-- successful claim atomically creates canonical claim evidence + initial registered ownership event for the authenticated collector;
-- exactly one current owner results and retries/concurrency cannot duplicate or reassign initial ownership;
-- cancelled/refunded/revoked/ineligible sales cannot be claimed;
-- request input cannot spoof collector identity;
-- failure/rollback cannot leave partial claim/ownership state;
-- no private owner/Shopify/internal identity leaks;
-- public passport remains public and privacy-safe;
-- no live Shopify dependency or store mutation;
+- authenticated collector can list only items they currently own;
+- owner detail is authorized from canonical current ownership and cannot enumerate another collector's item;
+- historical sale/claim/Shopify identity alone never grants access;
+- useful canonical certification/authentication/condition/provenance data is shown without private/internal/security leakage;
+- empty collection works safely;
+- collector/staff auth separation remains intact;
+- list/detail are read-only and create no ownership/provenance/lifecycle mutation;
+- public passport remains public and owner-private;
+- no live Shopify dependency/store mutation;
 - no Krayin core/vendor changes;
-- focused ownership-risk tests and mandatory checks pass;
+- focused tests and mandatory checks pass;
 - task report and implementation are committed and pushed.
 
-## Deferred live Shopify configuration
+## Deferred work
 
-Live Shopify OAuth activation and webhook registration remain deferred pending the permanent SCA HTTPS domain and secure server-side credentials. Mocked/controlled accepted sale-link evidence may be used for tests. Do not use the temporary HTTP preview IP as an OAuth/webhook callback.
+Ownership transfer is `SCA-TRANSFER-014`; service-event creation is `SCA-SERVICE-015`; lost/stolen/recovered mutations are `SCA-STATUS-016`; documents are `SCA-DOCUMENTS-017`. Live Shopify OAuth/webhook activation remains deferred pending the permanent SCA HTTPS domain. Do not implement or work around those in this task.
 
 ## Completion Rule
 
@@ -97,12 +95,11 @@ When complete, report only:
 1. branch and final HEAD SHA;
 2. task report path;
 3. focused test/assertion results and mandatory checks;
-4. exact QR/item + sale eligibility contract;
-5. claim transaction/idempotency/concurrency behavior;
-6. ownership evidence/current-state result;
-7. privacy/auth separation evidence;
-8. confirmation no live Shopify/store mutation or automatic ownership occurred;
-9. blocker/deferral, if any;
-10. confirmation everything is pushed.
+4. collection membership/authorization contract;
+5. owner-facing fields and privacy boundary;
+6. read-only/no-domain-mutation evidence;
+7. collector/staff/public-passport separation evidence;
+8. blocker/deferral, if any;
+9. confirmation everything is pushed.
 
 Then STOP for ChatGPT review.
