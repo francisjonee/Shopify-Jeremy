@@ -1,29 +1,83 @@
 # NEXT TASK
 
-**STATUS:** NONE — no executable task is authorized.
+**STATUS:** READY
 
-`SCA-PUBLIC-PASSPORT-PILOT-034` is **DONE** (audited, merged to implementation `main` at `2029f09`, and manually pilot-validated normal → lost → recovered → stolen → recovered/normal with certification/authentication intact, permanent SCA identity stable, and no collector identity exposed publicly).
+**TASK_ID:** SCA-ADMIN-OWNERSHIP-CORRECTION-035
 
-Per the governance rule, there is no active executable task until **ChatGPT promotes exactly one** item from `TASK_QUEUE.md` into this file. Claude must not self-promote or start the recommendation below.
+## Title
 
----
+Governed append-only staff ownership correction
 
-## Recommendation for ChatGPT (NOT promoted, NOT authorized to start)
+## Implementer
 
-**Recommended next task:** `SCA-PRODUCTION-CUTOVER` — Permanent infrastructure & production-cutover **design/ADR + reversible prep** (supersedes the old `SCA-PRODUCTION-018` stub).
+Claude
 
-**Why it is next (from committed evidence):** the trusted provenance product is complete and pilot-validated end to end (intake → authentication → certification → permanent QR identity → claim → transfer → My Collection → ownership history → lost/stolen/recovered → public passport). The single remaining *product* dependency is the **permanent Jeremy-controlled HTTPS / public-QR domain**, which is the shared blocker behind every standing deferral: permanent QR printing (007/008), Shopify live OAuth + webhooks (009), and retiring the temporary-IP pilot exposure (CONTROLLED-PILOT-001). No further core application feature is required for the pilot to be trustworthy.
+## Why this task now
 
-**Dependencies:** core product accepted (satisfied through 034) **+ a Jeremy-controlled production domain and secure credentials** (business/infra input Claude cannot self-provide). This is why the task should start as design/ADR, not a live cutover.
+The read-only application gap audit after SCA-034 confirmed an operational gap: an incorrect or
+fraudulent ownership assignment cannot currently be corrected through the application. The canonical
+ledger reserves the `admin_correction` ownership event type and `ProjectionService::currentOwner` already
+honours it, but **no writer or staff surface exists**, so staff would need direct database intervention to
+fix a mis-recorded owner. Production cutover/domain/infrastructure remains intentionally deferred; this is
+application-only work.
 
-**Proposed scope (design + reversible prep only):**
-- Produce an ADR + sequenced cutover plan covering: permanent domain + DNS; `sr-caddy` reverse-proxy route to `kr-app` over a shared container network (not a published host port); flip `SCA_PUBLIC_PREVIEW=0` and set the permanent `PUBLIC_QR_BASE_URL`; permanent QR-printing enablement; durable off-server backups + a restore rehearsal; production secrets management + admin-credential rotation; firewall/exposure cleanup (restore kr-app to loopback, remove the temporary IP allow-rules); Shopify live OAuth + webhook activation.
-- Prove the permanent SCA identity/token and all provenance survive cutover unchanged (host-independence already validated in 034).
+## Authority and safety boundary
 
-**Non-goals / boundaries:** do **not** perform live DNS/Caddy/Shopify/QR-domain cutover, activate production QR, change firewall/exposure, rotate live credentials, or mutate the live pilot record as part of the design task. No new passport, no QR-architecture redesign, no expansion features. Any actual infra mutation is a separate, explicitly-approved step once Jeremy supplies the domain.
+Staff-only, append-only correction. Never update/delete/rewrite an existing ownership event. Reuse the
+accepted ownership model and projection as authoritative — do not redesign them. No collector-facing or
+public correction capability. No certification/status/QR/transfer/claim semantic change. No public
+ownership history. No production-domain, DNS/Caddy/firewall/Shopify work, and no deployment.
 
-**Acceptance boundary:** a committed cutover ADR + dependency/sequence checklist + rollback plan, with zero production infrastructure mutation and the live pilot untouched.
+## Required Work
 
----
+1. Pull latest governance `main` and implementation `main`; branch `feat/sca-admin-ownership-correction-035`
+   from accepted implementation `main`.
+2. Before coding, inspect: canonical ownership schema, `ProjectionService::currentOwner`, claim + transfer
+   writers, the 033 ownership-history implementation, existing confirmation patterns (025 typed-confirm),
+   the collector account model, and the current ACL architecture.
+3. Implement a staff-only ownership-correction workflow that appends an `admin_correction` event.
+   Requirements:
+   - correct an item to an existing valid collector;
+   - correct an item to no current owner **only if** the canonical schema/projection can represent that
+     honestly without inventing new semantics;
+   - a mandatory human-readable correction reason;
+   - explicit typed confirmation before mutation;
+   - a dedicated ownership-correction permission unless an already accepted permission explicitly covers
+     this authority;
+   - destination-collector selection via an application-controlled mechanism — never require typing an
+     internal collector DB id;
+   - append-only provenance preserving every claim/transfer/prior correction;
+   - truthful rendering of the resulting event in the existing 033 Ownership History.
+4. **Semantic gate — no-owner:** prove exactly how `admin_correction` with `collector_account_id = NULL`
+   is interpreted by the canonical projection. If it is not unambiguous, STOP and report rather than
+   borrowing `transfer_out` semantics or silently changing the projection.
+5. **Reason storage:** inspect whether the ownership-event schema already has a canonical field for the
+   reason. Do not overload an unrelated field. If durable reason provenance requires a schema addition,
+   report and implement the smallest appropriate migration within the ownership-ledger boundary only.
+6. **Concurrency:** the confirmation POST must verify the ownership state being corrected is still the
+   state staff reviewed; a concurrent claim/transfer/correction must not be silently overwritten.
+7. Reject a correction that merely reproduces the current ownership state unless explicitly justified with
+   tests establishing the intended behaviour; prefer rejecting accidental no-ops.
+8. GET/confirmation pages perform zero domain mutations. Unknown items/collectors fail closed. Unauthorized
+   staff fail closed. Collector/public routes gain no correction capability. Public passport + collector
+   surfaces expose no additional identity.
+9. Add focused tests (minimum): owner A → correction → owner B; A's history preserved; correction after a
+   claim/transfer chain; rendering in ownership history; correction to no-owner if canonically supported;
+   reason persistence/rendering (staff); typed-confirmation failure; invalid collector; unauthorized staff;
+   collector/public denial; stale/concurrent rejection; no-op behaviour; zero GET mutation; public-passport
+   privacy unchanged.
+10. Run focused tests, full SCA suite, `composer validate`, `composer audit`, PHP lint, secret-safety scan.
+11. Create `docs/task-reports/SCA-ADMIN-OWNERSHIP-CORRECTION-035.md`.
+12. Push the branch and STOP for ChatGPT audit. No PR/merge/deploy.
 
-*History note:* the earlier `SCA-PUBLIC-PASSPORT-PILOT-034` task specification that previously occupied this file is preserved in the implementation repo's task report `docs/task-reports/SCA-PUBLIC-PASSPORT-PILOT-034.md`.
+## Explicit non-goals
+
+No editing/deleting ownership events, no rewriting claim/transfer history, no bulk reassignment, no
+collector-facing correction, no certification/status/QR changes, no public ownership history, no
+production-domain work, no DNS/Caddy/firewall/Shopify changes, and no deployment.
+
+## Completion Rule
+
+Report: schema semantics discovered; permission used/created; correction transaction/concurrency design;
+exact append-only event written; reason storage; collector-selection mechanism; no-owner semantics;
+tests/checks; changed files; base SHA and final HEAD. Then STOP for ChatGPT audit.
