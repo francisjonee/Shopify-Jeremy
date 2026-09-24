@@ -2,11 +2,11 @@
 
 **STATUS:** READY
 
-**TASK_ID:** SCA-COLLECTOR-PASSWORD-CHANGE-036
+**TASK_ID:** SCA-COLLECTOR-PASSWORD-RECOVERY-037
 
 ## Title
 
-Authenticated collector password change + minimal account-security UX
+Collector forgot-password / reset-password application workflow
 
 ## Implementer
 
@@ -14,74 +14,63 @@ Claude
 
 ## Why this task now
 
-SCA-035 is merged, deployed, and manually pilot-validated. The read-only 036 design audit confirmed a
-logged-in collector's only account actions are View My Collection, Sign out, and a prominent
-**Permanently anonymize my account** — with no way to rotate their own password. For a registry that now
-represents ownership of valuable authenticated eyewear, self-service password change is the smallest
-high-value gap. Production cutover/domain/mail remain intentionally deferred, so this is pure application
-work.
+SCA-036 is merged, deployed, and manually pilot-validated: authenticated collectors can change their password without disturbing ownership/provenance, the old password stops working, the new password works, and My Collection remains intact. The remaining account-access gap is a collector who cannot authenticate because they forgot the password. Today that collector has no self-service recovery path and can be stranded from registered ownership.
 
-## Scope (approved, tightened)
+This task stays application-focused. Production SMTP/mail delivery infrastructure is explicitly deferred. Build the recovery workflow against Laravel's mail/password-reset abstractions and prove delivery with the test/fake mailer; do not configure or deploy an SMTP provider in this task.
 
-Authenticated collector password change **only**, plus a minimal account-page reorganization.
-**No display-name editing.** Reuse the existing collector auth architecture; do not build a second auth
-system.
+## Scope (approved, tight)
+
+Add collector **Forgot password** + **Reset password** only, using the existing collector account/guard architecture. The workflow must be privacy-safe, tokenized, expiring, single-use, and must never mutate provenance or collector identity.
+
+Before coding, inspect the current accepted `origin/main` and existing auth/password infrastructure. Reuse framework facilities where safe. If a collector-specific password broker/reset-token store is required, implement the smallest conventional schema/config needed. If the existing framework architecture cannot safely support a separate collector broker without invasive auth changes, STOP and report the blocker rather than improvising a second authentication system.
 
 ## Required implementation
 
-1. Branch `feat/sca-collector-password-change-036` from **current accepted `origin/main`** (report the base
-   SHA before coding).
-2. Add an authenticated password change: collector provides **current password + new password + confirm**.
-   - Verify the current password against the **`collector` guard**.
-   - Enforce the **same password policy used at registration** (`Password::min(8)` + `confirmed`).
-   - Hash the replacement via the existing application mechanism (`Hash::make`).
-   - **Regenerate the current session** after success, keeping the collector authenticated.
-3. Account UX (minimal, no portal redesign): identity/email → View My Collection → **Account security**
-   (Change password) → **Danger zone** (Permanently anonymize my account). Anonymization capability is
-   unchanged — only moved/de-emphasized.
+1. Branch `feat/sca-collector-password-recovery-037` from **current accepted `origin/main`** and report the exact base SHA before coding.
+2. Add a guest-facing **Forgot password?** affordance from collector login.
+3. Add a collector password-reset request endpoint/form accepting email.
+   - Response must be enumeration-safe: do not reveal whether an email belongs to a collector.
+   - Apply CSRF and appropriate throttling.
+   - Disabled/pseudonymized collectors must not receive a usable reset capability.
+4. Generate a cryptographically secure, expiring reset token using Laravel/framework-standard password-reset facilities where possible. Store only the framework-standard safe representation; never log or persist plaintext passwords.
+5. Send the reset link through Laravel's mail abstraction. Tests must use fake/test delivery. **Do not configure production SMTP, DNS, Caddy, or a mail provider.** Runtime delivery remains dependent on later mail-infrastructure configuration.
+6. Add reset form/endpoint accepting token + collector email + new password + confirmation.
+   - Reuse the registration/SCA-036 password policy (`Password::min(8)` + `confirmed`).
+   - Reject invalid, expired, already-used, wrong-account, disabled, or pseudonymized reset attempts.
+   - On success, hash the new password with the existing application mechanism and invalidate/consume the reset token.
+   - Existing active sessions must be handled deliberately and documented. Prefer invalidating other collector sessions if the current session architecture safely supports it; do not weaken session security merely to achieve this.
+7. After successful reset, provide a clear path back to collector sign-in. Do not automatically claim, transfer, or alter any item.
 
-## Critical provenance invariant
+## Critical provenance / identity invariant
 
-Password change modifies only the collector's password credential. It must NEVER create/delete/update
-ownership events, transfer ownership, recreate the collector, or change `collector_account_id`,
-`public_ref`, `email`, collector `status`, claims, transfers, certification, authentication, QR identity,
-or registry status. Existing ownership must keep resolving through the same immutable collector account.
-Add explicit regression coverage.
+Password recovery may change **only the collector password credential plus the minimum reset-token/session state required for secure recovery**. It must NEVER create/delete/update ownership events, claims, transfers, certification/authentication events, QR identity, registry status, item state, `collector_account_id`, collector `id`, `public_ref`, `email`, or collector lifecycle `status`. Existing ownership must continue resolving through the same collector account after reset.
 
 ## Security requirements
 
-Collector guard required (staff/admin session alone must not grant access); correct current password
-required; new-password confirmation required; registration password policy reused; CSRF enforced;
-throttling consistent with existing collector auth/privacy routes; session regenerated on success (old
-password stops authenticating, new password authenticates); disabled/pseudonymized collectors fail closed
-per the existing collector-auth lifecycle. Do not weaken existing login/logout/session behavior.
+- Guest-safe workflow; collector need not already be authenticated.
+- Enumeration-safe request response for existing and unknown email addresses.
+- CSRF on state-changing browser forms.
+- Throttle reset requests and reset attempts consistently with existing collector auth protections.
+- Cryptographically secure, expiring, single-use token.
+- Token/account binding must be authoritative at mutation time.
+- New password policy identical to registration/SCA-036.
+- No password/token leakage to logs, query diagnostics, public pages, or task reports.
+- Disabled/pseudonymized collectors fail closed.
+- Staff/admin authentication must not substitute for collector recovery authorization.
+- Preserve existing collector login/change-password/logout behavior.
 
-## 419 / non-goals
+## Mail boundary
 
-**419:** no change — the SCA-035 419 was expected stale-CSRF behavior. Do not modify `ScaHttpStatusHandler`,
-CSRF handling, session lifetime, cookie config, or the 419 page.
-
-**Explicit non-goals:** no forgot-password, reset-password, password broker, reset-token table, email
-change, email verification, display-name/profile editing, SMTP/mail config, DNS/domain/Caddy work, schema
-migration (STOP and report if an unavoidable blocker appears), ownership/provenance changes, admin/staff
-auth changes, or infrastructure changes.
+The application may add the collector reset notification/mailable and the minimum broker/config/schema required to support reset tokens. Tests must prove the intended email contains the correct collector reset URL without sending real mail. **Do not change production mail credentials or infrastructure.** If the current deployment uses `MAIL_MAILER=log`, leave it unchanged. The completion report must state clearly that real email delivery is not production-ready until SMTP/mail infrastructure is configured.
 
 ## Tests
 
-Add focused `CollectorPasswordTest` proving at minimum: unauthenticated denied; staff/admin guard does not
-substitute; form GET zero-mutation; current password required; wrong current fails (no change); weak new
-fails; mismatched confirm fails; valid change succeeds; stored password hashed; old password no longer
-authenticates; new password authenticates; collector stays authenticated after regeneration; CSRF enforced;
-throttling present; disabled/pseudonymized fail closed; `collector_account_id`/`public_ref`/`email`/`status`
-unchanged; ownership events unchanged (count/content); claims/transfers unchanged; current-ownership
-projection unchanged; owned items still in My Collection; public passport privacy unaffected; account page
-places password management before the Danger Zone. Run the full SCA regression suite + `composer validate`,
-`composer audit`, PHP lint, secret scan.
+Add focused `CollectorPasswordRecoveryTest` coverage proving at minimum: forgot-password pages/routes exist; GETs are zero-mutation; unknown and known emails receive indistinguishable public responses; valid active collector produces a reset notification under fake/test mail; unknown/disabled/pseudonymized accounts do not gain usable reset capability; token is account-bound, expires, and is single-use; invalid/expired/reused token fails without password change; weak password fails; mismatched confirmation fails; valid reset succeeds; stored password is hashed; old password no longer authenticates; new password authenticates; collector identity fields remain unchanged; ownership events are byte/count/content unchanged; claims/transfers/projection owner unchanged; owned item remains in My Collection after sign-in with the new password; public passport/privacy behavior unchanged; CSRF and throttling are present. Run the full SCA regression suite plus `composer validate`, `composer audit`, PHP lint, and secret scan.
+
+## Explicit non-goals
+
+No email-address change or verification, display-name/profile editing, MFA, magic-link login, social login, admin password reset, account merge, ownership correction/transfer changes, SMTP/provider setup, production mail credentials, DNS/domain/Caddy work, Shopify work, permanent QR-domain work, infrastructure changes, or unrelated UI redesign.
 
 ## Completion rule
 
-Create `docs/task-reports/SCA-COLLECTOR-PASSWORD-CHANGE-036.md`. Push the feature branch; **do not merge,
-do not deploy.** Report base SHA, final HEAD, files changed, exact routes, password validation/security
-design, session behavior, provenance non-mutation evidence, focused + full test results, lint/composer/
-secret checks, and confirmation production/live pilot was not mutated. STOP for ChatGPT audit; SCA-037 must
-not be started.
+Create `docs/task-reports/SCA-COLLECTOR-PASSWORD-RECOVERY-037.md`. Push the feature branch; **do not merge and do not deploy**. Report base SHA, final HEAD, files changed, exact routes, broker/token/schema design, expiry/single-use behavior, enumeration/throttle/CSRF controls, session behavior, provenance/identity non-mutation evidence, mail boundary, focused + full test results, lint/composer/secret checks, and confirmation production/live pilot was not mutated. Restore the preview to accepted `main` if local branch testing touched the preview checkout. STOP for ChatGPT audit; SCA-038 must not be started.
