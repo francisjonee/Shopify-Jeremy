@@ -74,7 +74,8 @@ External-intake claim family / polish / provenance inspection / passport validat
 - `SCA-EXTERNAL-CLAIM-REVOKE-030` — staff revocation (issued→void) of external claim grant — **DONE** (merge `6f902f3`).
 - `SCA-COLLECTOR-AUTH-CONTEXT-032` — privacy-safe claim/transfer context on collector auth screens — **DONE** (merge `447093e`).
 - `SCA-OWNERSHIP-PROVENANCE-033` — read-only staff ownership provenance history — **DONE** (merge `f9385d7`).
-- `SCA-PUBLIC-PASSPORT-PILOT-034` — validate existing public passport across the live pilot lifecycle (audit + test only, zero runtime delta) — **DONE** (merge `2029f09`). ← most recent accepted task.
+- `SCA-PUBLIC-PASSPORT-PILOT-034` — validate existing public passport across the live pilot lifecycle (audit + test only, zero runtime delta) — **DONE** (merge `2029f09`).
+- `SCA-ADMIN-OWNERSHIP-CORRECTION-035` — governed append-only staff ownership correction (writes `admin_correction`; adds nullable `sca_ownership_events.reason`) — **DONE** (merge `cf05b58`; manually pilot-validated: Collector #2 → correction → Collector #1, history preserved, passport privacy intact). ← most recent accepted task.
 
 ### Non-code governance / validation activities (no merge; evidence is governance/pilot, not implementation `main`)
 
@@ -87,7 +88,15 @@ External-intake claim family / polish / provenance inspection / passport validat
 
 ## ACTIVE
 
-_None._ `SCA-PUBLIC-PASSPORT-PILOT-034` is DONE and has been removed from `NEXT_TASK.md`. No task is promoted; ChatGPT promotes exactly one item below into `NEXT_TASK.md` after this reconciliation is audited.
+### SCA-COLLECTOR-PASSWORD-CHANGE-036 — Authenticated collector password change + minimal account-security UX
+**Phase:** 6 — Collector Portal
+**Status:** ACTIVE (promoted to `NEXT_TASK.md`)
+**Depends on:** collector auth (011) accepted
+
+Authenticated collector password change only (current + new + confirm; reuse the collector guard +
+registration password policy; regenerate session on success) plus a minimal account-page reorg (Account
+security → Change password; Danger zone → anonymize). No display-name edit. Forgot/reset password and
+email change remain deferred — mail-infra-gated (`MAIL_MAILER=log`) + a collector broker/reset table.
 
 ---
 

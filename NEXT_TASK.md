@@ -2,11 +2,11 @@
 
 **STATUS:** READY
 
-**TASK_ID:** SCA-ADMIN-OWNERSHIP-CORRECTION-035
+**TASK_ID:** SCA-COLLECTOR-PASSWORD-CHANGE-036
 
 ## Title
 
-Governed append-only staff ownership correction
+Authenticated collector password change + minimal account-security UX
 
 ## Implementer
 
@@ -14,70 +14,74 @@ Claude
 
 ## Why this task now
 
-The read-only application gap audit after SCA-034 confirmed an operational gap: an incorrect or
-fraudulent ownership assignment cannot currently be corrected through the application. The canonical
-ledger reserves the `admin_correction` ownership event type and `ProjectionService::currentOwner` already
-honours it, but **no writer or staff surface exists**, so staff would need direct database intervention to
-fix a mis-recorded owner. Production cutover/domain/infrastructure remains intentionally deferred; this is
-application-only work.
+SCA-035 is merged, deployed, and manually pilot-validated. The read-only 036 design audit confirmed a
+logged-in collector's only account actions are View My Collection, Sign out, and a prominent
+**Permanently anonymize my account** — with no way to rotate their own password. For a registry that now
+represents ownership of valuable authenticated eyewear, self-service password change is the smallest
+high-value gap. Production cutover/domain/mail remain intentionally deferred, so this is pure application
+work.
 
-## Authority and safety boundary
+## Scope (approved, tightened)
 
-Staff-only, append-only correction. Never update/delete/rewrite an existing ownership event. Reuse the
-accepted ownership model and projection as authoritative — do not redesign them. No collector-facing or
-public correction capability. No certification/status/QR/transfer/claim semantic change. No public
-ownership history. No production-domain, DNS/Caddy/firewall/Shopify work, and no deployment.
+Authenticated collector password change **only**, plus a minimal account-page reorganization.
+**No display-name editing.** Reuse the existing collector auth architecture; do not build a second auth
+system.
 
-## Required Work
+## Required implementation
 
-1. Pull latest governance `main` and implementation `main`; branch `feat/sca-admin-ownership-correction-035`
-   from accepted implementation `main`.
-2. Before coding, inspect: canonical ownership schema, `ProjectionService::currentOwner`, claim + transfer
-   writers, the 033 ownership-history implementation, existing confirmation patterns (025 typed-confirm),
-   the collector account model, and the current ACL architecture.
-3. Implement a staff-only ownership-correction workflow that appends an `admin_correction` event.
-   Requirements:
-   - correct an item to an existing valid collector;
-   - correct an item to no current owner **only if** the canonical schema/projection can represent that
-     honestly without inventing new semantics;
-   - a mandatory human-readable correction reason;
-   - explicit typed confirmation before mutation;
-   - a dedicated ownership-correction permission unless an already accepted permission explicitly covers
-     this authority;
-   - destination-collector selection via an application-controlled mechanism — never require typing an
-     internal collector DB id;
-   - append-only provenance preserving every claim/transfer/prior correction;
-   - truthful rendering of the resulting event in the existing 033 Ownership History.
-4. **Semantic gate — no-owner:** prove exactly how `admin_correction` with `collector_account_id = NULL`
-   is interpreted by the canonical projection. If it is not unambiguous, STOP and report rather than
-   borrowing `transfer_out` semantics or silently changing the projection.
-5. **Reason storage:** inspect whether the ownership-event schema already has a canonical field for the
-   reason. Do not overload an unrelated field. If durable reason provenance requires a schema addition,
-   report and implement the smallest appropriate migration within the ownership-ledger boundary only.
-6. **Concurrency:** the confirmation POST must verify the ownership state being corrected is still the
-   state staff reviewed; a concurrent claim/transfer/correction must not be silently overwritten.
-7. Reject a correction that merely reproduces the current ownership state unless explicitly justified with
-   tests establishing the intended behaviour; prefer rejecting accidental no-ops.
-8. GET/confirmation pages perform zero domain mutations. Unknown items/collectors fail closed. Unauthorized
-   staff fail closed. Collector/public routes gain no correction capability. Public passport + collector
-   surfaces expose no additional identity.
-9. Add focused tests (minimum): owner A → correction → owner B; A's history preserved; correction after a
-   claim/transfer chain; rendering in ownership history; correction to no-owner if canonically supported;
-   reason persistence/rendering (staff); typed-confirmation failure; invalid collector; unauthorized staff;
-   collector/public denial; stale/concurrent rejection; no-op behaviour; zero GET mutation; public-passport
-   privacy unchanged.
-10. Run focused tests, full SCA suite, `composer validate`, `composer audit`, PHP lint, secret-safety scan.
-11. Create `docs/task-reports/SCA-ADMIN-OWNERSHIP-CORRECTION-035.md`.
-12. Push the branch and STOP for ChatGPT audit. No PR/merge/deploy.
+1. Branch `feat/sca-collector-password-change-036` from **current accepted `origin/main`** (report the base
+   SHA before coding).
+2. Add an authenticated password change: collector provides **current password + new password + confirm**.
+   - Verify the current password against the **`collector` guard**.
+   - Enforce the **same password policy used at registration** (`Password::min(8)` + `confirmed`).
+   - Hash the replacement via the existing application mechanism (`Hash::make`).
+   - **Regenerate the current session** after success, keeping the collector authenticated.
+3. Account UX (minimal, no portal redesign): identity/email → View My Collection → **Account security**
+   (Change password) → **Danger zone** (Permanently anonymize my account). Anonymization capability is
+   unchanged — only moved/de-emphasized.
 
-## Explicit non-goals
+## Critical provenance invariant
 
-No editing/deleting ownership events, no rewriting claim/transfer history, no bulk reassignment, no
-collector-facing correction, no certification/status/QR changes, no public ownership history, no
-production-domain work, no DNS/Caddy/firewall/Shopify changes, and no deployment.
+Password change modifies only the collector's password credential. It must NEVER create/delete/update
+ownership events, transfer ownership, recreate the collector, or change `collector_account_id`,
+`public_ref`, `email`, collector `status`, claims, transfers, certification, authentication, QR identity,
+or registry status. Existing ownership must keep resolving through the same immutable collector account.
+Add explicit regression coverage.
 
-## Completion Rule
+## Security requirements
 
-Report: schema semantics discovered; permission used/created; correction transaction/concurrency design;
-exact append-only event written; reason storage; collector-selection mechanism; no-owner semantics;
-tests/checks; changed files; base SHA and final HEAD. Then STOP for ChatGPT audit.
+Collector guard required (staff/admin session alone must not grant access); correct current password
+required; new-password confirmation required; registration password policy reused; CSRF enforced;
+throttling consistent with existing collector auth/privacy routes; session regenerated on success (old
+password stops authenticating, new password authenticates); disabled/pseudonymized collectors fail closed
+per the existing collector-auth lifecycle. Do not weaken existing login/logout/session behavior.
+
+## 419 / non-goals
+
+**419:** no change — the SCA-035 419 was expected stale-CSRF behavior. Do not modify `ScaHttpStatusHandler`,
+CSRF handling, session lifetime, cookie config, or the 419 page.
+
+**Explicit non-goals:** no forgot-password, reset-password, password broker, reset-token table, email
+change, email verification, display-name/profile editing, SMTP/mail config, DNS/domain/Caddy work, schema
+migration (STOP and report if an unavoidable blocker appears), ownership/provenance changes, admin/staff
+auth changes, or infrastructure changes.
+
+## Tests
+
+Add focused `CollectorPasswordTest` proving at minimum: unauthenticated denied; staff/admin guard does not
+substitute; form GET zero-mutation; current password required; wrong current fails (no change); weak new
+fails; mismatched confirm fails; valid change succeeds; stored password hashed; old password no longer
+authenticates; new password authenticates; collector stays authenticated after regeneration; CSRF enforced;
+throttling present; disabled/pseudonymized fail closed; `collector_account_id`/`public_ref`/`email`/`status`
+unchanged; ownership events unchanged (count/content); claims/transfers unchanged; current-ownership
+projection unchanged; owned items still in My Collection; public passport privacy unaffected; account page
+places password management before the Danger Zone. Run the full SCA regression suite + `composer validate`,
+`composer audit`, PHP lint, secret scan.
+
+## Completion rule
+
+Create `docs/task-reports/SCA-COLLECTOR-PASSWORD-CHANGE-036.md`. Push the feature branch; **do not merge,
+do not deploy.** Report base SHA, final HEAD, files changed, exact routes, password validation/security
+design, session behavior, provenance non-mutation evidence, focused + full test results, lint/composer/
+secret checks, and confirmation production/live pilot was not mutated. STOP for ChatGPT audit; SCA-037 must
+not be started.
