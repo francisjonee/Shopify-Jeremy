@@ -18,129 +18,105 @@ This file is the ordered implementation backlog for Second Chance Authenticators
 - `DONE` — accepted after ChatGPT audit.
 - `SUPERSEDED` — intentionally replaced.
 
+> **Reconciliation note (2026-09-24):** this file was stale (it showed
+> `SCA-MY-COLLECTION-013` as ACTIVE and mis-numbered later phases). It has been
+> reconstructed from committed evidence in the implementation repo
+> `francisjonee/francisjonee-sca-platform-private`: accepted `--no-ff` merges on
+> `main` and committed `docs/task-reports/<TASK_ID>.md`. Each DONE entry cites its
+> merge SHA. The actual accepted numbering diverged from the original roadmap
+> numbering (e.g. registry-status shipped as `016`, documents as `017`,
+> collector-privacy as `018`, backup as `019`, production-hardening as `020`); the
+> old queue's `SCA-STATUS-016 / SCA-DOCUMENTS-017 / SCA-PRODUCTION-018 /
+> SCA-EXPANSION-019` planning stubs are superseded below.
+
 ---
 
-## COMPLETED
+## COMPLETED — accepted, merged to implementation `main` (with evidence)
 
-### SCA-KRAYIN-INSTALL-001 — Install and validate Krayin foundation
-**Phase:** 1 — CRM Foundation
-**Status:** DONE
+Foundation / domain / staff / QR / public / Shopify / collector-core (accepted earlier):
 
-### SCA-KRAYIN-HARDEN-001 — Security hardening of Krayin foundation
-**Phase:** 1 — CRM Foundation
-**Status:** DONE
+- `SCA-KRAYIN-INSTALL-001` — Krayin foundation — **DONE** (merge `4d58551`).
+- `SCA-KRAYIN-HARDEN-001` — foundation security hardening — **DONE** (merge `96cf2d0`).
+- `SCA-DOMAIN-DESIGN-003` — provenance schema/invariants — **DONE** (merge `11f72ca`).
+- `SCA-DEMO-IP-004` — governed living development preview — **DONE** (report `SCA-DEMO-IP-004.md`).
+- `SCA-DOMAIN-CORE-004` — core migrations/models/services — **DONE** (report `SCA-DOMAIN-CORE-004.md`).
+- `SCA-ADMIN-ITEMS-005` — eyewear intake/search — **DONE** (report `SCA-ADMIN-ITEMS-005.md`).
+- `SCA-ADMIN-AUTH-006` — authentication + condition grading — **DONE** (report `SCA-ADMIN-AUTH-006.md`).
+- `SCA-CERT-QR-007` — certification ID + permanent QR identity — **DONE** (report `SCA-CERT-QR-007.md`).
+- `SCA-PUBLIC-PASSPORT-008` — public passport surface — **DONE** (report `SCA-PUBLIC-PASSPORT-008.md`).
+- `SCA-SHOPIFY-CONNECT-009` — least-privilege store connect scaffold — **DONE** (report `SCA-SHOPIFY-CONNECT-009.md`). *Live OAuth/webhook activation intentionally deferred — see Deferrals.*
+- `SCA-SHOPIFY-SALELINK-010` — paid-order → item sale links — **DONE** (PR #12 head `5914aab`, main `58b0d6c`).
+- `SCA-COLLECTOR-AUTH-011` — collector authentication — **DONE** (PR #13 head `2675d96`, main `500df27`).
+- `SCA-CLAIM-012` — QR claim ownership workflow — **DONE** (PR #14 head `b94fce3`, main `0d69940`).
 
-### SCA-DOMAIN-DESIGN-003 — Design SCA provenance schema and invariants
-**Phase:** 2 — SCA Domain
-**Status:** DONE
+Collector portal / lifecycle / status / documents / privacy / backup / hardening:
 
-### SCA-DEMO-IP-004 — Governed living development preview
-**Phase:** Delivery / Preview
-**Status:** DONE
+- `SCA-MY-COLLECTION-013` — collector My Collection portal — **DONE** (PR #15 merge `ad62c65`, accepted `37925b6`). *(was ACTIVE in the stale queue)*
+- `SCA-TRANSFER-014` — collector-to-collector ownership transfer — **DONE** (PR #16 merge `f27185a`, accepted `73347cb`).
+- `SCA-SERVICE-015` — append-only service history — **DONE** (merge `bace893`).
+- `SCA-LOST-STOLEN-016` — owner-reported lost/stolen/recovered registry status — **DONE** (merge `0ddfc99`).
+- `SCA-DOCUMENTS-017` — document/evidence handling (`sca_media_assets`) — **DONE** (merge `c4f43c2`).
+- `SCA-COLLECTOR-PRIVACY-018` — collector PII pseudonymization/anonymization — **DONE** (merge `4eb1b98`).
+- `SCA-BACKUP-019` — encrypted backup + restore-proof foundation — **DONE** (merge `3c80c20`). *Off-server/off-site backup still deferred — see Deferrals.*
+- `SCA-PRODUCTION-HARDENING-020` — pre-public application hardening (loopback binding, real HTTP statuses, etc.) — **DONE** (merge `0f5af00`).
 
-### SCA-DOMAIN-CORE-004 — Implement core SCA domain migrations and models
-**Phase:** 2 — SCA Domain
-**Status:** DONE
+Staff registry administration / certificates / recovery / pilot hardening:
 
-### SCA-ADMIN-ITEMS-005 — Build physical eyewear intake and search
-**Phase:** 3 — Staff Admin
-**Status:** DONE
+- `SCA-STATUS-ADMIN-022` — staff registry-status administration & exception resolution — **DONE** (merge `14b4353`).
+- `SCA-CERTIFICATE-PDF-023` — immutable certificate PDF + repair semantics — **DONE** (merge `4716329`).
+- `SCA-ADVERSE-RECOVERY-024` — staff recovery of owner-orphaned adverse items — **DONE** (merge `a1ae15d`).
+- `SCA-PILOT-HARDENING-025` — pre-pilot application hardening — **DONE** (merge `98a7ef2`).
 
-### SCA-ADMIN-AUTH-006 — Build authentication and condition grading workflow
-**Phase:** 3 — Staff Admin
-**Status:** DONE
+External-intake claim family / polish / provenance inspection / passport validation:
 
-### SCA-CERT-QR-007 — Certification ID and permanent QR identity
-**Phase:** 4 — Certification / QR
-**Status:** DONE
+- `SCA-EXTERNAL-CLAIM-027` — staff-issued external-intake claim entitlement (grant) — **DONE** (merge `90cd2dc`). *Closed the P0 discovered by the read-only `SCA-PILOT-E2E-026` trace.*
+- `SCA-APP-POLISH-029` — SCA CSRF real-419, current-ownership claim messaging, `/collector` root — **DONE** (merge `233fa2c`).
+- `SCA-EXTERNAL-CLAIM-REVOKE-030` — staff revocation (issued→void) of external claim grant — **DONE** (merge `6f902f3`).
+- `SCA-COLLECTOR-AUTH-CONTEXT-032` — privacy-safe claim/transfer context on collector auth screens — **DONE** (merge `447093e`).
+- `SCA-OWNERSHIP-PROVENANCE-033` — read-only staff ownership provenance history — **DONE** (merge `f9385d7`).
+- `SCA-PUBLIC-PASSPORT-PILOT-034` — validate existing public passport across the live pilot lifecycle (audit + test only, zero runtime delta) — **DONE** (merge `2029f09`). ← most recent accepted task.
 
-### SCA-PUBLIC-PASSPORT-008 — Public SCA registry/passport
-**Phase:** 4 — Public Registry
-**Status:** DONE
+### Non-code governance / validation activities (no merge; evidence is governance/pilot, not implementation `main`)
 
-### SCA-SHOPIFY-CONNECT-009 — Connect live Second Chance Eyewear Shopify store safely
-**Phase:** 5 — Shopify Integration
-**Status:** DONE
-
-Live OAuth activation/webhook registration remain intentionally deferred until a permanent publicly trusted SCA HTTPS endpoint and secure server-side credentials are available.
-
-### SCA-SHOPIFY-SALELINK-010 — Link paid order lines to exact physical SCA items
-**Phase:** 5 — Shopify Integration
-**Status:** DONE
-**Depends on:** SCA-SHOPIFY-CONNECT-009 PASS
-
-Accepted after ChatGPT audit/remediation. PR #12 accepted head `5914aabeb885ec544c0807d1fddd9ec5ddec6738` merged/deployed to implementation `main` at `58b0d6c8f36ba5d294a52378f5af3b9c0d05cd1c`.
-
-### SCA-COLLECTOR-AUTH-011 — Collector account authentication
-**Phase:** 6 — Collector Portal
-**Status:** DONE
-**Depends on:** stable claim-eligibility model
-
-Accepted after ChatGPT audit. PR #13 accepted head `2675d9620775619aea7009c5258f0bac05fa4c5a` merged/deployed to implementation `main` at `500df276e33f6b102f69154b83c577eae8439d45`.
-
-### SCA-CLAIM-012 — QR claim ownership workflow
-**Phase:** 6 — Claim
-**Status:** DONE
-**Depends on:** SCA-COLLECTOR-AUTH-011 PASS + SCA-SHOPIFY-SALELINK-010 PASS
-
-Accepted after ChatGPT audit/remediation. PR #14 accepted head `b94fce3f907e03606b31e29642d9fafbb807b3dc` merged/deployed to implementation `main` at `0d6994094bd86974e710b39e991147f1a7a038fc`. Exact QR/item claim eligibility, atomic initial ownership creation, idempotency/concurrency protection, rollback safety, collector identity binding, and privacy boundaries were verified. Deployment itself created no claims, owners, collectors, or sale links.
+- `SCA-PILOT-E2E-026` — read-only end-to-end pilot trace; surfaced the external-intake claim gap that became 027. No code change.
+- `SCA-PILOT-USABILITY-031` — read-only staff+collector usability audit. No code change; findings informed 032.
+- `SCA-CONTROLLED-PILOT-001` — live controlled real-user pilot on the temporary host: one Ray-Ban `PILOT-TEST` (`SCA-F1B792AE4745`) taken through intake→auth→cert→QR→claim (Collector #1)→transfer (Collector #2)→ownership-history→lost→recovered→stolen→recovered/normal, and the public passport verified. Ongoing; no code change. Standing security items it introduced (temporary public exposure + rotated admin credential) are tracked under Deferrals.
+- Numbers `021` and `028` were not used for accepted tasks (no report/merge); treat as skipped/superseded numbering, not missing work.
 
 ---
 
 ## ACTIVE
 
-### SCA-MY-COLLECTION-013 — Collector My Collection portal
-**Phase:** 6 — Collector Portal
-**Status:** ACTIVE
-**Depends on:** SCA-CLAIM-012 PASS
-
-Show only eyewear currently owned by the authenticated collector, with trusted certification/provenance information and privacy-safe owner-facing detail in an SCA-branded experience separate from Krayin staff admin. This task is read-only with respect to ownership/lifecycle; transfer and later service/status mutations remain separate tasks.
+_None._ `SCA-PUBLIC-PASSPORT-PILOT-034` is DONE and has been removed from `NEXT_TASK.md`. No task is promoted; ChatGPT promotes exactly one item below into `NEXT_TASK.md` after this reconciliation is audited.
 
 ---
 
-## QUEUED
+## REMAINING BACKLOG (planned only — not authorization to start)
 
-### SCA-TRANSFER-014 — Ownership transfer lifecycle
-**Phase:** 7 — Transfers
-**Status:** QUEUED
-**Depends on:** registered ownership stable
-
-Implement authenticated transfer initiation/acceptance/cancellation/expiry and append new ownership history without erasing prior owners.
-
-### SCA-SERVICE-015 — Service history
-**Phase:** 8 — Lifecycle
-**Status:** QUEUED
-**Depends on:** ownership/provenance core stable
-
-Implement append-only service events for repair, lens work, polish, tune-up, inspection, and approved service categories.
-
-### SCA-STATUS-016 — Lost/stolen/recovered registry
-**Phase:** 8 — Registry Status
-**Status:** QUEUED
-**Depends on:** ownership/public passport stable
-
-Implement auditable lost/stolen/recovered transitions and public warnings without exposing private owner data.
-
-### SCA-DOCUMENTS-017 — Certificates, provenance, and insurance reports
-**Phase:** 9 — Documents
-**Status:** QUEUED
-**Depends on:** core provenance data stable
-
-Generate versioned authentication certificates, ownership certificates, provenance reports, and insurance-oriented PDFs from trusted registry data.
-
-### SCA-PRODUCTION-018 — Permanent infrastructure and production cutover
+### SCA-PRODUCTION-CUTOVER — Permanent infrastructure & production cutover  *(recommended next; supersedes the old `SCA-PRODUCTION-018` stub)*
 **Phase:** 10 — Production
-**Status:** QUEUED
-**Depends on:** core product acceptance
+**Status:** BLOCKED (needs a Jeremy-controlled production domain + credentials; business/infra input)
+**Depends on:** core provenance product accepted (satisfied through 034) + Jeremy-provided permanent HTTPS domain
 
-Harden permanent infrastructure, configure off-server backups/durable media, rehearse restore, configure Jeremy-controlled production QR route, perform DNS/cutover/rollback, and close standing hardening gates before real production use.
+The trusted provenance core is complete and pilot-validated end to end. The dominant remaining product dependency is the **permanent Jeremy-controlled HTTPS/public-QR domain**, which gates permanent QR printing, Shopify live activation, and retiring the temporary-IP pilot exposure. This should begin as a **design/ADR + reversible-prep task** (no live cutover) because the actual DNS/Caddy/Shopify/QR-domain changes require Jeremy's domain and explicit approval. Detailed recommendation in `NEXT_TASK.md`'s recommendation block and the 034 reconciliation report.
 
-### SCA-EXPANSION-019 — Market history, collector profiles, paid external authentication
+### SCA-EXPANSION — Post-core expansion planning  *(supersedes the old `SCA-EXPANSION-019` stub)*
 **Phase:** 11 — Expansion
 **Status:** QUEUED
-**Depends on:** production core platform stable
+**Depends on:** production cutover complete
 
-Plan post-core features including market history/value tracking, collector profiles/privacy, notifications, external paid authentication intake, resale workflows, marketplace concepts, and advanced analytics.
+Plan market history/value tracking, collector profiles/privacy, notifications, external paid authentication intake, resale/marketplace concepts, and analytics. Must not block or destabilise the trusted provenance core.
+
+---
+
+## Outstanding deferrals / production gates (explicit; not changed by this reconciliation)
+
+- **Permanent Jeremy-controlled HTTPS + public QR domain** — deferred since `SCA-CERT-QR-007`/`008`; permanent QR printing stays disabled and `SCA_PUBLIC_PREVIEW=1` (DEVELOPMENT PREVIEW banner) until a production domain is configured. The permanent QR must never bind to a temporary IP/host.
+- **Shopify live activation** — `SCA-SHOPIFY-CONNECT-009` live OAuth + webhook registration deferred until a permanent publicly trusted SCA HTTPS endpoint + secure server-side credentials exist.
+- **DNS / Caddy** — no production DNS record or reverse-proxy cutover performed; documented path routes the permanent domain to `kr-app` via `sr-caddy` over a shared container network (not the published host port).
+- **Durable off-server / off-site backups** — `SCA-BACKUP-019` established encrypted backup + restore proof locally; off-server/off-site durability and a production restore rehearsal remain deferred.
+- **Temporary pilot exposure cleanup** — the running pilot app is currently published on `195.26.255.80:8080`, IP-restricted via host firewall rules, for the live controlled pilot. Committed compose stays hardened to loopback. This ad-hoc exposure (and the rotated admin credential) must be retired at production cutover / when the pilot ends.
+- **Secrets / credentials** — production secrets management and admin-credential rotation are part of the cutover gate.
 
 ---
 
