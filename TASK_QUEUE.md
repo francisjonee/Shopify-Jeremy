@@ -71,10 +71,7 @@ This file is the ordered implementation backlog for Second Chance Authenticators
 
 ### SCA-COLLECTOR-PASSWORD-RECOVERY-037 — Collector forgot-password / reset-password application workflow
 **Phase:** 6 — Collector Portal
-**Status:** ACTIVE (promoted to `NEXT_TASK.md`)
-**Depends on:** collector auth 011 + password change 036 accepted
-
-Build the application-side collector recovery workflow: enumeration-safe forgot-password request, expiring/single-use account-bound reset token, reset form, same password policy as registration/036, and strict provenance/identity non-mutation. Production SMTP/provider configuration remains deferred; tests use fake/test mail and the application must remain transport-agnostic. See `NEXT_TASK.md` for the executable scope and stop conditions.
+**Status:** MERGED — accepted + merged to implementation `main` at `df80e4b` (accepted HEAD `5dca01a`); **deploy pending** ChatGPT authorization. Production migration (`sca_collector_password_resets`) + SMTP/mail remain deferred. No task is active pending that authorization; SCA-038 is not activated.
 
 ---
 
