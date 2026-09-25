@@ -59,6 +59,7 @@ This file is the ordered implementation backlog for Second Chance Authenticators
 - `SCA-COLLECTOR-PASSWORD-RECOVERY-037` — collector forgot/reset password (dedicated broker + `sca_collector_password_resets`) — **DONE** (merged+deployed `df80e4b`; real email delivery deferred until SMTP configured).
 - `SCA-COLLECTOR-PASSWORD-CHANGE-036` — authenticated collector password change + account-security UX — **DONE** (merge/deployed `f362469`; manually pilot-validated: wrong current rejected, confirmation mismatch rejected, valid change succeeds, old password rejected, new password authenticates, ownership/My Collection preserved).
 - `SCA-CERTIFICATION-CORRECTION-038` — governed staff certification **revoke + re-certify (supersede)**, append-only on the canonical certification-event ledger; dedicated `sca.eyewear.certification.correct` ACL; permanent QR identity preserved; Option A public-passport contract preserved (resolver/controller unchanged); **no schema migration** — **DONE** (`--no-ff` merge/deployed `bd5b2e7`; base `df80e4b`, feature `9d1c0e4`; deploy gate 21/99 focused + 498/2113 full; production baseline verified identical before/after).
+- `SCA-STAFF-COLLECTOR-SUPPORT-040` — READ-ONLY privacy-safe staff collector lookup (`GET admin/sca/collectors` + `{ref}`); dedicated `sca.collector.support` read ACL; email withheld (not authorized); owned items from canonical current-ownership projection; **no schema migration** — **DONE** (`--no-ff` merge/deployed `ec75d4f`; base `bd5b2e7`, feature `cb4f357`; deploy gate 11/53 focused + 509/2166 full; production baseline verified identical before/after).
 
 ### Non-code governance / validation activities
 
@@ -72,9 +73,7 @@ This file is the ordered implementation backlog for Second Chance Authenticators
 
 ## ACTIVE
 
-- `SCA-STAFF-COLLECTOR-SUPPORT-040` — **ACTIVE** (READ-ONLY privacy-safe staff collector lookup). Implemented + pushed on branch `sca-staff-collector-support-040` (base `bd5b2e7`): `GET admin/sca/collectors` + `GET admin/sca/collectors/{ref}`, dedicated `sca.collector.support` read ACL, canonical owned-items projection, email withheld (not authorized), no schema migration. Focused 11/53; full SCA 509/2166. **Awaiting ChatGPT audit — NOT merged, NOT deployed.** SCA-041 must not start.
-
-_SCA-039 (planning) and SCA-038 (deployed `bd5b2e7`) are DONE. SCA-PRODUCTION-CUTOVER remains BLOCKED/DEFERRED awaiting Jeremy._
+_None._ SCA-040 is DONE (deployed `ec75d4f`). ChatGPT promotes exactly one next item into `NEXT_TASK.md`; SCA-041 is not activated. `SCA-PRODUCTION-CUTOVER` remains BLOCKED/DEFERRED awaiting Jeremy.
 
 ## REMAINING BACKLOG (planned only — not authorization to start)
 
