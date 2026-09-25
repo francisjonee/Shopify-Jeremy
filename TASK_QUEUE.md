@@ -58,6 +58,7 @@ This file is the ordered implementation backlog for Second Chance Authenticators
 - `SCA-ADMIN-OWNERSHIP-CORRECTION-035` — governed append-only staff ownership correction — **DONE** (merge `cf05b58`; manually pilot-validated Collector #2 → Collector #1).
 - `SCA-COLLECTOR-PASSWORD-RECOVERY-037` — collector forgot/reset password (dedicated broker + `sca_collector_password_resets`) — **DONE** (merged+deployed `df80e4b`; real email delivery deferred until SMTP configured).
 - `SCA-COLLECTOR-PASSWORD-CHANGE-036` — authenticated collector password change + account-security UX — **DONE** (merge/deployed `f362469`; manually pilot-validated: wrong current rejected, confirmation mismatch rejected, valid change succeeds, old password rejected, new password authenticates, ownership/My Collection preserved).
+- `SCA-CERTIFICATION-CORRECTION-038` — governed staff certification **revoke + re-certify (supersede)**, append-only on the canonical certification-event ledger; dedicated `sca.eyewear.certification.correct` ACL; permanent QR identity preserved; Option A public-passport contract preserved (resolver/controller unchanged); **no schema migration** — **DONE** (`--no-ff` merge/deployed `bd5b2e7`; base `df80e4b`, feature `9d1c0e4`; deploy gate 21/99 focused + 498/2113 full; production baseline verified identical before/after).
 
 ### Non-code governance / validation activities
 
@@ -70,7 +71,7 @@ This file is the ordered implementation backlog for Second Chance Authenticators
 
 ## ACTIVE
 
-- `SCA-CERTIFICATION-CORRECTION-038` — governed staff certification **revoke + re-certify (supersede)**, append-only on the canonical certification-event ledger; dedicated `sca.eyewear.certification.correct` ACL; permanent QR identity preserved; Option A public-passport contract preserved. **Implemented and pushed** on branch `sca-certification-correction-038` (base `df80e4b`); focused 21/99, full SCA 498/2113; no schema migration. **Awaiting ChatGPT audit — NOT merged, NOT deployed.** SCA-039 must not start.
+_None._ SCA-038 is DONE (deployed `bd5b2e7`). ChatGPT promotes exactly one next item into `NEXT_TASK.md`; SCA-039 is not activated.
 
 ## REMAINING BACKLOG (planned only — not authorization to start)
 
