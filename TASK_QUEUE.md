@@ -65,15 +65,16 @@ This file is the ordered implementation backlog for Second Chance Authenticators
 - `SCA-PILOT-E2E-026` — read-only end-to-end pilot trace.
 - `SCA-PILOT-USABILITY-031` — read-only staff+collector usability audit.
 - `SCA-CONTROLLED-PILOT-001` — controlled live pilot on temporary IP; ongoing.
+- `SCA-EXPANSION-PLANNING-039` — read-only application expansion audit — **DONE** (accepted; roadmap + SCA-040 selection at `docs/SCA-EXPANSION-PLANNING-039.md`).
 - Numbers `021` and `028` were unused.
 
 ---
 
 ## ACTIVE
 
-- `SCA-EXPANSION-PLANNING-039` — **ACTIVE** (READ-ONLY application expansion audit at impl `main` `bd5b2e7`). Audit + ranked NOW/NEXT/LATER/DEFERRED roadmap + recommended smallest **SCA-040** delivered at `docs/SCA-EXPANSION-PLANNING-039.md`. No code/schema/deploy. Awaiting ChatGPT review; **SCA-040 recommended but NOT activated.**
+- `SCA-STAFF-COLLECTOR-SUPPORT-040` — **ACTIVE** (READ-ONLY privacy-safe staff collector lookup). Implemented + pushed on branch `sca-staff-collector-support-040` (base `bd5b2e7`): `GET admin/sca/collectors` + `GET admin/sca/collectors/{ref}`, dedicated `sca.collector.support` read ACL, canonical owned-items projection, email withheld (not authorized), no schema migration. Focused 11/53; full SCA 509/2166. **Awaiting ChatGPT audit — NOT merged, NOT deployed.** SCA-041 must not start.
 
-_SCA-038 is DONE (deployed `bd5b2e7`)._
+_SCA-039 (planning) and SCA-038 (deployed `bd5b2e7`) are DONE. SCA-PRODUCTION-CUTOVER remains BLOCKED/DEFERRED awaiting Jeremy._
 
 ## REMAINING BACKLOG (planned only — not authorization to start)
 

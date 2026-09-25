@@ -1,39 +1,76 @@
 # NEXT TASK
 
-**STATUS:** ACTIVE — `SCA-EXPANSION-PLANNING-039` (READ-ONLY planning/design). Audit delivered; awaiting ChatGPT review and SCA-040 selection. No product code, no schema, no migration, no deploy.
+**STATUS:** ACTIVE — `SCA-STAFF-COLLECTOR-SUPPORT-040` implemented and pushed for ChatGPT audit (NOT merged, NOT deployed).
 
-*Prior task `SCA-CERTIFICATION-CORRECTION-038` is DONE (merged + deployed `bd5b2e795c21c0828413554ac78f47216a982fa4`).*
+Feature branch `sca-staff-collector-support-040` pushed to the implementation repo from accepted base
+`bd5b2e795c21c0828413554ac78f47216a982fa4`. Awaiting ChatGPT audit; must not be merged, deployed, or
+promoted onward (SCA-041 must not start) until ChatGPT authorizes.
+
+*Prior task `SCA-EXPANSION-PLANNING-039` is DONE (read-only audit accepted; roadmap + SCA-040 selection at
+`docs/SCA-EXPANSION-PLANNING-039.md`). `SCA-PRODUCTION-CUTOVER` remains BLOCKED/DEFERRED awaiting Jeremy.*
 
 ## Title
 
-SCA-EXPANSION-PLANNING-039 — Application expansion audit (read-only)
+SCA-STAFF-COLLECTOR-SUPPORT-040 — privacy-safe staff collector lookup and support view (read-only)
 
 ## Implementer
 
-Claude (planning only)
+Claude
 
 ## Why this task now
 
-Production cutover remains **BLOCKED/DEFERRED** (Jeremy has not provided the permanent domain/access). That must not block continued application development. With the trusted provenance core pilot-validated, this task audits the accepted application and recommends the best next capabilities.
+The controlled pilot exposed a concrete operational failure: determining which collector an opaque
+reference (`COL-…`) belonged to during ownership-correction testing required a raw database lookup. Normal
+staff operations must not require DB/CLI access.
 
-## Executable directive
+## Executable directive (as governed)
 
-Audit the accepted SCA application at implementation `main` @ `bd5b2e795c21c0828413554ac78f47216a982fa4`. Inspect actual routes/controllers/services/schema/projections/views and `docs/PRODUCT_REQUIREMENTS.md` — not only the historical roadmap.
+Add a staff-only, **read-only** collector-support search/list/detail workflow so authorized staff can
+locate a collector by the opaque reference already used in staff workflows (e.g. `COL-87A586B3903E`) and
+establish: collector reference; safe display label/name where permitted; account state; number of
+currently owned items; the currently owned SCA items (SCA reference, brand/model, registry/certification
+state); and links into the existing staff item-detail / ownership-history surfaces.
 
-Skip for now (keep under `SCA-PRODUCTION-CUTOVER`, do not modify): permanent domain/DNS/Caddy, permanent QR printing, Shopify live OAuth/webhooks, SMTP/provider config, off-server backup infra, retirement of the temporary `IP:8080` exposure, production secrets/cutover.
+Before implementation, inspect the actual collector schema, existing privacy contracts, 018/032/033/035
+behavior, current ACL vocabulary, and admin navigation/search conventions. Determine whether staff email
+search/display is already authorized by the accepted privacy model before implementing it — do not assume.
+Fail closed and STOP if the requested surface would violate an accepted privacy contract.
 
-Determine what already exists and what is missing for: staff collector lookup/support; collector profile/account management; notifications; item metadata correction/editing; registry search/filtering; reporting/export; market/value history; external authentication intake; resale/marketplace; collector documents/certificate access; public-passport access from collector surfaces; staff dashboards/operational queues; audit/history visibility.
+**Privacy boundary:** authenticated staff support surface only (not public/collector directory). Must not
+expose password hashes; reset/claim/transfer/grant tokens; QR public tokens; Shopify customer/order ids
+(unless an already-accepted staff requirement needs them); deleted/pseudonymized PII contrary to 018;
+unnecessary internal identifiers. Public passport and collector privacy behavior remain unchanged.
+Pseudonymized/anonymized collectors keep the 018 contract; do not reconstruct deleted PII from provenance.
 
-Evaluate families A–F (collector experience; staff operations; market/value; external paid authentication; resale/marketplace; notifications). For each: what exists; exact missing capability; user/business value; dependencies; provenance/security/privacy risks; schema-change needed?; complexity; sequencing. Distinguish explicit Jeremy requirement vs roadmap idea vs implementation gap vs recommendation.
+**Read-only hard boundary:** zero business-domain mutation — no collector editing, email/name change,
+staff password reset, account enable/disable, ownership correction, claim issue/revoke, transfer,
+certification/status change, deletion/anonymization, provenance append, or schema migration (STOP for
+review if inspection finds an unavoidable schema need). Reuse existing dedicated workflows for actions.
 
-Architectural boundary: existing provenance stays authoritative and append-only. Expansion must not redefine permanent item identity, ownership ledger, certification ledger, QR permanence, claim semantics, transfer semantics, or the public-passport privacy/security contract. Flag conflicts rather than designing around them.
+**ACL:** do not reuse an ownership-changing permission. Choose the smallest semantically-correct staff
+read permission (reuse an existing collector/support/view permission if one exists; else a dedicated read
+permission). Search/list/detail all fail closed; collector/public auth never grants access; unknown
+references use the established safe not-found behavior.
 
-Produce a ranked roadmap (NOW / NEXT / LATER / DEFERRED) and recommend exactly one smallest SCA-040 task (problem statement; exact scope; non-goals; routes/UI; data/schema impact; ACL/privacy; acceptance criteria; regression boundaries). Do NOT activate SCA-040.
+**Search:** deliberately small; no generic CRM-wide people search; prefer exact/controlled lookup over
+fuzzy PII search; bounded/paginated if it can return multiple records.
 
-Read-only: no implementation branch, no application code, no migrations, no production DB mutation, no deploy, no DNS/Caddy/firewall/Shopify/mail changes, do not disturb the live pilot.
+**Provenance:** ownership/certification/status shown must derive from the canonical current-state
+projection/ledger, never a newly invented owner relationship or duplicated support table.
 
-## Result (delivered)
+**Tests:** authorized staff locate by opaque reference; collector/public/unauthenticated cannot access;
+unknown collector fails safely; owned items correct after claim; ownership updates after transfer;
+ownership correction reflected without support-view mutation; previous owner not shown as current;
+pseudonymized privacy preserved; sensitive tokens/secrets/internal fields never render; GET/search/detail
+zero mutation; item links use existing staff routes; public passport / My Collection unchanged. Run
+focused + full `tests/Feature/Sca` + validation/audit/lint/secret checks.
 
-Full audit, ranked roadmap, and the recommended smallest SCA-040 (**SCA-COLLECTOR-PASSPORT-ACCESS-040**, with a read-only staff-collector-lookup alternative) are committed at **`docs/SCA-EXPANSION-PLANNING-039.md`** in this governance repo.
+## Completion state (recorded)
 
-**STOP — audit for ChatGPT review. SCA-040 recommended but NOT activated. Do not start SCA-040.**
+Implemented on branch `sca-staff-collector-support-040` (base `bd5b2e7`). Routes: `GET admin/sca/collectors`
+(exact `COL-…` lookup) + `GET admin/sca/collectors/{ref}` (detail), both `sca.can:sca.collector.support`
+(new dedicated read ACL). **Email withheld** (no accepted staff-display precedent → not authorized).
+Owned items from the canonical `current_owner_collector_id` projection. No schema migration. Focused
+`CollectorSupportTest` 11/53; full SCA suite 509/2166. Full evidence in
+`docs/task-reports/SCA-STAFF-COLLECTOR-SUPPORT-040.md` (implementation repo). **Push only — awaiting ChatGPT
+audit before any merge/deploy. SCA-041 must not start.**
