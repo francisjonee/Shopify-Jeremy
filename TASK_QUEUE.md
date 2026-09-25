@@ -71,13 +71,15 @@ This file is the ordered implementation backlog for Second Chance Authenticators
 
 ## ACTIVE
 
-_None._ SCA-038 is DONE (deployed `bd5b2e7`). ChatGPT promotes exactly one next item into `NEXT_TASK.md`; SCA-039 is not activated.
+- `SCA-EXPANSION-PLANNING-039` — **ACTIVE** (READ-ONLY application expansion audit at impl `main` `bd5b2e7`). Audit + ranked NOW/NEXT/LATER/DEFERRED roadmap + recommended smallest **SCA-040** delivered at `docs/SCA-EXPANSION-PLANNING-039.md`. No code/schema/deploy. Awaiting ChatGPT review; **SCA-040 recommended but NOT activated.**
+
+_SCA-038 is DONE (deployed `bd5b2e7`)._
 
 ## REMAINING BACKLOG (planned only — not authorization to start)
 
 ### SCA-PRODUCTION-CUTOVER — Permanent infrastructure & production cutover
 **Phase:** 10 — Production
-**Status:** BLOCKED (needs a Jeremy-controlled production domain + credentials)
+**Status:** BLOCKED / DEFERRED — awaiting Jeremy-provided permanent domain + access. Explicitly does NOT block continued application development (see SCA-EXPANSION-PLANNING-039).
 **Depends on:** core provenance product accepted + Jeremy-provided permanent HTTPS domain
 
 Permanent HTTPS/public-QR domain, DNS/Caddy cutover, Shopify live activation, permanent QR printing, production mail delivery configuration where required, temporary pilot exposure retirement, durable off-server backup/restore rehearsal, and production secrets remain infrastructure work and require explicit approval/input.
