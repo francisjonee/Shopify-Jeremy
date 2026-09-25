@@ -1,14 +1,19 @@
 # NEXT TASK
 
-**STATUS:** NONE — no executable task is authorized.
+**STATUS:** ACTIVE — implementation pushed for ChatGPT audit (NOT merged, NOT deployed).
 
-`SCA-COLLECTOR-PASSWORD-RECOVERY-037` is **DONE** (audited, merged, and deployed to production `main` at `df80e4b5a655f59a1337cb1a8792beb6e6d40f54`; the `sca_collector_password_resets` migration ran; forgot/reset routes are live). Real email delivery remains **not production-ready** until SMTP/mail infrastructure is configured (`MAIL_MAILER=log`). ChatGPT promotes exactly one next task here when ready; SCA-038 is not activated.
+`SCA-CERTIFICATION-CORRECTION-038` is promoted and implemented. The feature branch
+`sca-certification-correction-038` is pushed to the implementation repo
+(`francisjonee/francisjonee-sca-platform-private`) from the accepted base
+`df80e4b5a655f59a1337cb1a8792beb6e6d40f54`. It awaits ChatGPT audit; it must not be merged, deployed,
+or promoted onward (SCA-039 must not start) until ChatGPT authorizes.
 
-*The prior 037 task spec is preserved in the implementation repo report `docs/task-reports/SCA-COLLECTOR-PASSWORD-RECOVERY-037.md`.*
+*Prior task `SCA-COLLECTOR-PASSWORD-RECOVERY-037` remains DONE (audited, merged, deployed at `df80e4b`).
+Its spec is preserved in `docs/task-reports/SCA-COLLECTOR-PASSWORD-RECOVERY-037.md`.*
 
 ## Title
 
-Collector forgot-password / reset-password application workflow
+Governed staff certification revoke + re-certification (append-only certification correction)
 
 ## Implementer
 
@@ -16,63 +21,65 @@ Claude
 
 ## Why this task now
 
-SCA-036 is merged, deployed, and manually pilot-validated: authenticated collectors can change their password without disturbing ownership/provenance, the old password stops working, the new password works, and My Collection remains intact. The remaining account-access gap is a collector who cannot authenticate because they forgot the password. Today that collector has no self-service recovery path and can be stranded from registered ownership.
+The post-037 read-only application gap audit identified the certification lifecycle as the strongest
+remaining registry-integrity gap: `revoked` and `superseded` are already canonical (schema CHECK +
+`ProjectionService::currentCertification` fold + `reason` / `successor_certification_id` /
+`supersedes_certification_id` columns), yet no writer or staff surface existed, and re-certification was
+UI-blocked. A certification issued in error was therefore permanent public-passport evidence correctable
+only by direct DB/CLI work — the exact situation SCA-035 closed for the ownership ledger. This task is the
+certification-ledger analogue of 035.
 
-This task stays application-focused. Production SMTP/mail delivery infrastructure is explicitly deferred. Build the recovery workflow against Laravel's mail/password-reset abstractions and prove delivery with the test/fake mailer; do not configure or deploy an SMTP provider in this task.
+## Scope (ratified)
 
-## Scope (approved, tight)
+Staff-only, append-only certification correction on the canonical certification-event ledger:
 
-Add collector **Forgot password** + **Reset password** only, using the existing collector account/guard architecture. The workflow must be privacy-safe, tokenized, expiring, single-use, and must never mutate provenance or collector identity.
+- **Revoke** — the current certification is invalidated with **no replacement**. Append exactly the
+  canonical `revoked` evidence with a mandatory reason. Afterward: `currentCertification` is null; the item
+  is the same registry item; ownership unchanged; permanent QR identity unchanged; the historical
+  certification stays visible to staff; public presentation no longer shows it as valid.
+- **Supersede / re-certify** — the previous certification is replaced by a specific new certification,
+  issued from a **new** finalized, passed authentication for the same item. Atomically: validate the current
+  certification; validate the new authentication; create the successor using existing canonical
+  numbering/data rules; append the successor's `issued` evidence; append `superseded` evidence for the
+  predecessor with `successor_certification_id`; rebuild the projection; leave exactly one current valid
+  certification. Never record a `revoked` event during a supersede — the two meanings are distinct.
 
-Before coding, inspect the current accepted `origin/main` and existing auth/password infrastructure. Reuse framework facilities where safe. If a collector-specific password broker/reset-token store is required, implement the smallest conventional schema/config needed. If the existing framework architecture cannot safely support a separate collector broker without invasive auth changes, STOP and report the blocker rather than improvising a second authentication system.
+## QR policy (ratified)
 
-## Required implementation
+Certification correction preserves the existing permanent QR identity. Revoke and supersede must NOT
+mint/activate/reissue a QR and must NOT record any QR lifecycle event. Same QR identifier, same token, same
+active QR before and after both operations.
 
-1. Branch `feat/sca-collector-password-recovery-037` from **current accepted `origin/main`** and report the exact base SHA before coding.
-2. Add a guest-facing **Forgot password?** affordance from collector login.
-3. Add a collector password-reset request endpoint/form accepting email.
-   - Response must be enumeration-safe: do not reveal whether an email belongs to a collector.
-   - Apply CSRF and appropriate throttling.
-   - Disabled/pseudonymized collectors must not receive a usable reset capability.
-4. Generate a cryptographically secure, expiring reset token using Laravel/framework-standard password-reset facilities where possible. Store only the framework-standard safe representation; never log or persist plaintext passwords.
-5. Send the reset link through Laravel's mail abstraction. Tests must use fake/test delivery. **Do not configure production SMTP, DNS, Caddy, or a mail provider.** Runtime delivery remains dependent on later mail-infrastructure configuration.
-6. Add reset form/endpoint accepting token + collector email + new password + confirmation.
-   - Reuse the registration/SCA-036 password policy (`Password::min(8)` + `confirmed`).
-   - Reject invalid, expired, already-used, wrong-account, disabled, or pseudonymized reset attempts.
-   - On success, hash the new password with the existing application mechanism and invalidate/consume the reset token.
-   - Existing active sessions must be handled deliberately and documented. Prefer invalidating other collector sessions if the current session architecture safely supports it; do not weaken session security merely to achieve this.
-7. After successful reset, provide a clear path back to collector sign-in. Do not automatically claim, transfer, or alter any item.
+## Public passport behavior (Option A — accepted)
 
-## Critical provenance / identity invariant
+The SCA-020/034 constant-shape enumeration-safe passport contract is preserved and the resolver/controller
+are unchanged. Current valid certification → normal passport. Revoked with no successor → the existing
+identical real HTTP 404, indistinguishable from malformed/unknown/inactive/stale/ineligible tokens (no
+disclosure of token/item/certification existence, revocation, or reason). Superseded → the same permanent
+token resolves the successor current certification; the old certification is not presented as current.
 
-Password recovery may change **only the collector password credential plus the minimum reset-token/session state required for secure recovery**. It must NEVER create/delete/update ownership events, claims, transfers, certification/authentication events, QR identity, registry status, item state, `collector_account_id`, collector `id`, `public_ref`, `email`, or collector lifecycle `status`. Existing ownership must continue resolving through the same collector account after reset.
+## Guardrails
 
-## Security requirements
+- Dedicated permission `sca.eyewear.certification.correct` gates both the confirmation GET and the mutation
+  POSTs; not the ordinary `sca.eyewear.certify`. Not exposed to collectors.
+- Mandatory reason + typed confirmation for each destructive action.
+- One transaction locking the item/projection boundary; append-only optimistic stale-state guard; reject
+  unknown item / no current certification / wrong-item / unfinalized / failed / reused authentication /
+  stale state / malformed reason / unauthorized caller; fail closed, no partial state.
+- Certification correction must not modify ownership, current owner, collectors, claims, transfers, item
+  identity/metadata, lost/stolen/recovered state, QR identity/token, or unrelated authentication history.
+- No certification-ledger schema migration unless inspection proves one necessary (the audit indicates the
+  columns already exist); ACL registration through the established mechanism is allowed.
 
-- Guest-safe workflow; collector need not already be authenticated.
-- Enumeration-safe request response for existing and unknown email addresses.
-- CSRF on state-changing browser forms.
-- Throttle reset requests and reset attempts consistently with existing collector auth protections.
-- Cryptographically secure, expiring, single-use token.
-- Token/account binding must be authoritative at mutation time.
-- New password policy identical to registration/SCA-036.
-- No password/token leakage to logs, query diagnostics, public pages, or task reports.
-- Disabled/pseudonymized collectors fail closed.
-- Staff/admin authentication must not substitute for collector recovery authorization.
-- Preserve existing collector login/change-password/logout behavior.
+## Non-goals
 
-## Mail boundary
+No item metadata editing; no physical QR replacement/reissue; no collector certification controls; no
+certification-event edit/delete; no ownership changes; no redesign of authentication/grading; no
+SMTP/domain/DNS/Caddy/Shopify/backup work; no reporting/export; no SCA-039.
 
-The application may add the collector reset notification/mailable and the minimum broker/config/schema required to support reset tokens. Tests must prove the intended email contains the correct collector reset URL without sending real mail. **Do not change production mail credentials or infrastructure.** If the current deployment uses `MAIL_MAILER=log`, leave it unchanged. The completion report must state clearly that real email delivery is not production-ready until SMTP/mail infrastructure is configured.
+## Completion state (recorded)
 
-## Tests
-
-Add focused `CollectorPasswordRecoveryTest` coverage proving at minimum: forgot-password pages/routes exist; GETs are zero-mutation; unknown and known emails receive indistinguishable public responses; valid active collector produces a reset notification under fake/test mail; unknown/disabled/pseudonymized accounts do not gain usable reset capability; token is account-bound, expires, and is single-use; invalid/expired/reused token fails without password change; weak password fails; mismatched confirmation fails; valid reset succeeds; stored password is hashed; old password no longer authenticates; new password authenticates; collector identity fields remain unchanged; ownership events are byte/count/content unchanged; claims/transfers/projection owner unchanged; owned item remains in My Collection after sign-in with the new password; public passport/privacy behavior unchanged; CSRF and throttling are present. Run the full SCA regression suite plus `composer validate`, `composer audit`, PHP lint, and secret scan.
-
-## Explicit non-goals
-
-No email-address change or verification, display-name/profile editing, MFA, magic-link login, social login, admin password reset, account merge, ownership correction/transfer changes, SMTP/provider setup, production mail credentials, DNS/domain/Caddy work, Shopify work, permanent QR-domain work, infrastructure changes, or unrelated UI redesign.
-
-## Completion rule
-
-Create `docs/task-reports/SCA-COLLECTOR-PASSWORD-RECOVERY-037.md`. Push the feature branch; **do not merge and do not deploy**. Report base SHA, final HEAD, files changed, exact routes, broker/token/schema design, expiry/single-use behavior, enumeration/throttle/CSRF controls, session behavior, provenance/identity non-mutation evidence, mail boundary, focused + full test results, lint/composer/secret checks, and confirmation production/live pilot was not mutated. Restore the preview to accepted `main` if local branch testing touched the preview checkout. STOP for ChatGPT audit; SCA-038 must not be started.
+Implemented on branch `sca-certification-correction-038` (base `df80e4b`); focused suite 21 passed / 99
+assertions; full SCA suite 498 passed / 2113 assertions; no schema migration; composer validate/audit clean.
+Full evidence in `docs/task-reports/SCA-CERTIFICATION-CORRECTION-038.md`. **Push only — awaiting ChatGPT
+audit before any merge/deploy.**

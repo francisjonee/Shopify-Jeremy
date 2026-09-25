@@ -70,7 +70,7 @@ This file is the ordered implementation backlog for Second Chance Authenticators
 
 ## ACTIVE
 
-_None._ SCA-037 is DONE (deployed `df80e4b`). ChatGPT promotes exactly one next item into `NEXT_TASK.md`; SCA-038 is not activated.
+- `SCA-CERTIFICATION-CORRECTION-038` — governed staff certification **revoke + re-certify (supersede)**, append-only on the canonical certification-event ledger; dedicated `sca.eyewear.certification.correct` ACL; permanent QR identity preserved; Option A public-passport contract preserved. **Implemented and pushed** on branch `sca-certification-correction-038` (base `df80e4b`); focused 21/99, full SCA 498/2113; no schema migration. **Awaiting ChatGPT audit — NOT merged, NOT deployed.** SCA-039 must not start.
 
 ## REMAINING BACKLOG (planned only — not authorization to start)
 
