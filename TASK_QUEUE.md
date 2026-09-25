@@ -56,6 +56,7 @@ This file is the ordered implementation backlog for Second Chance Authenticators
 - `SCA-OWNERSHIP-PROVENANCE-033` — staff ownership provenance history — **DONE** (merge `f9385d7`).
 - `SCA-PUBLIC-PASSPORT-PILOT-034` — live-pilot passport validation — **DONE** (merge `2029f09`).
 - `SCA-ADMIN-OWNERSHIP-CORRECTION-035` — governed append-only staff ownership correction — **DONE** (merge `cf05b58`; manually pilot-validated Collector #2 → Collector #1).
+- `SCA-COLLECTOR-PASSWORD-RECOVERY-037` — collector forgot/reset password (dedicated broker + `sca_collector_password_resets`) — **DONE** (merged+deployed `df80e4b`; real email delivery deferred until SMTP configured).
 - `SCA-COLLECTOR-PASSWORD-CHANGE-036` — authenticated collector password change + account-security UX — **DONE** (merge/deployed `f362469`; manually pilot-validated: wrong current rejected, confirmation mismatch rejected, valid change succeeds, old password rejected, new password authenticates, ownership/My Collection preserved).
 
 ### Non-code governance / validation activities
@@ -69,11 +70,7 @@ This file is the ordered implementation backlog for Second Chance Authenticators
 
 ## ACTIVE
 
-### SCA-COLLECTOR-PASSWORD-RECOVERY-037 — Collector forgot-password / reset-password application workflow
-**Phase:** 6 — Collector Portal
-**Status:** MERGED — accepted + merged to implementation `main` at `df80e4b` (accepted HEAD `5dca01a`); **deploy pending** ChatGPT authorization. Production migration (`sca_collector_password_resets`) + SMTP/mail remain deferred. No task is active pending that authorization; SCA-038 is not activated.
-
----
+_None._ SCA-037 is DONE (deployed `df80e4b`). ChatGPT promotes exactly one next item into `NEXT_TASK.md`; SCA-038 is not activated.
 
 ## REMAINING BACKLOG (planned only — not authorization to start)
 

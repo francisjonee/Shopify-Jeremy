@@ -1,10 +1,10 @@
 # NEXT TASK
 
-**STATUS:** MERGED — awaiting ChatGPT deploy authorization (no new task promoted; SCA-038 not activated)
+**STATUS:** NONE — no executable task is authorized.
 
-> SCA-037 merged to implementation `main` at `df80e4b5a655f59a1337cb1a8792beb6e6d40f54` (accepted HEAD `5dca01a`). NOT yet deployed: production migration + SMTP/mail remain deferred until ChatGPT authorizes deployment. The task spec below is retained for the deploy step.
+`SCA-COLLECTOR-PASSWORD-RECOVERY-037` is **DONE** (audited, merged, and deployed to production `main` at `df80e4b5a655f59a1337cb1a8792beb6e6d40f54`; the `sca_collector_password_resets` migration ran; forgot/reset routes are live). Real email delivery remains **not production-ready** until SMTP/mail infrastructure is configured (`MAIL_MAILER=log`). ChatGPT promotes exactly one next task here when ready; SCA-038 is not activated.
 
-**TASK_ID:** SCA-COLLECTOR-PASSWORD-RECOVERY-037
+*The prior 037 task spec is preserved in the implementation repo report `docs/task-reports/SCA-COLLECTOR-PASSWORD-RECOVERY-037.md`.*
 
 ## Title
 
