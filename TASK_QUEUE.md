@@ -73,7 +73,9 @@ This file is the ordered implementation backlog for Second Chance Authenticators
 
 ## ACTIVE
 
-_None._ SCA-040 is DONE (deployed `ec75d4f`). ChatGPT promotes exactly one next item into `NEXT_TASK.md`; SCA-041 is not activated. `SCA-PRODUCTION-CUTOVER` remains BLOCKED/DEFERRED awaiting Jeremy.
+- `SCA-COLLECTOR-PASSPORT-ACCESS-041` — **ACTIVE** (owned-item access to the canonical public passport). Implemented + pushed on branch `sca-collector-passport-access-041` (base `ec75d4f`): new `GET collector/collection/{ref}/passport` (`collector.auth`) → owner+eligibility authorized from the canonical projection → redirect to existing `/p/{token}`; eligibility-gated UI action; no raw token in HTML; `PassportResolver`/`PassportController` unchanged (Option-A preserved); read-only, no schema migration. Focused 12/32; full SCA 521/2198. **Awaiting ChatGPT audit — NOT merged, NOT deployed.** SCA-042 must not start.
+
+_SCA-040 is DONE (deployed `ec75d4f`). `SCA-PRODUCTION-CUTOVER` remains BLOCKED/DEFERRED awaiting Jeremy._
 
 ## REMAINING BACKLOG (planned only — not authorization to start)
 
