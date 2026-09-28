@@ -60,6 +60,7 @@ This file is the ordered implementation backlog for Second Chance Authenticators
 - `SCA-COLLECTOR-PASSWORD-CHANGE-036` — authenticated collector password change + account-security UX — **DONE** (merge/deployed `f362469`; manually pilot-validated: wrong current rejected, confirmation mismatch rejected, valid change succeeds, old password rejected, new password authenticates, ownership/My Collection preserved).
 - `SCA-CERTIFICATION-CORRECTION-038` — governed staff certification **revoke + re-certify (supersede)**, append-only on the canonical certification-event ledger; dedicated `sca.eyewear.certification.correct` ACL; permanent QR identity preserved; Option A public-passport contract preserved (resolver/controller unchanged); **no schema migration** — **DONE** (`--no-ff` merge/deployed `bd5b2e7`; base `df80e4b`, feature `9d1c0e4`; deploy gate 21/99 focused + 498/2113 full; production baseline verified identical before/after).
 - `SCA-STAFF-COLLECTOR-SUPPORT-040` — READ-ONLY privacy-safe staff collector lookup (`GET admin/sca/collectors` + `{ref}`); dedicated `sca.collector.support` read ACL; email withheld (not authorized); owned items from canonical current-ownership projection; **no schema migration** — **DONE** (`--no-ff` merge/deployed `ec75d4f`; base `bd5b2e7`, feature `cb4f357`; deploy gate 11/53 focused + 509/2166 full; production baseline verified identical before/after).
+- `SCA-COLLECTOR-PASSPORT-ACCESS-041` — owned-item access to the canonical public passport (`GET collector/collection/{ref}/passport`, `collector.auth`) → owner+eligibility-authorized read-only redirect to existing `/p/{token}`; eligibility-gated UI; no raw token in HTML; `PassportResolver`/`PassportController` unchanged (Option-A preserved); **no schema migration** — **DONE** (`--no-ff` merge/deployed `223cc40`; base `ec75d4f`, feature `1a72d65`; deploy gate 12/32 focused + 521/2198 full; production baseline verified identical before/after).
 
 ### Non-code governance / validation activities
 
@@ -73,9 +74,7 @@ This file is the ordered implementation backlog for Second Chance Authenticators
 
 ## ACTIVE
 
-- `SCA-COLLECTOR-PASSPORT-ACCESS-041` — **ACTIVE** (owned-item access to the canonical public passport). Implemented + pushed on branch `sca-collector-passport-access-041` (base `ec75d4f`): new `GET collector/collection/{ref}/passport` (`collector.auth`) → owner+eligibility authorized from the canonical projection → redirect to existing `/p/{token}`; eligibility-gated UI action; no raw token in HTML; `PassportResolver`/`PassportController` unchanged (Option-A preserved); read-only, no schema migration. Focused 12/32; full SCA 521/2198. **Awaiting ChatGPT audit — NOT merged, NOT deployed.** SCA-042 must not start.
-
-_SCA-040 is DONE (deployed `ec75d4f`). `SCA-PRODUCTION-CUTOVER` remains BLOCKED/DEFERRED awaiting Jeremy._
+_None._ SCA-041 is DONE (deployed `223cc40`). ChatGPT promotes exactly one next item into `NEXT_TASK.md`; SCA-042 is not activated. `SCA-PRODUCTION-CUTOVER` remains BLOCKED/DEFERRED awaiting Jeremy.
 
 ## REMAINING BACKLOG (planned only — not authorization to start)
 
