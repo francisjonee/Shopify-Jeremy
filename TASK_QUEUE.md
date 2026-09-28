@@ -68,16 +68,14 @@ This file is the ordered implementation backlog for Second Chance Authenticators
 - `SCA-PILOT-USABILITY-031` — read-only staff+collector usability audit.
 - `SCA-CONTROLLED-PILOT-001` — controlled live pilot on temporary IP; ongoing.
 - `SCA-EXPANSION-PLANNING-039` — read-only application expansion audit — **DONE** (accepted; roadmap + SCA-040 selection at `docs/SCA-EXPANSION-PLANNING-039.md`).
-- `SCA-MY-COLLECTION-ENRICHMENT-042` — planning audit accepted; scope promoted + implemented (see ACTIVE). Planning doc at `docs/SCA-MY-COLLECTION-ENRICHMENT-042.md`.
+- `SCA-MY-COLLECTION-ENRICHMENT-042` — collector certificate-document Current vs Superseded/historical classification (read-time, from media `subject_id` vs canonical `current_certification_id`; public cert number; no evidence mutated/regenerated; **no schema migration**) — **DONE** (`--no-ff` merge/deployed `50c54ad`; base `223cc40`, feature `29715de`; isolated deploy gate 11/33 focused + 532/2231 full; migrate → Nothing to migrate; production baseline incl. media_assets verified identical before/after). Planning doc at `docs/SCA-MY-COLLECTION-ENRICHMENT-042.md`.
 - Numbers `021` and `028` were unused.
 
 ---
 
 ## ACTIVE
 
-- `SCA-MY-COLLECTION-ENRICHMENT-042` — **ACTIVE** (collector certificate-document current/historical classification). Implemented + pushed on branch `sca-my-collection-enrichment-042` (base `223cc40`): read-time classification in the collector document read model (media `subject_id` vs canonical `current_certification_id`) + item-detail badge + public cert number; no evidence mutated/regenerated; read-only; **no schema migration**. Focused 11/33; full SCA 532/2231. **Awaiting ChatGPT audit — NOT merged, NOT deployed.** SCA-043 must not start.
-
-_SCA-041 is DONE (deployed `223cc40`). `SCA-PRODUCTION-CUTOVER` remains BLOCKED/DEFERRED awaiting Jeremy._
+_None._ SCA-042 is DONE (deployed `50c54ad`). ChatGPT promotes exactly one next item into `NEXT_TASK.md`; SCA-043 is not activated. `SCA-PRODUCTION-CUTOVER` remains BLOCKED/DEFERRED awaiting Jeremy.
 
 ## REMAINING BACKLOG (planned only — not authorization to start)
 
