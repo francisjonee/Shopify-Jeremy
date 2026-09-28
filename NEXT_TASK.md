@@ -11,9 +11,16 @@ verified byte-identical before/after (counts + item-metadata / media-checksum / 
 fingerprints all unchanged); no metadata correction, PDF generation, or certification/snapshot change was
 performed. Deploy gate: focused `ItemMetadataCorrectionTest` 18/93; full `tests/Feature/Sca` 575/3099.
 
+The read-only `SCA-APPLICATION-EXPANSION-AUDIT-047` is also **DONE** (planning only — no code/branch/migration/
+mutation; full report at `docs/SCA-APPLICATION-EXPANSION-AUDIT-047.md`). It recommends **one** candidate for a
+future **SCA-048**: a read-only collector "item history" timeline on the My Collection item detail
+(certification-status + honest revocation notice, ownership/transfer, the owner's own status reports),
+privacy-scoped to the authenticated owner and built from the existing event ledgers + `ProjectionService` — no
+schema, read-only; smallest viable slice = the certification-status/revocation notice alone.
+
 **No queued item has been promoted.** Per the authority rule, ChatGPT may promote exactly one queued item
-from `TASK_QUEUE.md` into this file after auditing SCA-046. Until then there is no authorization to start
-any task. **`SCA-047` must not start.**
+from `TASK_QUEUE.md` into this file after auditing these reports. Until then there is no authorization to start
+any task. **`SCA-048` must not start.**
 
 *`SCA-PRODUCTION-CUTOVER` remains BLOCKED/DEFERRED awaiting a Jeremy-provided permanent HTTPS domain + access.*
 
