@@ -1,40 +1,41 @@
 # NEXT TASK
 
-**STATUS:** NONE — no executable task is authorized.
+**STATUS:** ACTIVE — `SCA-ITEM-METADATA-CORRECTION-046` implemented and pushed for ChatGPT audit (NOT merged, NOT deployed, production NOT migrated).
 
-`SCA-CERTIFICATE-SNAPSHOT-VERSIONING-045` is **DONE** (ChatGPT-audited, governed `--no-ff` merge, and deployed
-to production `main` at `17854a86f12d16485c7eb05ffa5418d7036a8eee`; base `fdf8595`, feature HEAD `c5aeb95`).
-Every newly issued certification (first issue AND SCA-038 supersede successor) now freezes an immutable
-per-certification render snapshot in the issuing transaction; the certificate PDF is generated/repaired from
-the frozen snapshot (v1 template dispatch; unknown version fails closed), with a v1 live-read fallback for
-grandfathered pre-045 certifications. This unlocks the future append-only metadata-correction slice.
+Feature branch `sca-item-metadata-correction-046` pushed to the implementation repo from accepted base
+`17854a86f12d16485c7eb05ffa5418d7036a8eee`. Awaiting ChatGPT audit; must not be merged, deployed, or
+promoted onward (SCA-047 must not start) until ChatGPT authorizes.
 
-## Deployment evidence
-- SHAs: base `fdf8595` → feature `c5aeb95` → **merge/deployed `17854a8`** (MERGE == ORIGIN == DEPLOYED).
-- Deploy test gate: `CertificateSnapshotTest` 12 passed / 714 assertions; full `tests/Feature/Sca` 557 passed
-  / 3001 assertions. Pre-merge included an independent base↔candidate v1 PDF byte comparison (identical
-  checksum) and a forced-capture-failure rollback proof.
-- **Production migration** `2026_09_28_000002_create_sca_certificate_snapshots` applied **exactly once**
-  (batch 9): table created with PRIMARY, UNIQUE(`certification_id`), FK→`sca_certifications`,
-  CHECK(`chk_cert_snapshot_source`), and both append-only triggers (`_no_update`, `_no_delete`).
-- **Legacy boundary honored: ZERO snapshot rows created** for the existing production certifications (no
-  backfill, no reconstruction).
-- Before/after production baseline **identical** apart from the new empty table + migration record:
-  certifications, cert events, media assets **and their checksums** (`0f74aee3…`, `bc01e71e…`), QR
-  identifiers/lifecycle, ownership/claims/transfers/status, collectors, item metadata, and current-cert
-  projections all unchanged (count/fingerprint verified). No production PDF generated or repaired.
-- Post-deploy (non-mutating): certified public passport, staff/collector login all healthy; SCA-043
-  `admin.sca.certificate.generate` route present; no snapshot endpoint exists; existing media/checksums
-  unchanged. SCA-042 classification and SCA-044 metadata behavior intact.
+*Prior task `SCA-CERTIFICATE-SNAPSHOT-VERSIONING-045` is DONE (deployed `17854a8`). `SCA-PRODUCTION-CUTOVER`
+remains BLOCKED/DEFERRED awaiting Jeremy.*
 
-## Accepted limitation (recorded)
-`snapshot_checksum` is currently stored as **tamper-evidence only — it is NOT revalidated during
-rendering/repair**. Snapshot-row integrity is enforced by the append-only triggers; PDF-byte integrity by
-the media checksum on repair. Any future consumption-time snapshot-checksum validation would be a separate
-task.
+## Title
 
-`SCA-PRODUCTION-CUTOVER` remains **BLOCKED/DEFERRED** awaiting Jeremy.
+SCA-ITEM-METADATA-CORRECTION-046 — append-only correction of eyewear identity metadata
 
-*Full evidence: implementation report `docs/task-reports/SCA-CERTIFICATE-SNAPSHOT-VERSIONING-045.md`.*
+## Executable directive (as governed)
 
-ChatGPT promotes exactly one next task here when ready. **SCA-046 is not activated.**
+Support append-only correction of the 5 always-correctable fields (`frame_serial`, `year`,
+`country_of_origin`, `materials`, `original_specifications`) for all items, plus `brand`/`model_name` only
+when the item has no current certification OR its current certification has an SCA-045 snapshot; reject
+brand/model change for a snapshot-less legacy certification (no reconstruction, no PDF render). Mixed
+unsafe+safe requests fail atomically. Append one `sca_item_metadata_events` row per changed field (grouped
+by correction_group_id; field CHECK-restricted; append-only triggers); item row is the current projection.
+Atomic service (lock item-state, stale guard = metadata-event count, NOOP rejection). Dedicated
+`sca.eyewear.metadata.correct` ACL; staff item-detail GET-confirm + POST workflow; typed `CORRECT`
+confirmation; mandatory reason; SCA-044 validation reused. Correction reasons/actor/old-values staff-only.
+Snapshotted certificate + PDF + checksum + certification history untouched; broad provenance isolation.
+Additive migration only; disposable-DB migration only; no production migration/backfill.
+
+## Completion state (recorded)
+
+Implemented on branch `sca-item-metadata-correction-046` (base `17854a8`). New migration
+`2026_09_28_000003_create_sca_item_metadata_events` (ran only on the disposable test DB; **production not
+migrated** — table absent, migration recorded 0×). New `ItemMetadataCorrectionService` +
+`ItemMetadataCorrectionRejection` + `ItemMetadataCorrectionRequest` + `ItemMetadataCorrectionController` +
+`metadata-correct.blade`; ACL `sca.eyewear.metadata.correct`; routes + item-detail entry point; SCA-044
+`m12` test updated (046 adds the correction route it previously asserted absent). Focused
+`ItemMetadataCorrectionTest` 18/93; full SCA suite 575/3099. Full evidence in
+`docs/task-reports/SCA-ITEM-METADATA-CORRECTION-046.md` (implementation repo). Legacy brand/model
+reconstruction remains a **separate future prerequisite** task. **Push only — awaiting ChatGPT audit before
+any merge/deploy/migration. SCA-047 must not start.**
