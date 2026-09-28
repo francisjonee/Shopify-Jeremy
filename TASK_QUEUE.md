@@ -69,14 +69,14 @@ This file is the ordered implementation backlog for Second Chance Authenticators
 - `SCA-CONTROLLED-PILOT-001` — controlled live pilot on temporary IP; ongoing.
 - `SCA-EXPANSION-PLANNING-039` — read-only application expansion audit — **DONE** (accepted; roadmap + SCA-040 selection at `docs/SCA-EXPANSION-PLANNING-039.md`).
 - `SCA-MY-COLLECTION-ENRICHMENT-042` — collector certificate-document Current vs Superseded/historical classification (read-time, from media `subject_id` vs canonical `current_certification_id`; public cert number; no evidence mutated/regenerated; **no schema migration**) — **DONE** (`--no-ff` merge/deployed `50c54ad`; base `223cc40`, feature `29715de`; isolated deploy gate 11/33 focused + 532/2231 full; migrate → Nothing to migrate; production baseline incl. media_assets verified identical before/after). Planning doc at `docs/SCA-MY-COLLECTION-ENRICHMENT-042.md`.
-- `SCA-SUCCESSOR-CERTIFICATE-PDF-043` — read-only planning/lifecycle audit for generating the successor certificate PDF after an SCA-038 supersede — **PLANNING DELIVERED, under ChatGPT review** at `docs/SCA-SUCCESSOR-CERTIFICATE-PDF-043.md`. Finding: the existing staff generate route (`admin.sca.certificate.generate` → `ensureForItem`) already targets the current (successor) cert idempotently; issuance/rendering are decoupled. Recommends **Option B (explicit staff-triggered)**; automatic generation rejected (provenance must not depend on rendering). Smallest optional code = a read-only staff hint when the current cert lacks a PDF; no schema. NOT implementation-active; NEXT_TASK stays NONE.
+- `SCA-SUCCESSOR-CERTIFICATE-PDF-043` — successor-certificate-PDF lifecycle — **DONE (zero-code lifecycle validation / architecture decision)**. Accepted lifecycle = **Option B (explicit staff-triggered)** via the existing idempotent `admin.sca.certificate.generate` → `ensureForItem`; automatic generation rejected (certification integrity must not depend on PDF rendering). Manually pilot-validated end-to-end (item `SCA-F1B792AE4745`): successor `SCA-CERT-2026-5AC07F22` (Current) + predecessor `SCA-CERT-2026-FEE6D3D8` (Superseded) both immutable + downloadable; read-only verification confirmed exactly two per-cert PDFs (no duplicate), permanent QR + current-cert projection unchanged. B1 staff "missing PDF" hint remains an optional future UX task. Decision doc at `docs/SCA-SUCCESSOR-CERTIFICATE-PDF-043.md`.
 - Numbers `021` and `028` were unused.
 
 ---
 
 ## ACTIVE
 
-_None._ SCA-042 is DONE (deployed `50c54ad`). ChatGPT promotes exactly one next item into `NEXT_TASK.md`; SCA-043 is not activated. `SCA-PRODUCTION-CUTOVER` remains BLOCKED/DEFERRED awaiting Jeremy.
+_None._ SCA-042 is DONE (deployed `50c54ad`); SCA-043 is DONE (zero-code lifecycle validation). ChatGPT promotes exactly one next item into `NEXT_TASK.md`; SCA-044 is not activated. `SCA-PRODUCTION-CUTOVER` remains BLOCKED/DEFERRED awaiting Jeremy.
 
 ## REMAINING BACKLOG (planned only — not authorization to start)
 
