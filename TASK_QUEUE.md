@@ -80,7 +80,7 @@ This file is the ordered implementation backlog for Second Chance Authenticators
 
 ## ACTIVE
 
-- `SCA-COLLECTOR-CERTIFICATION-HISTORY-048` — **ACTIVE** (promoted by ChatGPT from the SCA-047 audit recommendation). Read-only collector-facing certification history on the My Collection item detail (current / superseded-with-successor / revoked→neutral "no active certification" notice), derived from `sca_certifications` + `sca_certification_events` via `ProjectionService`; owner-authorized; SCA-038 Option A + SCA-041 passport + SCA-042 doc classification all preserved; no schema/mutation. Base `bb52a9d`. Executable contract in `NEXT_TASK.md`. **Push only — awaiting ChatGPT audit; NOT merged, NOT deployed.** SCA-049 must not start.
+- `SCA-COLLECTOR-CERTIFICATION-HISTORY-048` — **ACTIVE — implemented + pushed** (promoted by ChatGPT from the SCA-047 audit recommendation). Read-only collector-facing certification history on the My Collection item detail (current / superseded-with-successor / revoked→neutral "no active certification" notice), derived from `sca_certifications` + `sca_certification_events` via `ProjectionService`; owner-authorized; SCA-038 Option A + SCA-041 passport + SCA-042 doc classification all preserved; no schema/mutation. Base `bb52a9d`, feature branch `sca-collector-certification-history-048` @ `52e01aa`; focused 11/51 + full 586/3150. Pilot restored to `bb52a9d`. Executable contract in `NEXT_TASK.md`; evidence in impl repo `docs/task-reports/SCA-COLLECTOR-CERTIFICATION-HISTORY-048.md`. **Push only — awaiting ChatGPT audit; NOT merged, NOT deployed.** SCA-049 must not start.
 
 _SCA-046 is DONE (deployed `bb52a9d`); SCA-047 audit is DONE (planning). `SCA-PRODUCTION-CUTOVER` remains BLOCKED/DEFERRED awaiting Jeremy._
 

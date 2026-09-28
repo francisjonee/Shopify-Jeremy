@@ -1,8 +1,13 @@
 # NEXT TASK
 
-**STATUS:** ACTIVE — `SCA-COLLECTOR-CERTIFICATION-HISTORY-048` promoted for implementation (push only —
-NOT merged, NOT deployed, production NOT migrated). Base = deployed `main`
-`bb52a9dae425a97e601f4e0ea88f063b5994401d`.
+**STATUS:** ACTIVE — `SCA-COLLECTOR-CERTIFICATION-HISTORY-048` **implemented and pushed for ChatGPT audit**
+(push only — NOT merged, NOT deployed, production NOT migrated). Base = deployed `main`
+`bb52a9dae425a97e601f4e0ea88f063b5994401d`; feature branch `sca-collector-certification-history-048` @
+`52e01aa7a0f71261aef8e3cf9673fb975468bfbb`. Focused `ItemCertificationHistoryTest` 11/51; full
+`tests/Feature/Sca` 586/3150 (575/3099 baseline + 11 new). Read-only (no schema/mutation); SCA-038 Option A,
+SCA-041, SCA-042 all preserved. Pilot restored to deployed `bb52a9d`. Must not be merged/deployed and SCA-049
+must not start until ChatGPT authorizes. Full evidence in the implementation repo
+`docs/task-reports/SCA-COLLECTOR-CERTIFICATION-HISTORY-048.md`.
 
 *Prior task `SCA-ITEM-METADATA-CORRECTION-046` is DONE (deployed `bb52a9d`); the read-only
 `SCA-APPLICATION-EXPANSION-AUDIT-047` is DONE (planning). `SCA-PRODUCTION-CUTOVER` remains BLOCKED/DEFERRED
