@@ -15,8 +15,15 @@ before/after IDENTICAL (counts + certifications / cert_events / current-state-pr
 fingerprints all MATCH). Pilot restored to normal posture (deployed main clean, `--no-dev`, caches cleared,
 kr-app healthy on the pilot bind, MariaDB private, DOCKER-USER IP-lock unchanged).
 
+The read-only `SCA-049` planning/architecture audit (Collector Ownership & Transfer History) is also **DONE**
+(planning only — no code/branch/migration/mutation; full report at
+`docs/SCA-049-COLLECTOR-OWNERSHIP-TRANSFER-HISTORY.md`). It recommends **one** candidate: a read-only
+"Ownership history" section on the existing My Collection item detail — an owner-authorized, neutral, dated
+timeline built from `sca_ownership_events` + transfer ledgers via `ProjectionService`, withholding all
+other-collector identity, staff refs, correction reasons, tokens and internal ids; no schema, no route.
+
 **No queued item has been promoted.** Per the authority rule, ChatGPT may promote exactly one queued item
-from `TASK_QUEUE.md` into this file after auditing SCA-048. Until then there is no authorization to start any
-task. **`SCA-049` must not start.**
+from `TASK_QUEUE.md` into this file after auditing these reports. Until then there is no authorization to start
+any task. **`SCA-050` must not start.**
 
 *`SCA-PRODUCTION-CUTOVER` remains BLOCKED/DEFERRED awaiting a Jeremy-provided permanent HTTPS domain + access.*
