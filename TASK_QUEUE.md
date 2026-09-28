@@ -68,14 +68,16 @@ This file is the ordered implementation backlog for Second Chance Authenticators
 - `SCA-PILOT-USABILITY-031` — read-only staff+collector usability audit.
 - `SCA-CONTROLLED-PILOT-001` — controlled live pilot on temporary IP; ongoing.
 - `SCA-EXPANSION-PLANNING-039` — read-only application expansion audit — **DONE** (accepted; roadmap + SCA-040 selection at `docs/SCA-EXPANSION-PLANNING-039.md`).
-- `SCA-MY-COLLECTION-ENRICHMENT-042` — read-only planning/gap audit (collector experience map + certificate-PDF current/superseded finding) — **PLANNING DELIVERED, under ChatGPT review** at `docs/SCA-MY-COLLECTION-ENRICHMENT-042.md`. Recommends smallest 042 = collector-safe certificate-document current/historical labeling (no schema, no PDF generation, read-only). NOT implementation-active; NEXT_TASK stays NONE until ChatGPT promotes.
+- `SCA-MY-COLLECTION-ENRICHMENT-042` — planning audit accepted; scope promoted + implemented (see ACTIVE). Planning doc at `docs/SCA-MY-COLLECTION-ENRICHMENT-042.md`.
 - Numbers `021` and `028` were unused.
 
 ---
 
 ## ACTIVE
 
-_None._ SCA-041 is DONE (deployed `223cc40`). ChatGPT promotes exactly one next item into `NEXT_TASK.md`; SCA-042 is not activated. `SCA-PRODUCTION-CUTOVER` remains BLOCKED/DEFERRED awaiting Jeremy.
+- `SCA-MY-COLLECTION-ENRICHMENT-042` — **ACTIVE** (collector certificate-document current/historical classification). Implemented + pushed on branch `sca-my-collection-enrichment-042` (base `223cc40`): read-time classification in the collector document read model (media `subject_id` vs canonical `current_certification_id`) + item-detail badge + public cert number; no evidence mutated/regenerated; read-only; **no schema migration**. Focused 11/33; full SCA 532/2231. **Awaiting ChatGPT audit — NOT merged, NOT deployed.** SCA-043 must not start.
+
+_SCA-041 is DONE (deployed `223cc40`). `SCA-PRODUCTION-CUTOVER` remains BLOCKED/DEFERRED awaiting Jeremy._
 
 ## REMAINING BACKLOG (planned only — not authorization to start)
 
