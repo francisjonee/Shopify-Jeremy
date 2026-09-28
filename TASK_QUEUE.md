@@ -68,6 +68,7 @@ This file is the ordered implementation backlog for Second Chance Authenticators
 - `SCA-PILOT-USABILITY-031` — read-only staff+collector usability audit.
 - `SCA-CONTROLLED-PILOT-001` — controlled live pilot on temporary IP; ongoing.
 - `SCA-EXPANSION-PLANNING-039` — read-only application expansion audit — **DONE** (accepted; roadmap + SCA-040 selection at `docs/SCA-EXPANSION-PLANNING-039.md`).
+- `SCA-MY-COLLECTION-ENRICHMENT-042` — read-only planning/gap audit (collector experience map + certificate-PDF current/superseded finding) — **PLANNING DELIVERED, under ChatGPT review** at `docs/SCA-MY-COLLECTION-ENRICHMENT-042.md`. Recommends smallest 042 = collector-safe certificate-document current/historical labeling (no schema, no PDF generation, read-only). NOT implementation-active; NEXT_TASK stays NONE until ChatGPT promotes.
 - Numbers `021` and `028` were unused.
 
 ---
