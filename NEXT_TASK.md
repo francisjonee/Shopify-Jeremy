@@ -1,41 +1,30 @@
 # NEXT TASK
 
-**STATUS:** ACTIVE — `SCA-ITEM-METADATA-CORRECTION-046` implemented and pushed for ChatGPT audit (NOT merged, NOT deployed, production NOT migrated).
+**STATUS:** NONE — no executable task is currently authorized.
 
-Feature branch `sca-item-metadata-correction-046` pushed to the implementation repo from accepted base
-`17854a86f12d16485c7eb05ffa5418d7036a8eee`. Awaiting ChatGPT audit; must not be merged, deployed, or
-promoted onward (SCA-047 must not start) until ChatGPT authorizes.
+`SCA-ITEM-METADATA-CORRECTION-046` is **DONE** (`--no-ff` merged + deployed to production `main` at
+`bb52a9dae425a97e601f4e0ea88f063b5994401d`; base `17854a86f12d16485c7eb05ffa5418d7036a8eee`, feature
+`fa9686344b5abae5b0323cd57f89b9592e3ec3d2`). Production migration applied once (batch 10): the append-only
+`sca_item_metadata_events` ledger (FK + `correction_group_id`/composite indexes + exact 7-field CHECK +
+both `_no_update`/`_no_delete` triggers), created with **0 rows** and no backfill. Production business data
+verified byte-identical before/after (counts + item-metadata / media-checksum / current-state-projection
+fingerprints all unchanged); no metadata correction, PDF generation, or certification/snapshot change was
+performed. Deploy gate: focused `ItemMetadataCorrectionTest` 18/93; full `tests/Feature/Sca` 575/3099.
 
-*Prior task `SCA-CERTIFICATE-SNAPSHOT-VERSIONING-045` is DONE (deployed `17854a8`). `SCA-PRODUCTION-CUTOVER`
-remains BLOCKED/DEFERRED awaiting Jeremy.*
+**No queued item has been promoted.** Per the authority rule, ChatGPT may promote exactly one queued item
+from `TASK_QUEUE.md` into this file after auditing SCA-046. Until then there is no authorization to start
+any task. **`SCA-047` must not start.**
 
-## Title
+*`SCA-PRODUCTION-CUTOVER` remains BLOCKED/DEFERRED awaiting a Jeremy-provided permanent HTTPS domain + access.*
 
-SCA-ITEM-METADATA-CORRECTION-046 — append-only correction of eyewear identity metadata
+## Legacy metadata-correction policy (recorded with SCA-046)
 
-## Executable directive (as governed)
-
-Support append-only correction of the 5 always-correctable fields (`frame_serial`, `year`,
-`country_of_origin`, `materials`, `original_specifications`) for all items, plus `brand`/`model_name` only
-when the item has no current certification OR its current certification has an SCA-045 snapshot; reject
-brand/model change for a snapshot-less legacy certification (no reconstruction, no PDF render). Mixed
-unsafe+safe requests fail atomically. Append one `sca_item_metadata_events` row per changed field (grouped
-by correction_group_id; field CHECK-restricted; append-only triggers); item row is the current projection.
-Atomic service (lock item-state, stale guard = metadata-event count, NOOP rejection). Dedicated
-`sca.eyewear.metadata.correct` ACL; staff item-detail GET-confirm + POST workflow; typed `CORRECT`
-confirmation; mandatory reason; SCA-044 validation reused. Correction reasons/actor/old-values staff-only.
-Snapshotted certificate + PDF + checksum + certification history untouched; broad provenance isolation.
-Additive migration only; disposable-DB migration only; no production migration/backfill.
-
-## Completion state (recorded)
-
-Implemented on branch `sca-item-metadata-correction-046` (base `17854a8`). New migration
-`2026_09_28_000003_create_sca_item_metadata_events` (ran only on the disposable test DB; **production not
-migrated** — table absent, migration recorded 0×). New `ItemMetadataCorrectionService` +
-`ItemMetadataCorrectionRejection` + `ItemMetadataCorrectionRequest` + `ItemMetadataCorrectionController` +
-`metadata-correct.blade`; ACL `sca.eyewear.metadata.correct`; routes + item-detail entry point; SCA-044
-`m12` test updated (046 adds the correction route it previously asserted absent). Focused
-`ItemMetadataCorrectionTest` 18/93; full SCA suite 575/3099. Full evidence in
-`docs/task-reports/SCA-ITEM-METADATA-CORRECTION-046.md` (implementation repo). Legacy brand/model
-reconstruction remains a **separate future prerequisite** task. **Push only — awaiting ChatGPT audit before
-any merge/deploy/migration. SCA-047 must not start.**
+- `brand` and `model_name` are certificate-PDF render inputs. Correcting them is **blocked**
+  (`LEGACY_PDF_FIELD_LOCKED`) when the item's current certification is a **snapshot-less legacy** cert;
+  allowed only when there is **no** current certification OR the current certification has an **SCA-045
+  snapshot**. Mixed unsafe+safe correction requests fail **atomically**.
+- The 5 non-PDF fields — `frame_serial`, `year`, `country_of_origin`, `materials`,
+  `original_specifications` — remain **always correctable**.
+- **No automatic or reconstructed legacy snapshot** is created by SCA-046. All 3 production certifications
+  are currently snapshot-less, so brand/model on them stays locked. Verified legacy-snapshot reconstruction
+  (Option B) remains a **separate future prerequisite** task, not authorized here.
