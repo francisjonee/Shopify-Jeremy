@@ -1,48 +1,32 @@
 # NEXT TASK
 
-**STATUS:** ACTIVE — `SCA-EYEWEAR-METADATA-EXPANSION-044` (Slice 1) implemented and pushed for ChatGPT audit (NOT merged, NOT deployed).
+**STATUS:** NONE — no executable task is authorized.
 
-Feature branch `sca-eyewear-metadata-expansion-044` pushed to the implementation repo from accepted base
-`50c54ad2ce0afe8f993e11d8b1979e5d667c7935`. Awaiting ChatGPT audit; must not be merged, deployed, or
-promoted onward (SCA-045 must not start) until ChatGPT authorizes.
+`SCA-EYEWEAR-METADATA-EXPANSION-044` (Slice 1) is **DONE** (ChatGPT-audited, governed `--no-ff` merge, and
+deployed to production `main` at `fdf8595828e618b8a65742134836c2e914c67d3e`; base `50c54ad`, feature HEAD
+`1be55a9`). Nullable current-item identity metadata (`year`, `country_of_origin`, `materials`,
+`original_specifications`) is now captured at intake and shown on staff detail + collector My Collection;
+the public passport exposes `year`/`country_of_origin`/`materials` only (`original_specifications` is
+owner/staff-only; `frame_serial` stays sensitive). The certificate PDF is unchanged. Create-time only — no
+edit/correction path, no metadata ledger, no certificate snapshotting.
 
-*Prior tasks 042/043 are DONE. `SCA-PRODUCTION-CUTOVER` remains BLOCKED/DEFERRED awaiting Jeremy; it does not
-block application development.*
+## Deployment evidence
+- SHAs: base `50c54ad` → feature `1be55a9` → **merge/deployed `fdf8595`** (MERGE == ORIGIN == DEPLOYED).
+- Deploy test gate: `EyewearMetadataTest` 13 passed / 56 assertions; full `tests/Feature/Sca` 545 passed /
+  2287 assertions.
+- **Production migration** `2026_09_28_000001_add_metadata_to_sca_eyewear_items` applied **exactly once**
+  (batch 8): `sca_eyewear_items` now = original 8 columns + nullable `year` (smallint), `country_of_origin`
+  (varchar 100), `materials` (varchar 255), `original_specifications` (text). No unrelated schema change.
+- Existing production items intact: both items have **NULL** for all four new fields; the item-content
+  fingerprint is identical before/after; provenance/domain baseline (items, certifications, cert_events,
+  media_assets, ownership, claims, transfers, QR, qr_lifecycle, status, collectors) is **identical**
+  before/after — no values/history/media altered. No backfill.
+- Post-deploy health (non-destructive): staff/collector logins and the certified pilot passport all 200;
+  passport exposes no `original_specifications`/`frame_serial`; certificate PDFs/media untouched.
 
-## Title
+`SCA-PRODUCTION-CUTOVER` remains **BLOCKED/DEFERRED** awaiting Jeremy.
 
-SCA-EYEWEAR-METADATA-EXPANSION-044 (Slice 1) — additive nullable current-item identity metadata
+*Full evidence: implementation report `docs/task-reports/SCA-EYEWEAR-METADATA-EXPANSION-044.md`. Later slices
+(certificate per-cert snapshot-freezing; append-only metadata correction) remain planned, not active.*
 
-## Implementer
-
-Claude
-
-## Executable directive (as governed — Slice 1 only)
-
-Add four nullable current-item metadata fields — `year`, `country_of_origin`, `materials`,
-`original_specifications` — to `sca_eyewear_items` via an additive migration (all nullable, no backfill,
-bounded scalar types, no JSON), preserving the existing brand/model_name/frame_serial/intake_type identity
-model. Extend the existing staff intake to optionally capture them with explicit bounded validation (year
-validated as a plausible year that does not block vintage eyewear; sensible length limits on the rest); add
-**no** UPDATE/edit/correction route. Display the four on staff item detail and (as current facts) in
-collector My Collection, gracefully omitting NULLs. Extend `PublicAllowlist` deliberately so the public
-passport exposes `year`/`country_of_origin`/`materials` only; **do NOT expose `original_specifications`
-publicly** (staff/owner-visible only); `frame_serial` remains sensitive/non-public. **Do NOT modify the
-certificate PDF template or `CertificatePdfService`** — existing certificate PDFs and deterministic
-repair/checksum behavior stay byte-compatible.
-
-Invariants: create-time metadata only; no destructive item editing; no `sca_item_metadata_events`; no
-metadata correction; no certificate snapshotting/template versioning; authentication observations
-(condition/grade/findings/inspection) stay on authentication records; NULL-metadata items behave normally;
-QR/certification/ownership/registry-status/transfer/claim/passport behavior unchanged; no backfill of
-production records.
-
-## Completion state (recorded)
-
-Implemented on branch `sca-eyewear-metadata-expansion-044` (base `50c54ad`). Migration
-`2026_09_28_000001_add_metadata_to_sca_eyewear_items` (additive nullable columns; ran only on the disposable
-test DB — **production schema untouched**). Public passport exposes year/country/materials only;
-original_specifications is owner/staff-only; frame_serial stays sensitive. Certificate PDF untouched. Focused
-`EyewearMetadataTest` 13/56; full SCA suite 545/2287. Full evidence in
-`docs/task-reports/SCA-EYEWEAR-METADATA-EXPANSION-044.md` (implementation repo). **Push only — awaiting ChatGPT
-audit before any merge/deploy. SCA-045 must not start.**
+ChatGPT promotes exactly one next task here when ready. **SCA-045 is not activated.**
