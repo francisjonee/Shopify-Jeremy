@@ -80,7 +80,7 @@ This file is the ordered implementation backlog for Second Chance Authenticators
 
 ## ACTIVE
 
-- **NONE.** `SCA-ITEM-METADATA-CORRECTION-046` is **DONE** (merged + deployed `bb52a9d`), and the read-only `SCA-APPLICATION-EXPANSION-AUDIT-047` is **DONE** (planning only; see COMPLETED). No task is currently active; `NEXT_TASK.md` = NONE. The 047 audit recommends one candidate (read-only collector item-history timeline) for a future **SCA-048** — **NOT promoted, NOT started**. ChatGPT must promote exactly one item before any new implementation starts.
+- `SCA-COLLECTOR-CERTIFICATION-HISTORY-048` — **ACTIVE** (promoted by ChatGPT from the SCA-047 audit recommendation). Read-only collector-facing certification history on the My Collection item detail (current / superseded-with-successor / revoked→neutral "no active certification" notice), derived from `sca_certifications` + `sca_certification_events` via `ProjectionService`; owner-authorized; SCA-038 Option A + SCA-041 passport + SCA-042 doc classification all preserved; no schema/mutation. Base `bb52a9d`. Executable contract in `NEXT_TASK.md`. **Push only — awaiting ChatGPT audit; NOT merged, NOT deployed.** SCA-049 must not start.
 
 _SCA-046 is DONE (deployed `bb52a9d`); SCA-047 audit is DONE (planning). `SCA-PRODUCTION-CUTOVER` remains BLOCKED/DEFERRED awaiting Jeremy._
 
