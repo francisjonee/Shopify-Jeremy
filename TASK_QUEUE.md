@@ -85,7 +85,7 @@ This file is the ordered implementation backlog for Second Chance Authenticators
 
 ## ACTIVE
 
-- **NONE.** `SCA-STAFF-REGISTRY-OPERATIONS-051` is **DONE** (merged + deployed `c8e3f59`; see COMPLETED). No task is currently active; `NEXT_TASK.md` = NONE. No queued item has been promoted — ChatGPT must promote exactly one before any new implementation starts. **SCA-052 must not start.** *(Open: DEFECT-001 in `docs/PENDING-DEFECTS.md`.)*
+- `SCA-COLLECTOR-AUTHENTICITY-BADGE-052` — **ACTIVE** (promoted by ChatGPT; DEFECT-001 fix; contract = root-cause audit at gov `636216c`). Correct the My Collection item-detail authenticity badge so green ✓ ⇔ current active certification; authentication evidence and certification status kept semantically independent (certification from `currentCertification` projection; authentication from an independent `sca_authentications` passed+finalized read; authentication date independent so revocation doesn't erase it). Implements the accepted display matrix. Read-model + presentation only (`CollectionService` + `collection/show.blade.php` + tests + report); no schema/migration/mutation; public passport (resolver-gated, out of scope) + SCA-038/041/042/048/049/051 unchanged. Base `c8e3f59`. Executable contract in `NEXT_TASK.md`. **Push only — awaiting ChatGPT audit; NOT merged, NOT deployed; DEFECT-001 NOT marked fixed yet.** SCA-053 unpromoted.
 
 _SCA-051 is DONE (deployed `c8e3f59`); SCA-049 DONE (`ec2b2ef`); SCA-050 product/ops audit DONE (planning). `SCA-PRODUCTION-CUTOVER` remains BLOCKED/DEFERRED awaiting Jeremy. Open defect: DEFECT-001 (`docs/PENDING-DEFECTS.md`)._
 
