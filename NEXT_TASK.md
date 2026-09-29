@@ -28,11 +28,16 @@ absent); `sca_edge` torn down (kr-app → `sca_internal` only; kr-mariadb privat
 (counts + QR rows/`no_update`/`no_delete` triggers unchanged). **This is not a regression from `d089e7a`.**
 
 **Prerequisite before Phase 2B can be retried:** a governed code slice (recommend "Phase 2A.1", DEFECT-002) that
-resolves trusted proxies from a value available *after* env load — read the edge CIDR from a **config file** and
-have `trustProxies()` read `config(...)` (also `config:cache`-safe), or set trusted proxies in a
-bootstrapper/provider `boot()` that runs after `LoadEnvironmentVariables` — with a **runtime** assertion that an
-untrusted RFC1918 peer (`172.19.x`) is rejected while the pinned `/24` edge is honored. Re-attempt Phase 2B only
-after that fix is merged + deployed and the runtime pin is proven effective.
+resolves trusted proxies from a value available *after* env load. **Its planning/root-cause audit is now DONE**
+(read-only, 2026-09-29 — `docs/SCA-PRODUCTION-CUTOVER-PHASE2A1-DEFECT-002-PLAN.md`; DEFECT-002 in
+`docs/PENDING-DEFECTS.md`). Confirmed fix (empirically, through the real `TrustProxies` middleware): the framework
+already lazily reads `config('trustedproxy.proxies')` at request time, but the closure's eager
+`TrustProxies::at(<RFC1918 default>)` preempts it — so add a fail-safe `config/trustedproxy.php` (default **trust
+none**) and drop the `at:`/`env()` from `bootstrap/app.php` (keep the explicit `headers:`). `config:cache`-safe.
+Includes the runtime regression test with the **`172.19.x`-rejected** discriminator the original
+`TrustedProxyReadinessTest` lacked. Deploy 2A.1 with `TRUSTED_PROXIES` UNSET (pilot-safe); pin `172.20.0.0/24` only
+in the Phase 2B retry. **Implementation UNPROMOTED / not started.** Re-attempt Phase 2B only after the fix is merged
++ deployed and the runtime pin is proven effective.
 
 ## Authorization state
 

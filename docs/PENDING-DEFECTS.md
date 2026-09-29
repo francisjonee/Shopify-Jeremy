@@ -147,5 +147,12 @@ _(DEFECT-001 was subsequently FIXED by `SCA-COLLECTOR-AUTHENTICITY-BADGE-052`, d
   `LoadEnvironmentVariables`. Add a **runtime** (not just unit) assertion that an untrusted RFC1918 peer (`172.19.x`) is
   **rejected** while the pinned `/24` edge is **honored**. Re-attempt Phase 2B only after this is merged + deployed and
   the runtime pin is proven effective.
-- **Planning status:** root-cause proven; DEFECT-002 **OPEN / not fixed**. Recommended for ChatGPT to promote as the
-  prerequisite code fix before Phase 2B is retried. ACTIVE = NONE; nothing started.
+- **Planning status:** root-cause proven; **Phase 2A.1 planning/root-cause audit DONE** (read-only) —
+  `docs/SCA-PRODUCTION-CUTOVER-PHASE2A1-DEFECT-002-PLAN.md`. Confirmed fix mechanism (empirically, through the real
+  `TrustProxies` middleware): the framework already lazily reads `config('trustedproxy.proxies')` at request time, but
+  the closure's eager `TrustProxies::at(<RFC1918 default>)` preempts it; the fix is a new `config/trustedproxy.php`
+  (fail-safe parse; default = **trust none**) + dropping the `at:`/`env()` from `bootstrap/app.php` (keep the explicit
+  `headers:`). Includes a runtime regression test whose **`172.19.x`-rejected** row is the discriminator the original
+  `TrustedProxyReadinessTest` lacked (its peers sat inside both the RFC1918 default and any /24 pin). DEFECT-002 stays
+  **OPEN / not fixed**; implementation unpromoted (ACTIVE = NONE / NEXT_TASK = NONE). ChatGPT to promote before any
+  Phase 2B retry.
