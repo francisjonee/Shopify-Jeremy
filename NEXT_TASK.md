@@ -17,9 +17,17 @@ verification confirmed green ✓ only via `authenticity_certified`, owner-auth i
 restored to normal posture (deployed main clean, `--no-dev`, kr-app healthy on the pilot bind, MariaDB private,
 DOCKER-USER IP-lock unchanged).
 
+The read-only `SCA-053` End-to-End Pilot Readiness Audit is also **DONE** (planning only; full report at
+`docs/SCA-053-PILOT-READINESS-AUDIT.md`). **Verdict:** the digital lifecycle is functionally pilot-ready — no
+code/workflow blockers, no confirmed functional defects — and every material remaining gap (printable permanent
+QR, HTTPS, functional password recovery/SMTP, off-site backup rehearsal) is downstream of a Jeremy-provided
+permanent HTTPS domain, already scoped under SCA-PRODUCTION-CUTOVER. **Recommended next action: production-cutover
+preparation, NOT a code task** (SCA-054 candidate only if ChatGPT wants the small non-blocking staff-UX polish —
+collector-support menu link + ownership-correction item-detail link).
+
 **No queued item has been promoted.** Per the authority rule, ChatGPT may promote exactly one queued item from
-`TASK_QUEUE.md` into this file after reviewing this deployment. Until then there is no authorization to start
-any task. **`SCA-053` must not start.**
+`TASK_QUEUE.md` into this file after reviewing these reports. Until then there is no authorization to start any
+task. **`SCA-054` must not start.**
 
 *No open correctness defects (DEFECT-001 is FIXED, see `docs/PENDING-DEFECTS.md`). `SCA-PRODUCTION-CUTOVER`
 remains BLOCKED/DEFERRED awaiting a Jeremy-provided permanent HTTPS domain + access.*
