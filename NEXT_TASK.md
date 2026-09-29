@@ -15,8 +15,14 @@ ownership_events / current-state-projection / certifications / media-checksum fi
 restored to normal posture (deployed main clean, `--no-dev`, caches cleared, kr-app healthy on the pilot bind,
 MariaDB private, DOCKER-USER IP-lock unchanged).
 
+The read-only `SCA-050` Product Experience & Operations audit is also **DONE** (planning only — no code/branch/
+migration/mutation; full report at `docs/SCA-050-PRODUCT-EXPERIENCE-OPERATIONS-AUDIT.md`). It recommends **one**
+candidate: **staff registry operational filtering & item lookup** — add lifecycle/registry-status/owner/date
+filters + certification-number search to the existing paginated eyewear index (read-only, no schema, one
+controller+view), removing the most frequent raw-DB staff operation and the physical-item→admin dead-end.
+
 **No queued item has been promoted.** Per the authority rule, ChatGPT may promote exactly one queued item from
-`TASK_QUEUE.md` into this file after auditing SCA-049. Until then there is no authorization to start any task.
-**`SCA-050` must not start.**
+`TASK_QUEUE.md` into this file after auditing these reports. Until then there is no authorization to start any
+task. **`SCA-051` must not start.**
 
 *`SCA-PRODUCTION-CUTOVER` remains BLOCKED/DEFERRED awaiting a Jeremy-provided permanent HTTPS domain + access.*
