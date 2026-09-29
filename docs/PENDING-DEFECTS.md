@@ -5,7 +5,15 @@ folded into) a governed task; none is fixed except through the normal governed f
 
 ---
 
-## DEFECT-001 — Collector "✓" authenticity badge shows green on revoked/uncertified items
+## DEFECT-001 — Collector "✓" authenticity badge shows green on revoked/uncertified items — **FIXED**
+
+> **RESOLVED by `SCA-COLLECTOR-AUTHENTICITY-BADGE-052`** — merged + deployed to production `main` at
+> `0e2e151b2023186ce18347c514903dce217c1685` (base `c8e3f59`, feature `efe7dd9`). The badge now shows the green
+> ✓ iff the item is currently certified; non-certified states render neutral (no ✓), consistent with the
+> SCA-048 notice. Authentication is derived independently from `sca_authentications` so revocation no longer
+> erases historical authentication evidence. Read-model + presentation only, no schema/mutation; zero domain
+> mutation verified (before/after fingerprints MATCH); no migration (count 118). Deploy gate 7/48 focused +
+> 621/3375 full. Evidence in impl repo `docs/task-reports/SCA-COLLECTOR-AUTHENTICITY-BADGE-052.md`. Status: CLOSED.
 
 - **Discovered:** SCA-050 product/operations audit (deployed `ec2b2ef`).
 - **Where:** `app/packages/Sca/Collector/src/Resources/views/collection/show.blade.php` — the top authenticity
