@@ -1,40 +1,46 @@
 # NEXT TASK
 
-**STATUS: ACTIVE — `SCA-PRODUCTION-CUTOVER Phase 2A.1 / DEFECT-002` — Runtime Trusted-Proxy Fix (PUSH ONLY).**
+**STATUS: `SCA-PRODUCTION-CUTOVER Phase 2A.1 / DEFECT-002` — IMPLEMENTED + PUSHED (push-only). Awaiting ChatGPT
+pre-merge audit. NOT merged, NOT deployed.**
 
-Promoted 2026-09-29 by ChatGPT. Base/deployed SHA `d089e7a27856d7aacc45ccb9fb3333dbf4d4ade0`. Accepted
-architecture = the Phase 2A.1 audit at governance `51e281f`
-(`docs/SCA-PRODUCTION-CUTOVER-PHASE2A1-DEFECT-002-PLAN.md`). **PUSH ONLY — do NOT merge, do NOT deploy, do NOT retry
-Phase 2B.**
+Base/deployed `d089e7a27856d7aacc45ccb9fb3333dbf4d4ade0`. Feature branch `sca-cutover-trusted-proxy-2a1` on
+`github-sca-platform` — fix `acea325dc8bbfcab04f4f88ac842c329bd5c8861`, task report `75f9e9e`
+(`docs/task-reports/SCA-CUTOVER-TRUSTED-PROXY-2A1.md`). Governance evidence:
+`docs/SCA-PRODUCTION-CUTOVER-PHASE2A1-DEFECT-002-PLAN.md` + this entry.
 
-## Executable contract
+## What was implemented (push only)
 
-1. **Add `config/trustedproxy.php`** deriving the proxy list from `TRUSTED_PROXIES` with the audited fail-safe policy:
-   unset → trust none; empty → trust none; whitespace/empty comma entries removed; valid IP/CIDR retained;
-   `*`/`**`/universal-trust values rejected/removed; malformed never broadens trust. **Do NOT restore the RFC1918
-   default.**
-2. **Edit `bootstrap/app.php`**: remove all `env('TRUSTED_PROXIES')` reads and the `at:` argument from
-   `trustProxies()`; retain the explicit accepted forwarded-header mask; let the framework's `TrustProxies` middleware
-   resolve `config('trustedproxy.proxies')` lazily at request time. Do NOT call `TrustProxies::at()` anywhere.
-3. **Regression coverage** (extend `TrustedProxyReadinessTest`) with configured trust `172.20.0.0/24`, proven through
-   the real HTTP kernel: `172.20.x` honored; **`172.19.x` rejected (mandatory discriminator)**; public rejected;
-   loopback/untrusted rejected; untrusted cannot manufacture HTTPS/host/client-IP. Configure via the real config path —
-   NOT `TrustProxies::at()`, NOT static mutation, NOT early env injection that bypasses the bootstrap-order defect.
-4. **Default/failure tests:** no config → trust none; empty → trust none; malformed → not trusted; `*`/`**` → no
-   universal trust; `:8080` plain-HTTP remains compatible with trust-none.
-5. **Config-cache hard gate:** build production-style config cache, verify through a real web/runtime request that
-   `TRUSTED_PROXIES=172.20.0.0/24` yields exactly `172.20.x`=trusted / `172.19.x`=untrusted, then clear/restore caches.
-   Include a static gate proving `bootstrap/app.php` has no `env('TRUSTED_PROXIES')`.
-6. **Existing behavior:** re-run passport, collector auth and the full `tests/Feature/Sca`; must not alter Phase-2A
-   Apache behavior.
+Fixes DEFECT-002 — trusted proxies are now resolved at request time from `config('trustedproxy.proxies')`, not
+prematurely from `env()` in `bootstrap/app.php::withMiddleware()`:
+- **`config/trustedproxy.php` (new):** sole reader of `TRUSTED_PROXIES`; fail-safe parse (unset/empty → trust none;
+  whitespace/empty entries removed; valid IPv4/IPv6/CIDR retained; `*`/`**`/`REMOTE_ADDR`/malformed rejected); **no
+  RFC1918 default**; `config:cache`-safe.
+- **`bootstrap/app.php`:** dropped the `env()` read and the `at:` argument; kept the explicit forwarded-header mask;
+  `TrustProxies` (default global middleware) resolves the config value lazily at handle time; no `TrustProxies::at()`.
+- **`TrustedProxyReadinessTest`:** config-driven (no `TrustProxies::at`/static/pre-boot env) with the mandatory
+  **`172.19.x`-rejected** discriminator, fail-safe/default matrix, plain-HTTP pilot compat, and a static gate that
+  `bootstrap/app.php` performs no `env('TRUSTED_PROXIES')` read.
 
-**Scope boundaries:** no migration/schema/route/ACL/domain mutation; do NOT change production `.env`; do NOT set
-`TRUSTED_PROXIES` in production; do NOT change DNS/Caddy/Docker-networks/firewall/DOCKER-USER/`APP_URL`/
-`PUBLIC_QR_BASE_URL`/`SESSION_SECURE_COOKIE`/`SCA_PUBLIC_PREVIEW`/SMTP/QR/provenance. Do NOT retry Phase 2B.
+## Verification
 
-**Verification / restore:** report exact test totals; verify `TRUSTED_PROXIES` unset ⇒ trust-none and the
-`195.26.255.80:8080` pilot unaffected; restore the pilot to deployed main `@ d089e7a`, clean tree, `--no-dev`, healthy
-kr-app, private MariaDB, unchanged DOCKER-USER. **PUSH ONLY. STOP for ChatGPT audit.**
+- Focused `TrustedProxyReadinessTest`: **14 passed (57 assertions)**. Full `tests/Feature/Sca`: **635 passed
+  (3432 assertions)**, exit 0.
+- **Discriminator proven to catch DEFECT-002:** reverting `bootstrap/app.php` to base `d089e7a` makes the `172.19.x`
+  and trust-none tests **FAIL**; the fix makes them pass.
+- **config:cache hard gate passed:** baked `["172.20.0.0/24"]` (via a process-env only — production `.env` untouched);
+  with config cached and `getenv=false`, the real middleware honored `172.20.x` / rejected `172.19.x`+public; cache cleared.
+- **Trust-none default (TRUSTED_PROXIES unset):** `config('trustedproxy.proxies')=null`, spoofed forwarded proto
+  ignored; `:8080` pilot `/up`,`/admin/login`,`/collector/login` all 200.
+- **Pilot restored** to deployed main `@ d089e7a`: clean tree, `--no-dev` (phpunit pruned), kr-app healthy on
+  `195.26.255.80:8080` (`sca_internal` only), MariaDB private, **DOCKER-USER byte-identical**, no probe leftovers.
 
-DEFECT-002 remains **OPEN** until merge/deploy + runtime verification. Phase 2B remains **BLOCKED**.
-`SCA-PRODUCTION-CUTOVER` remains **OPEN**.
+## Boundaries honored
+
+No migration/schema/route/ACL/domain mutation; production `.env` unchanged (`TRUSTED_PROXIES` stays unset); no
+DNS/Caddy/Docker-net/firewall/`APP_URL`/`PUBLIC_QR_BASE_URL`/`SESSION_SECURE_COOKIE`/`SCA_PUBLIC_PREVIEW`/SMTP/QR
+change; Phase-2A Apache behavior unchanged. **Phase 2B NOT retried.**
+
+**DEFECT-002 remains OPEN** until merge/deploy + runtime verification. **Phase 2B remains BLOCKED.**
+`SCA-PRODUCTION-CUTOVER` remains **OPEN**. **PUSH ONLY — stopped for ChatGPT audit; no merge, no deploy.** Deploy
+sequencing when authorized: deploy with `TRUSTED_PROXIES` unset (trust-none, pilot-safe); pin `172.20.0.0/24` only in
+the Phase 2B retry.

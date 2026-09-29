@@ -147,12 +147,13 @@ _(DEFECT-001 was subsequently FIXED by `SCA-COLLECTOR-AUTHENTICITY-BADGE-052`, d
   `LoadEnvironmentVariables`. Add a **runtime** (not just unit) assertion that an untrusted RFC1918 peer (`172.19.x`) is
   **rejected** while the pinned `/24` edge is **honored**. Re-attempt Phase 2B only after this is merged + deployed and
   the runtime pin is proven effective.
-- **Planning status:** root-cause proven; **Phase 2A.1 planning/root-cause audit DONE** (read-only) —
-  `docs/SCA-PRODUCTION-CUTOVER-PHASE2A1-DEFECT-002-PLAN.md`. Confirmed fix mechanism (empirically, through the real
-  `TrustProxies` middleware): the framework already lazily reads `config('trustedproxy.proxies')` at request time, but
-  the closure's eager `TrustProxies::at(<RFC1918 default>)` preempts it; the fix is a new `config/trustedproxy.php`
-  (fail-safe parse; default = **trust none**) + dropping the `at:`/`env()` from `bootstrap/app.php` (keep the explicit
-  `headers:`). Includes a runtime regression test whose **`172.19.x`-rejected** row is the discriminator the original
-  `TrustedProxyReadinessTest` lacked (its peers sat inside both the RFC1918 default and any /24 pin). DEFECT-002 stays
-  **OPEN / not fixed**; implementation unpromoted (ACTIVE = NONE / NEXT_TASK = NONE). ChatGPT to promote before any
-  Phase 2B retry.
+- **Planning status:** root-cause proven; **Phase 2A.1 planning DONE** (`docs/SCA-PRODUCTION-CUTOVER-PHASE2A1-DEFECT-002-PLAN.md`)
+  and **IMPLEMENTED + PUSHED (push-only)** on branch `sca-cutover-trusted-proxy-2a1` (fix `acea325`, report `75f9e9e`
+  in impl repo `docs/task-reports/SCA-CUTOVER-TRUSTED-PROXY-2A1.md`; base `d089e7a`). Fix: new `config/trustedproxy.php`
+  (fail-safe parse; default = **trust none**; `*`/`**`/`REMOTE_ADDR`/malformed rejected; `config:cache`-safe) + dropped
+  the `at:`/`env()` from `bootstrap/app.php` (kept the explicit `headers:`); `TrustProxies` resolves
+  `config('trustedproxy.proxies')` lazily at request time. Regression test is config-driven with the mandatory
+  **`172.19.x`-rejected** discriminator (proven to FAIL on base `d089e7a`, pass on the fix). Focused 14/57; full
+  `tests/Feature/Sca` 635/3432; config:cache hard gate passed; trust-none default verified; pilot restored to
+  `d089e7a`. **DEFECT-002 remains OPEN until merge/deploy + runtime verification.** NOT merged, NOT deployed; awaiting
+  ChatGPT pre-merge audit.
