@@ -1,9 +1,15 @@
 # NEXT TASK
 
-**STATUS:** ACTIVE — `SCA-COLLECTOR-AUTHENTICITY-BADGE-052` promoted for implementation (DEFECT-001 fix; push
-only — NOT merged, NOT deployed, production NOT migrated). Base = deployed `main`
-`c8e3f5943e9b8e6ecd22accdce9db7719bab97ba`. Implementation contract = the accepted DEFECT-001 root-cause audit
-recorded at governance `636216c` (`docs/PENDING-DEFECTS.md`).
+**STATUS:** ACTIVE — `SCA-COLLECTOR-AUTHENTICITY-BADGE-052` **implemented and pushed for ChatGPT audit**
+(DEFECT-001 fix; push only — NOT merged, NOT deployed, production NOT migrated). Base = deployed `main`
+`c8e3f5943e9b8e6ecd22accdce9db7719bab97ba`; feature branch `sca-collector-authenticity-badge-052` @
+`efe7dd92c5af608294fd7517c30e261e57c4d8ca`. Contract = the DEFECT-001 root-cause audit at governance `636216c`.
+Focused `ItemAuthenticityBadgeTest` 7/48; full `tests/Feature/Sca` 621/3375; `php -l` clean. Read-model +
+presentation only (no schema/migration/mutation; no controller change); green ✓ ⇔ current active certification,
+authentication derived independently from `sca_authentications`; public passport + SCA-038/041/042/048/049/051
+unchanged. Pilot restored to deployed `c8e3f59`. Must not be merged/deployed, **DEFECT-001 not marked fixed**,
+and SCA-053 stays unpromoted until ChatGPT authorizes. Evidence in the implementation repo
+`docs/task-reports/SCA-COLLECTOR-AUTHENTICITY-BADGE-052.md`.
 
 *Prior: `SCA-051` DONE (deployed `c8e3f59`); DEFECT-001 root-cause audit DONE. `SCA-PRODUCTION-CUTOVER` remains
 BLOCKED/DEFERRED. SCA-053 must not start.*
