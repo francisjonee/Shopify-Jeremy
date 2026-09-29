@@ -1,8 +1,13 @@
 # NEXT TASK
 
-**STATUS:** ACTIVE — `SCA-COLLECTOR-OWNERSHIP-TRANSFER-HISTORY-049` promoted for implementation (push only —
-NOT merged, NOT deployed, production NOT migrated). Base = deployed `main`
-`96cc584556c78b009ccb8e88afe228f08891e7ba`.
+**STATUS:** ACTIVE — `SCA-COLLECTOR-OWNERSHIP-TRANSFER-HISTORY-049` **implemented and pushed for ChatGPT audit**
+(push only — NOT merged, NOT deployed, production NOT migrated). Base = deployed `main`
+`96cc584556c78b009ccb8e88afe228f08891e7ba`; feature branch `sca-collector-ownership-transfer-history-049` @
+`e3abf76695d3539ab59a5afe24a0bcb020b02a5a`. Focused `ItemOwnershipHistoryTest` 11/50; full `tests/Feature/Sca`
+597/3201 (586/3150 baseline + 11 new + 1 assertion from the SCA-033 `o14` update). Read-only (no schema/route/
+mutation); SCA-048/041/042 + SCA-038 Option A preserved. Pilot restored to deployed `96cc584`. Must not be
+merged/deployed and SCA-050 must not start until ChatGPT authorizes. Evidence in the implementation repo
+`docs/task-reports/SCA-COLLECTOR-OWNERSHIP-TRANSFER-HISTORY-049.md`.
 
 *Prior: `SCA-048` DONE (deployed `96cc584`); `SCA-049` planning audit DONE
 (`docs/SCA-049-COLLECTOR-OWNERSHIP-TRANSFER-HISTORY.md`). `SCA-PRODUCTION-CUTOVER` remains BLOCKED/DEFERRED.
