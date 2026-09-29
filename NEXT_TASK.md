@@ -1,8 +1,13 @@
 # NEXT TASK
 
-**STATUS:** ACTIVE — `SCA-STAFF-REGISTRY-OPERATIONS-051` promoted for implementation (push only — NOT merged,
-NOT deployed, production NOT migrated). Base = deployed `main`
-`ec2b2efcaab6f9f8d4c8c236645285dd8158ec37`.
+**STATUS:** ACTIVE — `SCA-STAFF-REGISTRY-OPERATIONS-051` **implemented and pushed for ChatGPT audit** (push
+only — NOT merged, NOT deployed, production NOT migrated). Base = deployed `main`
+`ec2b2efcaab6f9f8d4c8c236645285dd8158ec37`; feature branch `sca-staff-registry-operations-051` @
+`a4240fde35121e9a139c2872938aab9724fabce2`. Focused `StaffRegistryOperationsTest` 16/81; full
+`tests/Feature/Sca` 613/3285 (597 baseline + 16 new). Read-only (no schema/mutation, one new POST lookup route
+under the existing `sca.eyewear` ACL); Option-A/PassportResolver untouched. Pilot restored to deployed
+`ec2b2ef`. Must not be merged/deployed and SCA-052 must not start until ChatGPT authorizes. Evidence in the
+implementation repo `docs/task-reports/SCA-STAFF-REGISTRY-OPERATIONS-051.md`.
 
 *Prior: `SCA-049` DONE (deployed `ec2b2ef`); `SCA-050` product/ops audit DONE. `SCA-PRODUCTION-CUTOVER` remains
 BLOCKED/DEFERRED. SCA-052 must not start.*
