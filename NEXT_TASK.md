@@ -1,13 +1,17 @@
 # NEXT TASK
 
-**STATUS:** ACTIVE — `SCA-STAFF-REGISTRY-OPERATIONS-051` **implemented and pushed for ChatGPT audit** (push
-only — NOT merged, NOT deployed, production NOT migrated). Base = deployed `main`
-`ec2b2efcaab6f9f8d4c8c236645285dd8158ec37`; feature branch `sca-staff-registry-operations-051` @
-`a4240fde35121e9a139c2872938aab9724fabce2`. Focused `StaffRegistryOperationsTest` 16/81; full
-`tests/Feature/Sca` 613/3285 (597 baseline + 16 new). Read-only (no schema/mutation, one new POST lookup route
-under the existing `sca.eyewear` ACL); Option-A/PassportResolver untouched. Pilot restored to deployed
-`ec2b2ef`. Must not be merged/deployed and SCA-052 must not start until ChatGPT authorizes. Evidence in the
-implementation repo `docs/task-reports/SCA-STAFF-REGISTRY-OPERATIONS-051.md`.
+**STATUS:** ACTIVE — `SCA-STAFF-REGISTRY-OPERATIONS-051` **pushed for FINAL PRE-MERGE RE-VERIFICATION** after
+the conditional-pass grammar fix (push only — NOT merged, NOT deployed, production NOT migrated). Base = deployed
+`main` `ec2b2efcaab6f9f8d4c8c236645285dd8158ec37`; feature branch `sca-staff-registry-operations-051` now @
+**`e168cffd62e90e54204b48e53e2a8d5badbf6b3c`** (2 commits: reviewed `a4240fd` preserved + grammar fix `e168cff`;
+base..HEAD = the same 5-file scope). **Pre-merge review finding resolved:** `normalizeQrToken` was broader than
+the `/p/{token}` contract (accepted any `…/{token}` path); it now accepts ONLY a bare token or a value whose
+parsed URL path is exactly `/p/{token}` (rejects `/anything/{token}`, `/foo/p/{token}`, trailing slash, encoded
+slashes, uppercase/wrong-length/non-hex), no host dependency — proven by new focused case `rg16`. Focused
+`StaffRegistryOperationsTest` **17/123**; full `tests/Feature/Sca` **614/3327**; `php -l` clean. Read-only (no
+schema/mutation; one POST lookup route under existing `sca.eyewear` ACL); Option-A/PassportResolver/QR lifecycle
+untouched. Pilot restored to deployed `ec2b2ef`. Must not be merged/deployed and SCA-052 must not start until
+ChatGPT authorizes. Evidence in `docs/task-reports/SCA-STAFF-REGISTRY-OPERATIONS-051.md`.
 
 *Prior: `SCA-049` DONE (deployed `ec2b2ef`); `SCA-050` product/ops audit DONE. `SCA-PRODUCTION-CUTOVER` remains
 BLOCKED/DEFERRED. SCA-052 must not start.*
