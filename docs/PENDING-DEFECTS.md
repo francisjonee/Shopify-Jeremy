@@ -122,7 +122,22 @@ _(DEFECT-001 was subsequently FIXED by `SCA-COLLECTOR-AUTHENTICITY-BADGE-052`, d
 
 ---
 
-## DEFECT-002 — `TRUSTED_PROXIES` env pin is inert at runtime (trustProxies reads `env()` before env is loaded) — **OPEN**
+## DEFECT-002 — `TRUSTED_PROXIES` env pin is inert at runtime (trustProxies reads `env()` before env is loaded) — **FIXED**
+
+> **RESOLVED by `SCA-PRODUCTION-CUTOVER Phase 2A.1`** — merged `--no-ff` + deployed to production `main` at
+> **`c568331f9eca01cd2eed068f3e0b6af3e9381665`** (parents: base `d089e7a`, feature `75f9e9e`; fix `acea325`).
+> Trusted proxies are now resolved at request time from `config('trustedproxy.proxies')` (new `config/trustedproxy.php`,
+> fail-safe parse, **no RFC1918 default**, `config:cache`-safe); `bootstrap/app.php` no longer reads
+> `env('TRUSTED_PROXIES')` and passes no `at:`/`TrustProxies::at()`. Deployed in **trust-none** mode (production
+> `TRUSTED_PROXIES` left UNSET; `172.20.0.0/24` will be pinned only in the Phase 2B retry). Deploy gate: focused
+> `TrustedProxyReadinessTest` 14/57 + full `tests/Feature/Sca` 635/3432; `migrate → Nothing to migrate` (migrations
+> 118). **Deployed-runtime proof (through the real HTTP middleware):** `env`/`config`/boot-static all NULL (no hidden
+> RFC1918 fallback); default rejects spoofed `X-Forwarded-*` from every peer (172.19/172.20/10/192.168/public/loopback);
+> with an in-memory `172.20.0.0/24` pin the **DEFECT-002 discriminator now rejects `172.19.x`** while honoring
+> `172.20.x`. Zero production mutation (counts + QR identity fp `6bb119ee…` unchanged; DOCKER-USER byte-identical;
+> MariaDB private; Apache no forwarded-HTTPS path). Evidence in impl repo
+> `docs/task-reports/SCA-CUTOVER-TRUSTED-PROXY-2A1.md`; plan `docs/SCA-PRODUCTION-CUTOVER-PHASE2A1-DEFECT-002-PLAN.md`.
+> Status: **CLOSED.**
 
 - **Discovered:** SCA-PRODUCTION-CUTOVER Phase 2B edge/Caddy pre-DNS **implementation** attempt (deployed baseline
   `d089e7a`); it is a **hard blocker** for Phase 2B and any edge-CIDR pinning. Full evidence:
