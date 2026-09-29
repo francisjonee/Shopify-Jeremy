@@ -117,3 +117,35 @@ unaffected.
 **Planning status:** root-cause audit COMPLETE; DEFECT-001 remains **OPEN / not fixed**. Recommended as a small
 read-model + presentation correctness task for ChatGPT to promote when it chooses (candidate id e.g.
 `SCA-COLLECTOR-AUTHENTICITY-BADGE-052`). ACTIVE = NONE / NEXT_TASK = NONE; SCA-052 not started.
+
+_(DEFECT-001 was subsequently FIXED by `SCA-COLLECTOR-AUTHENTICITY-BADGE-052`, deployed `0e2e151` — see the header block above.)_
+
+---
+
+## DEFECT-002 — `TRUSTED_PROXIES` env pin is inert at runtime (trustProxies reads `env()` before env is loaded) — **OPEN**
+
+- **Discovered:** SCA-PRODUCTION-CUTOVER Phase 2B edge/Caddy pre-DNS **implementation** attempt (deployed baseline
+  `d089e7a`); it is a **hard blocker** for Phase 2B and any edge-CIDR pinning. Full evidence:
+  `docs/SCA-PRODUCTION-CUTOVER-PHASE2B-IMPLEMENTATION-RESULT.md`.
+- **Where:** `bootstrap/app.php` — `trustProxies(at: env('TRUSTED_PROXIES', '<RFC1918 default>'))` is evaluated
+  **inside the `withMiddleware()` closure**, which runs at HTTP-kernel resolution (`afterResolving(Kernel::class)`),
+  i.e. **before** `$kernel->handle()` runs the `LoadEnvironmentVariables` bootstrapper.
+- **Symptom:** at the moment the closure runs, `env('TRUSTED_PROXIES')` is **NULL**, so the code falls back to the
+  hardcoded RFC1918 default (`10.0.0.0/8,172.16.0.0/12,192.168.0.0/16`). The `.env` pin only becomes readable
+  *post*-bootstrap — too late for the middleware. Proven in the **web SAPI** (`apache2handler`): a probe replicating
+  `public/index.php` ordering shows `PRE-bootstrap`/`AT-kernel-make` `env(TRUSTED_PROXIES)=NULL` but
+  `POST-bootstrap='172.20.0.0/24'`; and a live spoof shows an untrusted `172.19.x` peer's `X-Forwarded-*` **honored**
+  (only possible under the RFC1918 default, not a `/24` pin). A container restart/recreate does **not** fix it.
+- **Impact:** the Phase-2A/2B design of pinning the Caddy edge subnet via `TRUSTED_PROXIES=<edge CIDR>` **cannot take
+  effect**. Runtime trust silently stays RFC1918-wide, so the "pinned exclusively to the edge /24" hardening is absent
+  and Phase 2B's §2/§7 gate is unachievable on `d089e7a`. (Not a regression from `d089e7a`; the same timing bug would
+  also defeat `config:cache`.) No live exposure today (only sr-caddy and internal non-HTTP containers can reach
+  `kr-app:80`; the public `:8080` peer is correctly rejected), but the intended boundary is not enforced.
+- **Correct behavior / fix (governed code slice — recommend "Phase 2A.1", DEFECT-002):** resolve trusted proxies from a
+  value available *after* env load — read the CIDR list from a **config file** and have `trustProxies()` read
+  `config(...)` (also `config:cache`-safe), or set trusted proxies in a bootstrapper/provider `boot()` that runs after
+  `LoadEnvironmentVariables`. Add a **runtime** (not just unit) assertion that an untrusted RFC1918 peer (`172.19.x`) is
+  **rejected** while the pinned `/24` edge is **honored**. Re-attempt Phase 2B only after this is merged + deployed and
+  the runtime pin is proven effective.
+- **Planning status:** root-cause proven; DEFECT-002 **OPEN / not fixed**. Recommended for ChatGPT to promote as the
+  prerequisite code fix before Phase 2B is retried. ACTIVE = NONE; nothing started.

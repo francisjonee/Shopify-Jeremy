@@ -2,32 +2,44 @@
 
 **STATUS:** NONE — no executable task is currently authorized.
 
-`SCA-COLLECTOR-AUTHENTICITY-BADGE-052` is **DONE** (`--no-ff` merged + deployed to production `main` at
-`0e2e151b2023186ce18347c514903dce217c1685`; base/prior-deployed `c8e3f5943e9b8e6ecd22accdce9db7719bab97ba`,
-feature `efe7dd92c5af608294fd7517c30e261e57c4d8ca`). It **fixes DEFECT-001**: the collector My Collection
-authenticity badge now shows the green ✓ "Authenticated & Certified" iff the item is currently certified;
-non-certified states render neutral (no ✓), consistent with the SCA-048 notice; authentication is derived
-independently from `sca_authentications` so revocation no longer erases historical authentication evidence.
-**No schema/migration** (deploy migrate → "Nothing to migrate", migrations unchanged at 118); read-model +
-presentation only; no domain mutation. Deploy gate: focused `ItemAuthenticityBadgeTest` 7/48; full
-`tests/Feature/Sca` 621/3375. Production before/after IDENTICAL (counts + 7 fingerprints —
-certs/cert_events/authentications/projection/media-checksum/qr-identity/ownership — all MATCH). Non-mutating
-verification confirmed green ✓ only via `authenticity_certified`, owner-auth intact, certified `/p/{token}` →
-200 + bogus → constant 404 (SCA-038 Option A), PassportPresenter + SCA-041/042/048/049/051 unchanged. Pilot
-restored to normal posture (deployed main clean, `--no-dev`, kr-app healthy on the pilot bind, MariaDB private,
-DOCKER-USER IP-lock unchanged).
+## Latest: SCA-PRODUCTION-CUTOVER Phase 2B edge/Caddy pre-DNS IMPLEMENTATION — **FAILED (hard gate) + ROLLED BACK** (2026-09-29)
 
-The read-only `SCA-053` End-to-End Pilot Readiness Audit is also **DONE** (planning only; full report at
-`docs/SCA-053-PILOT-READINESS-AUDIT.md`). **Verdict:** the digital lifecycle is functionally pilot-ready — no
-code/workflow blockers, no confirmed functional defects — and every material remaining gap (printable permanent
-QR, HTTPS, functional password recovery/SMTP, off-site backup rehearsal) is downstream of a Jeremy-provided
-permanent HTTPS domain, already scoped under SCA-PRODUCTION-CUTOVER. **Recommended next action: production-cutover
-preparation, NOT a code task** (SCA-054 candidate only if ChatGPT wants the small non-blocking staff-UX polish —
-collector-support menu link + ownership-correction item-detail link).
+The Phase 2B edge/Caddy pre-DNS path was built and validated against deployed baseline `d089e7a`
+(created `sca_edge` 172.20.0.0/24 on sr-caddy + kr-app only; appended the default-deny Caddy SCA site with
+`tls internal`; force-recreated sr-caddy with smsrocket.io staying healthy; pinned `TRUSTED_PROXIES=172.20.0.0/24`
+in `.env`) — but the **hard verification gate (directive §2/§7) failed**: the running application's *effective*
+trusted-proxy set is still the **transitional RFC1918 default, not the pinned `/24`**. A live spoof shows an
+untrusted `172.19.x` peer's `X-Forwarded-*` **honored** (impossible under a true `/24` pin).
+
+**Root cause = DEFECT-002 (a code bug in the deployed Phase 2A `d089e7a`), not a Phase-2B/config error.**
+`bootstrap/app.php` evaluates `trustProxies(at: env('TRUSTED_PROXIES', <RFC1918 default>))` inside the
+`withMiddleware()` closure, which runs at HTTP-kernel resolution **before** `LoadEnvironmentVariables`. At that
+moment `env('TRUSTED_PROXIES')` is NULL, so the code falls back to the hardcoded RFC1918 default and the `.env`
+pin is **inert at runtime** (proven in the web SAPI: PRE / AT-kernel-make `env=NULL`; POST-bootstrap
+`=172.20.0.0/24`). No container restart/recreate fixes it — it requires a code change, which is outside Phase 2B's
+scope. See `docs/PENDING-DEFECTS.md` (DEFECT-002) and `docs/SCA-PRODUCTION-CUTOVER-PHASE2B-IMPLEMENTATION-RESULT.md`.
+
+**Per the directive, everything was rolled back to the audited baseline** and the smsrocket.io co-tenant preserved:
+Caddyfile restored (`sha256 171f29c…`, `caddy validate` = Valid); smsrocket compose reverted; sr-caddy
+force-recreated → smsrocket.io recovered (http 308 → https 200); SCA vhost removed (SNI → 000); `.env` pin removed
+(0600 www-data; `APP_URL` still HTTP pilot; `PUBLIC_QR_BASE_URL`/`SESSION_SECURE_COOKIE`/`SCA_PUBLIC_PREVIEW`
+absent); `sca_edge` torn down (kr-app → `sca_internal` only; kr-mariadb private); `:8080` pilot fallback intact
+(`/up`, `/admin/login`, `/collector/login` = 200; DOCKER-USER byte-identical); **zero provenance mutation**
+(counts + QR rows/`no_update`/`no_delete` triggers unchanged). **This is not a regression from `d089e7a`.**
+
+**Prerequisite before Phase 2B can be retried:** a governed code slice (recommend "Phase 2A.1", DEFECT-002) that
+resolves trusted proxies from a value available *after* env load — read the edge CIDR from a **config file** and
+have `trustProxies()` read `config(...)` (also `config:cache`-safe), or set trusted proxies in a
+bootstrapper/provider `boot()` that runs after `LoadEnvironmentVariables` — with a **runtime** assertion that an
+untrusted RFC1918 peer (`172.19.x`) is rejected while the pinned `/24` edge is honored. Re-attempt Phase 2B only
+after that fix is merged + deployed and the runtime pin is proven effective.
+
+## Authorization state
 
 **No queued item has been promoted.** Per the authority rule, ChatGPT may promote exactly one queued item from
-`TASK_QUEUE.md` into this file after reviewing these reports. Until then there is no authorization to start any
-task. **`SCA-054` must not start.**
+`TASK_QUEUE.md` (recommended: the Phase 2A.1 / DEFECT-002 code fix) into this file after reviewing these reports.
+Until then there is no authorization to start any task. **Do NOT proceed to DNS / public TLS / Phase 2C.**
 
-*No open correctness defects (DEFECT-001 is FIXED, see `docs/PENDING-DEFECTS.md`). `SCA-PRODUCTION-CUTOVER`
-remains BLOCKED/DEFERRED awaiting a Jeremy-provided permanent HTTPS domain + access.*
+*Prior completed context: `SCA-COLLECTOR-AUTHENTICITY-BADGE-052` DONE (deployed `0e2e151`; DEFECT-001 FIXED);
+`SCA-053` pilot-readiness audit DONE (functionally pilot-ready). `SCA-PRODUCTION-CUTOVER` remains OPEN /
+BLOCKED — now gated on DEFECT-002, then a Jeremy-provided permanent HTTPS domain + a quiet maintenance window.*
