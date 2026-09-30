@@ -1,7 +1,22 @@
 # NEXT TASK
 
-**STATUS: DEFECT-003 CORRECTED + PUSHED (2026-09-30) — re-submitted for pre-merge audit. NOT merged/deployed.**
+**STATUS: PRE-MERGE VERIFICATION PASS / GO (2026-09-30) — `ddfe424` cleared for merge pending authorization. NOT merged/deployed.**
 `SCA-PRODUCTION-CUTOVER — Permanent QR Artifact Generator`.
+
+Independent re-verification of corrected candidate `ddfe424` (base `bd9e3cd`) — **every gate holds**. Only production
+diff from the superseded `c7eb163` is `svgUseFillAttributes false→true`. DEFECT-003 fixed and proven by decoding the
+**actual HTTP SVG response body** → exactly `https://verify.secondchanceauthenticators.com/p/{active_token}`;
+self-contained (`#000`/`#fff` fills, no `<style>`); ECC H + 4-module quiet zone; discriminator (strengthened regression
+FAILS on `c7eb163`, PASSES on `ddfe424`); revoked/missing/unauthorized fail closed with no mutation; privacy intact;
+focused 10/39 + full `tests/Feature/Sca` 651/3504; `php -l` clean; `composer check-platform-reqs --no-dev` all success;
+SCA-038 200/404 live; zero prod mutation (fp `a920dc1c…`); pilot restored to `bd9e3cd`, generator+dependency absent from
+runtime. Full report: `docs/SCA-PERMANENT-QR-ARTIFACT-PREMERGE-VERIFICATION.md`.
+**→ Cleared for merge + governed deploy under separate authorization. No further code change required. Do not
+merge/deploy/print or start another task without authorization.**
+
+---
+
+_(Verification history for this candidate, retained:)_
 
 **Corrected HEAD `ddfe424`** (on top of `c7eb163`, base `bd9e3cd`, history preserved; branch `sca-qr-artifact-generator`).
 One-line production fix `svgUseFillAttributes => true` in `EyewearItemController::qr()` → the downloaded SVG now carries

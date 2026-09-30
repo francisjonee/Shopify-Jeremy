@@ -1,5 +1,37 @@
 # SCA-PERMANENT-QR-ARTIFACT — Final Pre-Merge Verification
 
+## ✅ RE-VERIFICATION VERDICT (corrected candidate `ddfe424`): **PASS / GO** — cleared for merge pending authorization
+
+**Date:** 2026-09-30 · independent, read-only (candidate never deployed). **Accepted candidate:**
+`ddfe424fd8513c32887d1f5db3e1f6d6b4cdf416` · **Base/deployed:** `bd9e3cdd914b6ac657ad54939f9c692e13463006`.
+
+Every gate holds. DEFECT-003 is fixed and proven against the **actual HTTP response body**.
+
+| Gate | Result | Evidence |
+|---|---|---|
+| Git identity (origin/main==base; local+origin feature==candidate; merge-base==base; clean tree) | ✅ PASS | all equalities hold |
+| Commit set / file scope | ✅ PASS | 2 commits (`c7eb163`←`ddfe424`, `c7eb163` ancestor of candidate); 7 files: controller, view, routes, composer.json/lock, test, task-report |
+| **Only production diff `c7eb163`→`ddfe424` is `svgUseFillAttributes` false→true** | ✅ PASS | controller diff = that one option (+comment); composer/view/routes byte-identical to `c7eb163`; test strengthened + task-report are the other two changes |
+| Reviewed surface intact (GET-only route, `sca.eyewear.view`, active-QR projection binding, canonical request-independent payload from `APP_URL`, `public_ref`-only filename, no public endpoint) | ✅ PASS | carried over unchanged from `c7eb163` (proven byte-identical) + reconfirmed via captured HTTP response |
+| **DEFECT-003 hard gate — decode the ACTUAL HTTP SVG response** | ✅ PASS | real HTTP body (status 200, `image/svg+xml`) captured through the framework, independently rasterized (verifier-owned harness, not the test helper) → decodes to **exactly** `https://verify.secondchanceauthenticators.com/p/{active_token}` |
+| Self-contained standalone artifact (explicit dark/light fills, no external CSS) | ✅ PASS | 16 `fill=` attrs, distinct `#000`/`#fff`, no `<style>`; standalone render (default-black + explicit fills) decodes correctly |
+| ECC H + ≥4-module quiet zone effective | ✅ PASS | viewBox 57 = 49-module symbol + 2×4 quiet zone; `eccLevel` line unchanged (`EccLevel::H`) |
+| **Discriminator** (strengthened regression fails on `c7eb163`, passes on `ddfe424`; delivered HTTP body, not a substitute QR) | ✅ PASS | `rg2`+`rg6` on `ddfe424` test vs `c7eb163` controller → **2 failed** (`DECODE_FAILED: could not find enough finder patterns`); vs `ddfe424` controller → **pass** |
+| Revoked/stale not printable; missing item / no-active / missing-row / unauthorized fail closed; no mutation on those paths | ✅ PASS | `rg4/rg5/rg6/rg7/rg8` green; controller reads only via `active_qr_identifier_id`, zero writes |
+| Privacy (token only in machine-readable QR; not plaintext in body/headers/filename/logs/flash) | ✅ PASS | token absent from SVG body, all headers, and `Content-Disposition` (filename `sca-qr-SCA-…svg`); no `[0-9a-f]{16,}` text run in body |
+| Focused `QrArtifactTest` + full `tests/Feature/Sca` | ✅ PASS | **10 / 39** and **651 / 3504**; `php -l` clean on controller + test |
+| Composer production-install compatibility | ✅ PASS | `composer check-platform-reqs --no-dev` all `success` (chillerlan 6.0.1 in `require`; php ^8.2 + ext-mbstring satisfied) |
+| SCA-038 valid→200 / bogus→constant-shape 404 | ✅ PASS | live `verify./p/{valid}`→200, unknown-32→404, malformed→404 |
+| Zero production mutation | ✅ PASS | fp `a920dc1c…` + counts (qr=2/life=2/certs=3/auth=3/own=4, migrations=118, is_production=0,0, proj 1:1/3:2) unchanged |
+| Pilot restored to `bd9e3cd`, generator + dependency absent from runtime | ✅ PASS | tree clean on main; chillerlan absent from app vendor; no `/qr` route live; verify. 200/404 + :8080 200; kr-app healthy |
+
+**Recommendation:** cleared for merge to `main` + governed deploy under separate authorization. No code change required.
+Stopping at the verdict — not merged, not deployed, no production QR generated/printed.
+
+---
+
+_(Superseded record for the earlier HEAD `c7eb163` follows.)_
+
 > **UPDATE 2026-09-30 — DEFECT-003 CORRECTED (HEAD `ddfe424`, on top of `c7eb163`, base `bd9e3cd`).** Production fix
 > `svgUseFillAttributes => true` in `EyewearItemController::qr()`; the SVG now carries explicit `#000`/`#fff` fills and is
 > self-contained/scannable with no external CSS. The regression was strengthened: `QrArtifactTest::decodeSvgArtifact()`
