@@ -2,8 +2,20 @@
 
 **Date:** 2026-09-30 · Deployed baseline `5e02f3e`.
 
-> **SLICE 1 IMPLEMENTED + PUSHED (push-only) 2026-09-30 — awaiting pre-merge review.** Feature branch
-> `sca-registry-catalog-ui` @ `ed6d4cc` (code `cd7f2a6` + report `ed6d4cc`), base `5e02f3e`. Operator decisions locked:
+> **SLICE 1 DONE — MERGED `--no-ff` + DEPLOYED 2026-09-30.** MERGE_SHA = ORIGIN_MAIN = DEPLOYED_HEAD =
+> `3ef9ed0a5a761447fc0e423333ce423ed41f48d6` (reviewed candidate `ed6d4cc`, base `5e02f3e`, 2 commits preserved
+> `cd7f2a6`+`ed6d4cc`). Approved by ChatGPT. **Post-deploy gates all PASS:** deploy test gate 660 passed;
+> migration `add_catalog` applied (**migrations 118→119**); 3 catalog columns exist, **existing rows 2/2 null (no
+> backfill)**; certified item 1 + item 3 detail pages render (two-panel + tabs); catalog ACL on deployed routes
+> (`catalog`→`ScaAuthorize:sca.eyewear.catalog`, `image`→`:sca.eyewear.view`; non-staff `/admin/...` → 403 at edge);
+> full catalog round-trip on deployed code **upload→stream(200 image/png)→remove→404**, net-zero (prod items back to
+> 2/2 null); **zero provenance/QR mutation** (fp `a920dc1c…` unchanged), **is_production unchanged**; SCA-038
+> `/p` 200 / bogus 404 / malformed 404; `/storage` 404 (edge default-deny — confirms routed-image requirement);
+> MariaDB private, `sca_edge` auto-attached on recreate (172.20.0.3), Caddyfile `0faece7a` + DOCKER-USER 5 unchanged;
+> verify. + smsrocket + :8080 healthy; dev deps pruned, chillerlan(prod) present, pilot bind restored, tree clean.
+> **Slices 2 + 3 NOT started (per the authorization).**
+>
+> _(Pre-deploy record:)_ Feature branch `sca-registry-catalog-ui` @ `ed6d4cc` (code `cd7f2a6` + report `ed6d4cc`), base `5e02f3e`. Operator decisions locked:
 > **SKU + image only**, catalog **card grid** (Slice 2), History tab = **SCA provenance history only**, core Products
 > tab **left as-is**. Delivered: additive nullable `sku`/`image_path`/`image_mime`; new `sca.eyewear.catalog` ACL;
 > `POST {id}/catalog` + `GET {id}/image` (image streamed through the app — the edge default-denies `/storage`; explicit
