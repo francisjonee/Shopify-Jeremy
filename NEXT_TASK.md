@@ -1,7 +1,28 @@
 # NEXT TASK
 
-**STATUS: PRE-MERGE VERIFICATION PASS / GO (2026-09-30) — `ddfe424` cleared for merge pending authorization. NOT merged/deployed.**
-`SCA-PRODUCTION-CUTOVER — Permanent QR Artifact Generator`.
+**STATUS: NONE — ACTIVE = NONE.** `SCA-PRODUCTION-CUTOVER — Permanent QR Artifact Generator` is **DONE**
+(merged `--no-ff` + deployed `5e02f3e`, 2026-09-30). No task is promoted; do not start one without authorization.
+
+**`SCA-PRODUCTION-CUTOVER — Permanent QR Artifact Generator` — DONE (merged `--no-ff` + deployed `5e02f3e`).**
+Base `bd9e3cd`, reviewed candidate `ddfe424` (chain `c7eb163`→`ddfe424`), MERGE_SHA=ORIGIN_MAIN=DEPLOYED_HEAD=
+`5e02f3e8b9b780306b8e11fb13d30247d134ff81`. Deploy gate 651/3504; `Nothing to migrate` (schema unchanged, 118); `--no-dev`
+(chillerlan 6.0.1 prod dep present, dev pruned). Deployed-artifact proof: the real deployed SVG for existing active item 1
+independently rasterized+decoded → exactly `https://verify.secondchanceauthenticators.com/p/bee93d2bd7933ba643a872c6bf79ac33`;
+self-contained (`#000`/`#fff` fills, no `<style>`), ECC H + 4-module quiet zone, filename `sca-qr-SCA-3C35D669ACBE.svg`
+(public_ref only), no token in body/headers/filename. SCA-038 200/404; new `/qr` route 403 from non-staff IP (default-deny
+intact); sca_edge auto-attached on recreate, MariaDB private; verify.+smsrocket+:8080 healthy; Caddyfile `0faece7a`,
+DOCKER-USER 5 rules; **zero QR/domain mutation** (fp `a920dc1c…`, is_production 0,0, counts/projection unchanged). Deploy
+note: first gate run aborted on root-owned `storage/` dirs from the verifier's earlier root test runs — fixed by
+`chown -R 33:33 storage bootstrap/cache` and re-run (production untouched during the abort). Report:
+`docs/SCA-PERMANENT-QR-ARTIFACT-DEPLOY-RESULT.md`. **No QR printed/attached; returned for review.**
+
+**Explicitly NOT done / still deferred:** physical QR printing/attachment, QR regeneration/reissue, is_production
+mutation, SMTP activation, :8080 retirement, `SESSION_SECURE_COOKIE` Phase B, further DNS/Caddy. SCA-PRODUCTION-CUTOVER
+remains OPEN.
+
+---
+
+_(Task contract + verification history for this task, retained below.)_
 
 Independent re-verification of corrected candidate `ddfe424` (base `bd9e3cd`) — **every gate holds**. Only production
 diff from the superseded `c7eb163` is `svgUseFillAttributes false→true`. DEFECT-003 fixed and proven by decoding the
