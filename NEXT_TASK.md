@@ -1,45 +1,38 @@
 # NEXT TASK
 
-**STATUS: ACTIVE — `SCA-COLLECTOR-PASSWORD-RESET-FAILURE-HARDENING` (PUSH ONLY).**
+**STATUS: `SCA-COLLECTOR-PASSWORD-RESET-FAILURE-HARDENING` — IMPLEMENTED + PUSHED (push-only). Awaiting ChatGPT
+pre-merge audit. NOT merged, NOT deployed.**
 
-Promoted 2026-09-30 by ChatGPT. Base/deployed `c568331`. Preserves the collector forgot-password endpoint's
-enumeration-safe behavior when the configured mail transport throws / is unavailable. **PUSH ONLY — do NOT merge,
-deploy, or execute Phase 2C.** (Distinct from the held `SCA-054` staff-UX candidate.)
+Base/deployed `c568331`. Feature branch `sca-collector-pwreset-failure-hardening` on `github-sca-platform` — fix
+`f3e86f2`, task report `8fdce4d` (`docs/task-reports/SCA-COLLECTOR-PASSWORD-RESET-FAILURE-HARDENING.md`).
 
-## Root cause (inspected at c568331)
+## What was implemented (push only)
 
-Laravel `PasswordBroker::sendResetLink` creates the reset token **before** calling
-`$user->sendPasswordResetNotification($token)`. Today `MAIL_MAILER=log` (can't fail), but under a real SMTP transport
-a delivery throw would propagate out of `ForgotPasswordController::sendLink` → **HTTP 500**, which both harms UX and
-**breaks the enumeration-safety guarantee** (a 500 vs. the generic 200/redirect becomes an oracle; a transport
-exception message can also contain the recipient address). See
-`docs/SCA-PRODUCTION-CUTOVER-SMTP-READINESS-AUDIT.md` §9.
+Minimal hardening of `ForgotPasswordController::sendLink` so a mail-transport failure preserves the endpoint's
+enumeration-safety:
+- `try/catch (\Throwable)` around `Password::broker('sca_collectors')->sendResetLink(...)` → on failure returns the
+  **identical** generic redirect+flash (no HTTP 500; no exception/email/token/provider/credential text to the
+  browser). `$request->validate` stays before the try (malformed input still 422s).
+- **Residual-token cleanup:** `sendResetLink` creates the token before delivery; on a throw (⇒ not delivered, plaintext
+  unrecoverable) the residual token is deleted best-effort via the public `getUser` + `deleteToken` (cleanup itself
+  guarded) — no misleading token lingers, and the 60-s throttle doesn't block a legitimate retry.
+- **Privacy-safe log:** `Log::warning('SCA collector password-reset delivery failed', ['exception' => $e::class])` —
+  only the exception class; never email/token/message/provider response.
+- Preserved: 60-min expiry, 60-s broker throttle, route `throttle:6,1`, single-use deletion, collector/staff broker
+  separation, `status=active` eligibility, no-auto-login, exact success behavior.
 
-## Executable contract
+Scope = exactly 2 files (`ForgotPasswordController.php` + `CollectorPasswordRecoveryTest.php`). No
+`.env`/DNS/Caddy/Docker/network/firewall/queue/schema/QR change.
 
-1. **Harden `ForgotPasswordController::sendLink` only** (minimal): wrap the `Password::broker('sca_collectors')
-   ->sendResetLink(...)` call in a `try/catch (\Throwable)`. On catch, return the **same** enumeration-safe generic
-   redirect+flash as the success/unknown/disabled paths — **no HTTP 500**, no exception/email/token/provider/credential
-   text to the browser. Validation (`$request->validate`) stays **before** the try so malformed input still 422s.
-2. **Token cleanup on failure (decided):** a thrown transport exception means the message was not accepted, so the
-   token was not delivered and its plaintext is unrecoverable (only a hash remains). **Delete the residual token**
-   best-effort via the public broker API (`getUser` + `deleteToken`), wrapped in its own guard so cleanup failure also
-   never 500s. Rationale: prevents a misleading residual token and frees the 60-s broker throttle for a legitimate
-   retry; it never invalidates a delivered link (a throw ⇒ not delivered). This is a deliberate, security-analyzed
-   choice, not a broker-semantics requirement.
-3. **Privacy-safe operational logging:** record the failure so ops can detect a broken transport, but log **only** a
-   fixed message + the exception **class** (and optionally code) — **never** the email, token, `$e->getMessage()`,
-   provider response, or collector identity.
-4. **Preserve everything else unchanged:** 60-min token expiry, 60-s broker throttle, route `throttle:6,1`,
-   single-use deletion on success, collector/staff broker separation, `status=active` eligibility, no-auto-login, and
-   the exact successful-reset behavior.
-5. **Tests (focused, `tests/Feature/Sca/CollectorPasswordRecoveryTest.php`)** using a **deliberately failing mail
-   transport**: prove (a) active/unknown/disabled all return the **identical** enumeration-safe response under
-   failure; (b) **no 500**; (c) no exception/email/token/provider text in the response; (d) the residual token is
-   **deleted** on failure (0 rows); (e) privacy-safe log carries no email/token/message; (f) normal successful reset
-   still works (real in-memory transport); (g) zero unrelated domain mutation.
-6. **Run** the focused suite + full `tests/Feature/Sca`; report exact totals; `php -l` clean.
+## Verification
 
-**Forbidden:** DNS, SMTP credentials/provider activation, real email, `.env`, Caddy, Docker/network/firewall, queue
-infrastructure/workers, schema/migrations (unless an unexpected hard requirement is discovered — then STOP and
-report), QR changes, Phase 2C execution. **Push only; return to ChatGPT for audit.**
+- Focused `CollectorPasswordRecoveryTest`: **20 passed / 97 assertions** (r1–r14 unchanged; r15–r20 new).
+- Full `tests/Feature/Sca`: **641 passed / 3462 assertions** (exit 0; was 635/3432).
+- **Discriminator proven:** reverting the controller to base `c568331` makes r15/r17/r20 **FAIL** (uncaught → 500);
+  the fix makes them pass. `php -l` clean.
+- Pilot restored to deployed main `c568331`: clean tree, `--no-dev` (phpunit pruned), kr-app healthy on
+  `195.26.255.80:8080`, `:8080` endpoints (incl `/collector/forgot-password`) 200, smsrocket 200, 2B edge intact
+  (SCA vhost SNI 200), MariaDB private.
+
+**PUSH ONLY — stopped for ChatGPT audit; no merge, no deploy.** `SCA-PRODUCTION-CUTOVER` remains OPEN (Phase 2C blocked
+on the client's GoDaddy `verify` A record). SCA-054 must not start.
