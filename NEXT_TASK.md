@@ -48,6 +48,20 @@ recommend "adopt existing tokens"). Minimal Caddy diff = relabel apex→`verify.
 remove `tls internal` for public LE. Post-DNS checklist + rollback in the audit doc. When Shopify OAuth (`SHOPIFY-CONNECT-009`)
 is later activated, the Caddy default-deny must add an explicit allow for `/sca/*` callback/webhook (denied now).
 
+**SMTP / password-recovery readiness audit DONE 2026-09-30 (read-only, zero changes;
+`docs/SCA-PRODUCTION-CUTOVER-SMTP-READINESS-AUDIT.md`).** The password-reset flow is **code-complete and secure**
+(dedicated `sca_collectors` broker; hashed single-use 60-min token; enumeration-safe; `throttle:6,1` + 60-s broker
+throttle; `status=active` fails disabled closed; no token/PII logged) — **no defect**. Non-functional only because
+`MAIL_MAILER=log`. Activation = provider account + SMTP creds + **DKIM/SPF on a dedicated SCA sending subdomain**
+(never the Shopify apex) + `.env` `MAIL_*` switch; **no code change**. Domain mail DNS: apex has **DMARC
+`p=quarantine`** (relaxed) but **no SPF/MX/DKIM**, so real sending needs subdomain DKIM/SPF to pass DMARC.
+**Recommended provider: Postmark** (SES / Resend alternatives), From `no-reply@verify.secondchanceauthenticators.com`
+(not the bare apex; `support@` only as Reply-To if a real inbox exists — apex MX is empty). `sr-mail` is
+smsrocket.io-only → fully isolated. **Flagged separately (NOT a current defect, do not fix without a separate task):**
+the reset notification sends **synchronously** — under real SMTP a provider outage would 500 and break
+enumeration-safety; harden at activation (try/catch in `sendLink`, or queue the notification). DNS records need the
+client's GoDaddy access (same blocker); provider/creds/DNS can be prepared but not created here.
+
 ## Authorization state
 
 `SCA-PRODUCTION-CUTOVER` remains **OPEN**. **Still forbidden without new authorization:** public DNS changes, public
