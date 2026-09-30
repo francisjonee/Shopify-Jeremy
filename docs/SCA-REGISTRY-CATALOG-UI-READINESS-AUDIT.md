@@ -1,6 +1,23 @@
 # SCA-REGISTRY-CATALOG-UI — Readiness / Planning Audit (READ-ONLY)
 
-**Date:** 2026-09-30 · Deployed baseline `5e02f3e`. **Planning only — nothing implemented.**
+**Date:** 2026-09-30 · Deployed baseline `5e02f3e`.
+
+> **SLICE 1 IMPLEMENTED + PUSHED (push-only) 2026-09-30 — awaiting pre-merge review.** Feature branch
+> `sca-registry-catalog-ui` @ `ed6d4cc` (code `cd7f2a6` + report `ed6d4cc`), base `5e02f3e`. Operator decisions locked:
+> **SKU + image only**, catalog **card grid** (Slice 2), History tab = **SCA provenance history only**, core Products
+> tab **left as-is**. Delivered: additive nullable `sku`/`image_path`/`image_mime`; new `sca.eyewear.catalog` ACL;
+> `POST {id}/catalog` + `GET {id}/image` (image streamed through the app — the edge default-denies `/storage`; explicit
+> 404, not `abort()` which Krayin masks to 200); `show.blade.php` rebuilt to Krayin's two-panel core layout
+> (left info card + image + SKU + Edit-catalog & About-Item `x-admin::accordion`s; right `x-admin::tabs`: Overview /
+> Authentication / Certification & QR / Documents / History — no Inventory). No Krayin core/vendor edits; all existing
+> actions/forms/ACL preserved; **zero provenance mutation** (`is_production` untouched). Tests `CatalogUiTest` 9/38;
+> full `tests/Feature/Sca` 659 passed + 1 pre-existing flaky (`CertificationWorkflowTest::c13` — random 32-hex token
+> containing `'8080'` ~0.035%, re-runs green, unrelated). `php -l` clean. Live pilot restored to `5e02f3e` (no catalog
+> routes live, prod schema untouched — migration ran only on the disposable test DB, dev deps pruned, fp `a920dc1c…`
+> unchanged). Report: `app`-repo `docs/task-reports/SCA-REGISTRY-CATALOG-UI-SLICE1.md`. **Not merged/deployed. Slices 2
+> (catalog card-grid index) + 3 (collector/passport image+SKU) follow after review.**
+
+**Planning section below — original audit (read-only, nothing implemented at the time).**
 
 ## Goal (from the operator)
 
