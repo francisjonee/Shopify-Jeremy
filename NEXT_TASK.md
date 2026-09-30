@@ -1,7 +1,27 @@
 # NEXT TASK
 
-**STATUS: PRE-MERGE VERIFICATION FAILED (2026-09-30) — NO-GO, returned to author. NOT merged/deployed.**
+**STATUS: DEFECT-003 CORRECTED + PUSHED (2026-09-30) — re-submitted for pre-merge audit. NOT merged/deployed.**
 `SCA-PRODUCTION-CUTOVER — Permanent QR Artifact Generator`.
+
+**Corrected HEAD `ddfe424`** (on top of `c7eb163`, base `bd9e3cd`, history preserved; branch `sca-qr-artifact-generator`).
+One-line production fix `svgUseFillAttributes => true` in `EyewearItemController::qr()` → the downloaded SVG now carries
+explicit `#000`/`#fff` fills and is self-contained/scannable with no external CSS. The regression was strengthened:
+`QrArtifactTest::decodeSvgArtifact()` independently rasterizes + decodes the **actual HTTP SVG response body** (no longer
+a byte-compare to a same-options SVG); `rg2` requires the decode to equal exactly
+`https://verify.secondchanceauthenticators.com/p/{active_token}`, `rg6` proves only the active token is encoded.
+**Discriminator:** `rg2`+`rg6` FAIL on `c7eb163` (`DECODE_FAILED: could not find enough finder patterns`), PASS on
+`ddfe424`. Focused 10/39; full `tests/Feature/Sca` **651/3504**; `php -l` clean. All prior invariants preserved
+(SVG/ECC H/≥4 quiet zone, active-QR-only, GET-only `sca.eyewear.view`, fail-safe 404, `public_ref`-only filename, no
+plaintext token, is_production untouched, SCA-038 unchanged). Zero prod mutation (fp `a920dc1c…`, counts unchanged);
+pilot restored to `bd9e3cd`, candidate absent from runtime. Report:
+`app/docs/task-reports/SCA-PERMANENT-QR-ARTIFACT.md`; verification doc: `docs/SCA-PERMANENT-QR-ARTIFACT-PREMERGE-VERIFICATION.md`.
+**→ Awaiting fresh pre-merge audit of `ddfe424`. Do not merge/deploy/print or start another task.**
+
+---
+
+_(Earlier verdict on the superseded HEAD, retained:)_
+
+**PRE-MERGE VERIFICATION FAILED (2026-09-30) — NO-GO on `c7eb163`.**
 
 **Verdict:** candidate `c7eb163` FAILS one gate — **DEFECT-003**: the generated SVG uses
 `svgUseFillAttributes=false` with no `<style>`/fill attributes, so as delivered (attachment, no external CSS) every

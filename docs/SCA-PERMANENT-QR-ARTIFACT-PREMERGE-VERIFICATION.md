@@ -1,5 +1,16 @@
 # SCA-PERMANENT-QR-ARTIFACT — Final Pre-Merge Verification
 
+> **UPDATE 2026-09-30 — DEFECT-003 CORRECTED (HEAD `ddfe424`, on top of `c7eb163`, base `bd9e3cd`).** Production fix
+> `svgUseFillAttributes => true` in `EyewearItemController::qr()`; the SVG now carries explicit `#000`/`#fff` fills and is
+> self-contained/scannable with no external CSS. The regression was strengthened: `QrArtifactTest::decodeSvgArtifact()`
+> independently rasterizes + decodes the **actual HTTP SVG response body** (not a byte-compare) and requires exactly
+> `https://verify.…/p/{active_token}`. **Discriminator proven:** `rg2`+`rg6` FAIL on `c7eb163`
+> (`DECODE_FAILED: could not find enough finder patterns`), PASS on `ddfe424`. Focused 10/39; full `tests/Feature/Sca`
+> 651/3504; `php -l` clean; zero prod mutation (fp `a920dc1c…`); pilot restored to `bd9e3cd`, candidate absent. Re-submitted
+> for a fresh pre-merge audit of `ddfe424`. The FAIL verdict below applies to the superseded `c7eb163`.
+
+
+
 **Date:** 2026-09-30 · **Verifier:** independent pre-merge review (read-only; candidate never deployed).
 **Candidate:** `c7eb163b85c046794c4d0acb00ada40d8617cd3a` · **Base:** `bd9e3cdd914b6ac657ad54939f9c692e13463006`.
 
