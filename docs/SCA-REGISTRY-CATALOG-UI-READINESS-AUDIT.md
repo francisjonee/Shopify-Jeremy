@@ -29,6 +29,22 @@
 > unchanged). Report: `app`-repo `docs/task-reports/SCA-REGISTRY-CATALOG-UI-SLICE1.md`. **Not merged/deployed. Slices 2
 > (catalog card-grid index) + 3 (collector/passport image+SKU) follow after review.**
 
+> **SLICE 2 IMPLEMENTED + PUSHED (push-only) 2026-09-30 — awaiting pre-merge review.** Feature branch
+> `sca-registry-catalog-ui-slice2` @ **`6e8a063`**, base = deployed Slice-1 main **`3ef9ed0`**. **2 commits, 5 files:**
+> `dccc680` Slice 2 (controller `index()` select + presence-only `cs_cert`/`cs_qr` flags; `eyewear/index.blade.php`
+> card grid; `CatalogGridTest.php`; report) + `6e8a063` **c13 de-flake** (test-only). The catalog **card grid** renders
+> over the SAME SCA-051 result set — header, POST QR-lookup, and the full GET filter/search/sort form preserved
+> verbatim; only the results table → responsive cards (image via the authorized `admin.sca.eyewear.image` route, never
+> `/storage`; placeholder when null; brand+model, SKU [`—` when null], public_ref, lifecycle/registry/**Certified**/
+> **QR** badges; View link gated by `sca.eyewear.view`; pagination preserved). No Krayin core/vendor edits; index stays
+> read-only (GET) → zero provenance mutation; no change to QR/cert/auth/ownership/projection/is_production/passport/
+> SCA-038/collector/Shopify/infra. **c13 de-flake:** dropped only the bare `'8080'` from the forbidden host-fragment
+> list (4 hex digits → a random `Token::opaque()` contains it ~0.035% of the time; remaining fragments still reject any
+> real host/URL/IP embed); `Token::opaque()` / production token generation unchanged. Tests: `CatalogGridTest` 7/27;
+> full `tests/Feature/Sca` **667 passed / 3572** (660 + 7; c13 now stable); `php -l` clean; live index renders against
+> prod (grid + 2 cards + filters + QR lookup). Pilot restored to `3ef9ed0` (old table index live, dev pruned, fp
+> `a920dc1c…` / migrations 119 unchanged, healthy). **Not merged/deployed. Slice 3 not started.**
+
 **Planning section below — original audit (read-only, nothing implemented at the time).**
 
 ## Goal (from the operator)
