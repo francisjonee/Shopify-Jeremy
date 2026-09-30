@@ -2,35 +2,30 @@
 
 **STATUS:** NONE — no executable task is currently authorized. **ACTIVE = NONE, NEXT_TASK = NONE.**
 
-## Latest: SCA-PRODUCTION-CUTOVER — EDGE PERSISTENCE HARDENING — **DONE (merged + deployed)** 2026-09-30
+## Latest: SCA-PRODUCTION-CUTOVER Phase 2C (Public DNS + Trusted TLS) — **PASS / LIVE** 2026-09-30
 
-Merged `--no-ff` (reviewed commit preserved) + deployed to production `main`. **A real governed container recreation
-proved automatic `sca_edge` reattachment with NO `docker network connect`** — persistence is now established, so the
-prior "reconnect kr-app to `sca_edge` after every deploy" operational step is **no longer required**.
+The public SCA registry edge is live at **`https://verify.secondchanceauthenticators.com`** with a publicly-trusted
+Let's Encrypt certificate. Apex + `www` remain the live Shopify storefront, untouched. Full evidence:
+`docs/SCA-PRODUCTION-CUTOVER-PHASE2C-RESULT.md`.
 
-- **Base:** `4095ad506e01458b5131523d4b0b9ca49ed97ac5`
-- **Feature:** `97e3d693eda876e4053b84d64d2b09d1121e6563` (branch `sca-edge-persistence`, 1 commit)
-- **MERGE_SHA = ORIGIN_MAIN = DEPLOYED_HEAD = `bd9e3cdd914b6ac657ad54939f9c692e13463006`**
-
-`docker-compose.yml`: `app` service `networks: [internal, sca_edge]` + top-level `sca_edge: {external: true}` (literal
-existing 172.20.0.0/24 network). `mariadb` unchanged (`internal`-only); no static IP.
-
-**Deploy + decisive persistence proof:** deploy gate focused (implicit) + full `tests/Feature/Sca` **641/3462**;
-`migrate → Nothing to migrate` (118); `DEPLOYED_HEAD==ORIGIN_MAIN==MERGE_SHA`. The governed `deploy-preview.sh`
-recreated kr-app (log: "Recreated") and Compose **auto-attached** it to `sca_internal`(172.19.0.3) + **`sca_edge`
-(172.20.0.3, inside /24)** — no manual connect. Re-establishing the `:8080` public bind recreated kr-app a second time
-and it **again** auto-attached `sca_edge` (172.20.0.3).
-
-**All gates:** isolation — kr-mariadb `sca_internal`-only + no host port, sr-caddy on `sca_edge`+smsrocket,
-Caddy→kr-app:80 OK. Trusted-proxy runtime — `TRUSTED_PROXIES=172.20.0.0/24` (not broadened); real Caddy peer
-`172.20.0.2` → proto/host/client-IP honored, `172.19.x`+public rejected. Functional edge — SCA SNI `/p/valid`→200,
-bogus→404 (SCA-038, 2863 B), `/collector/login`→200, `/admin`→403, installer/`/sca/*`/`/up`/root→404; smsrocket.io
-healthy (`/`→302→`/admin/login`→200; sr-caddy/sr-app untouched). `:8080` fallback `/up`,`/admin/login`,
-`/collector/login`→200, DOCKER-USER byte-identical (2 staff IPs + DROP). Non-mutation — migrations=118, qr=2, certs=3,
-QR fp `6bb119ee0b598222bfec58bb80c7a4cb`; MariaDB private. Restoration — clean deployed main `bd9e3cd`, `--no-dev`
-(phpunit pruned), no config cache, no probe artifacts, kr-app healthy + dual-homed.
+- **DNS** (client-set, independently confirmed 8.8.8.8/1.1.1.1): `verify.` → `195.26.255.80`; apex/www still Shopify.
+- **Caddyfile** (`sha256 0faece7a…`, smsrocket block byte-for-byte unchanged): SCA vhost relabelled to `verify.`,
+  `tls internal` removed (public LE), `www` block deleted; default-deny preserved.
+- **HARD GATE (no `-k`, no `--resolve`):** LE cert obtained (log "certificate obtained successfully"); `curl` →
+  `http=200, ssl_verify_result=0`; issuer **Let's Encrypt**, subject **CN=verify.secondchanceauthenticators.com**,
+  valid Sep 30 → Dec 29 2026.
+- **Internet-facing:** `/p/{valid}`→200, bogus→404 (SCA-038), `/collector/login`→200, `/admin`→403 (non-staff),
+  installer/`/sca/*`/api/root/`/up`→404, `http`→`https` 308, form action absolute `https://verify.…`; apex Shopify;
+  smsrocket 200.
+- **Proxy/security (re-proven):** `TRUSTED_PROXIES=172.20.0.0/24` (not broadened); real Caddy peer `172.20.0.2` →
+  proto/host/client-IP honored, `172.19.x`+public rejected.
+- **Non-mutation:** migrations=118, qr=2, certs=3, QR fp `6bb119ee0b598222bfec58bb80c7a4cb`; MariaDB private;
+  DOCKER-USER byte-identical; `:8080` fallback 200; kr-app healthy dual-homed; deployed app `bd9e3cd` unchanged.
 
 ## Authorization state
 
-`SCA-PRODUCTION-CUTOVER` remains **OPEN**; **Phase 2C blocked on client DNS access** (GoDaddy `verify` A record). No
-queued item promoted. **SCA-054 must not start.** Nothing is active.
+`SCA-PRODUCTION-CUTOVER` remains **OPEN**. **Next gate = application URL / permanence configuration** (`APP_URL=https://verify.…`,
+`PUBLIC_QR_BASE_URL`, `SESSION_SECURE_COOKIE=true` [sequenced with `:8080` retirement], `SCA_PUBLIC_PREVIEW=0`) — a
+**separate** step, **NOT authorized here**; APP_URL/permanence config was deliberately left unchanged in Phase 2C.
+SMTP, permanent QR production/printing, `:8080` retirement, and off-site backup remain deferred. **SCA-054 must not
+start.** Nothing is active.
