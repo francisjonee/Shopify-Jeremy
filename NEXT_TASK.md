@@ -1,70 +1,45 @@
 # NEXT TASK
 
-**STATUS:** NONE — no executable task is currently authorized. **ACTIVE = NONE, NEXT_TASK = NONE.**
+**STATUS: ACTIVE — `SCA-COLLECTOR-PASSWORD-RESET-FAILURE-HARDENING` (PUSH ONLY).**
 
-## Latest: SCA-PRODUCTION-CUTOVER Phase 2B RETRY (Edge/Caddy Pre-DNS) — **PASS — edge left LIVE** 2026-09-29
+Promoted 2026-09-30 by ChatGPT. Base/deployed `c568331`. Preserves the collector forgot-password endpoint's
+enumeration-safe behavior when the configured mail transport throws / is unavailable. **PUSH ONLY — do NOT merge,
+deploy, or execute Phase 2C.** (Distinct from the held `SCA-054` staff-UX candidate.)
 
-On production baseline `c568331` (DEFECT-002 fixed), the pre-DNS edge was built and **all hard gates passed**, so the
-validated edge is left live (full evidence: `docs/SCA-PRODUCTION-CUTOVER-PHASE2B-RETRY-RESULT.md`).
+## Root cause (inspected at c568331)
 
-**Live governed state:** `sca_edge` (172.20.0.0/24) joining sr-caddy `172.20.0.2` + kr-app `172.20.0.3` (kr-mariadb
-stays sca_internal-only); production `.env` `TRUSTED_PROXIES=172.20.0.0/24` (effective at request time — proven);
-`/opt/smsrocket-stack/Caddyfile` SCA vhost `tls internal` + `www→apex` (sha `00f16788…`, smsrocket block byte-for-byte
-unchanged); sr-caddy recreated serving smsrocket.io (public LE) + SCA vhost (internal CA, **reachable only via SNI —
-no DNS, no public ACME**). `:8080` pilot + DOCKER-USER IP-lock unchanged = rollback/fallback path.
+Laravel `PasswordBroker::sendResetLink` creates the reset token **before** calling
+`$user->sendPasswordResetNotification($token)`. Today `MAIL_MAILER=log` (can't fail), but under a real SMTP transport
+a delivery throw would propagate out of `ForgotPasswordController::sendLink` → **HTTP 500**, which both harms UX and
+**breaks the enumeration-safety guarantee** (a 500 vs. the generic 200/redirect becomes an oracle; a transport
+exception message can also contain the recipient address). See
+`docs/SCA-PRODUCTION-CUTOVER-SMTP-READINESS-AUDIT.md` §9.
 
-**Hard gate (real deployed HTTP middleware):** Caddy peer `172.20.0.2` trusted (proto/host/client-IP honored),
-`172.19.x` rejected, public rejected. **Pre-DNS checks (`curl --resolve`, internal cert):** vhost answers,
-`/p/{valid}`→200, bogus→404 (SCA-038 constant-shape), `/collector/login`→200, `/admin*`→403 (staff allowlist intact),
-installer/`/sca/*`/api/root/`/up`→404 (default-deny), HTTPS recognized; smsrocket 200. Zero SCA mutation (counts + QR
-fp `6bb119ee…` unchanged); DOCKER-USER byte-identical; MariaDB private.
+## Executable contract
 
-## Phase 2C (Public DNS + Trusted TLS) — **BLOCKED / NOT STARTED** 2026-09-29
+1. **Harden `ForgotPasswordController::sendLink` only** (minimal): wrap the `Password::broker('sca_collectors')
+   ->sendResetLink(...)` call in a `try/catch (\Throwable)`. On catch, return the **same** enumeration-safe generic
+   redirect+flash as the success/unknown/disabled paths — **no HTTP 500**, no exception/email/token/provider/credential
+   text to the browser. Validation (`$request->validate`) stays **before** the try so malformed input still 422s.
+2. **Token cleanup on failure (decided):** a thrown transport exception means the message was not accepted, so the
+   token was not delivered and its plaintext is unrecoverable (only a hash remains). **Delete the residual token**
+   best-effort via the public broker API (`getUser` + `deleteToken`), wrapped in its own guard so cleanup failure also
+   never 500s. Rationale: prevents a misleading residual token and frees the 60-s broker throttle for a legitimate
+   retry; it never invalidates a delivered link (a throw ⇒ not delivered). This is a deliberate, security-analyzed
+   choice, not a broker-semantics requirement.
+3. **Privacy-safe operational logging:** record the failure so ops can detect a broken transport, but log **only** a
+   fixed message + the exception **class** (and optionally code) — **never** the email, token, `$e->getMessage()`,
+   provider response, or collector identity.
+4. **Preserve everything else unchanged:** 60-min token expiry, 60-s broker throttle, route `throttle:6,1`,
+   single-use deletion on success, collector/staff broker separation, `status=active` eligibility, no-auto-login, and
+   the exact successful-reset behavior.
+5. **Tests (focused, `tests/Feature/Sca/CollectorPasswordRecoveryTest.php`)** using a **deliberately failing mail
+   transport**: prove (a) active/unknown/disabled all return the **identical** enumeration-safe response under
+   failure; (b) **no 500**; (c) no exception/email/token/provider text in the response; (d) the residual token is
+   **deleted** on failure (0 rows); (e) privacy-safe log carries no email/token/message; (f) normal successful reset
+   still works (real in-memory transport); (g) zero unrelated domain mutation.
+6. **Run** the focused suite + full `tests/Feature/Sca`; report exact totals; `php -l` clean.
 
-Attempted under authorization but **stopped at the pre-change revalidation gate with zero changes** — the DNS
-prerequisite is unmet in a way that needs a human decision (`docs/SCA-PRODUCTION-CUTOVER-PHASE2C-BLOCKED.md`).
-**`secondchanceauthenticators.com` is a LIVE Shopify storefront** (apex → `23.227.38.32` Shopify; `www` →
-`shops.myshopify.com`; `HTTP/2 200`, `powered-by: Shopify`), **not** pointed at `195.26.255.80`. Repointing the apex
-would take the store offline; DNS is at an external registrar (no access here); and public ACME was NOT attempted
-(the name resolves to Shopify → issuance would fail + risk LE rate limits, so `tls internal` was left untouched).
-The 2B edge is fully intact (Caddyfile `00f16788`, pin, sca_edge, smsrocket 200, `:8080` 200, DOCKER-USER unchanged,
-QR fp `6bb119ee…` unchanged).
-
-**Recommended (needs human/registrar action):** put the SCA registry on a dedicated **subdomain** (chosen:
-`verify.secondchanceauthenticators.com`) → `195.26.255.80`, leaving the Shopify apex intact; then a revised Phase 2C
-points the Caddy vhost at that subdomain with public TLS.
-
-**Phase 2C.1 — waiting-for-DNS readiness audit DONE 2026-09-30 (read-only, zero changes;
-`docs/SCA-PRODUCTION-CUTOVER-PHASE2C1-READINESS-AUDIT.md`).** Verdict: **READY** — the app is host-agnostic (all URLs
-request-derived via trusted proxy; no global scheme/root forcing; **zero production hard-coding** of host/IP/:8080 —
-all 7 hits are tests only; `PassportPresenter` builds no URLs; passport route has no host constraint; cert PDFs embed
-the opaque token, no URL/host; QR token immutable + host-independent). The **only genuine blocker is external**: the
-GoDaddy `verify` A record needs the client's domain-protection code. Key notes: `PUBLIC_QR_BASE_URL` is inert
-(comment-only, unused by code); password-reset URL is request-derived (`QUEUE_CONNECTION=sync`, no `ShouldQueue`) so
-correct under `verify.` with no APP_URL dependency; **keep `SESSION_DOMAIN` null** (a dot-domain would leak cookies to
-the Shopify apex); sequence `SESSION_SECURE_COOKIE=true` only **after** `:8080` login is retired; `is_production` is an
-immutable, behavior-inert print marker (2 pilot rows resolve fine — decision deferred to the printable-QR phase,
-recommend "adopt existing tokens"). Minimal Caddy diff = relabel apex→`verify.` + delete the `www` block; at cutover
-remove `tls internal` for public LE. Post-DNS checklist + rollback in the audit doc. When Shopify OAuth (`SHOPIFY-CONNECT-009`)
-is later activated, the Caddy default-deny must add an explicit allow for `/sca/*` callback/webhook (denied now).
-
-**SMTP / password-recovery readiness audit DONE 2026-09-30 (read-only, zero changes;
-`docs/SCA-PRODUCTION-CUTOVER-SMTP-READINESS-AUDIT.md`).** The password-reset flow is **code-complete and secure**
-(dedicated `sca_collectors` broker; hashed single-use 60-min token; enumeration-safe; `throttle:6,1` + 60-s broker
-throttle; `status=active` fails disabled closed; no token/PII logged) — **no defect**. Non-functional only because
-`MAIL_MAILER=log`. Activation = provider account + SMTP creds + **DKIM/SPF on a dedicated SCA sending subdomain**
-(never the Shopify apex) + `.env` `MAIL_*` switch; **no code change**. Domain mail DNS: apex has **DMARC
-`p=quarantine`** (relaxed) but **no SPF/MX/DKIM**, so real sending needs subdomain DKIM/SPF to pass DMARC.
-**Recommended provider: Postmark** (SES / Resend alternatives), From `no-reply@verify.secondchanceauthenticators.com`
-(not the bare apex; `support@` only as Reply-To if a real inbox exists — apex MX is empty). `sr-mail` is
-smsrocket.io-only → fully isolated. **Flagged separately (NOT a current defect, do not fix without a separate task):**
-the reset notification sends **synchronously** — under real SMTP a provider outage would 500 and break
-enumeration-safety; harden at activation (try/catch in `sendLink`, or queue the notification). DNS records need the
-client's GoDaddy access (same blocker); provider/creds/DNS can be prepared but not created here.
-
-## Authorization state
-
-`SCA-PRODUCTION-CUTOVER` remains **OPEN**. **Still forbidden without new authorization:** public DNS changes, public
-ACME/TLS, `APP_URL`/`PUBLIC_QR_BASE_URL`/`SESSION_SECURE_COOKIE`/`SCA_PUBLIC_PREVIEW`, QR generation/printing, SMTP,
-off-site backup, `:8080` retirement. **Phase 2C is BLOCKED on a human DNS (subdomain-vs-apex) decision.** Nothing is
-promoted; **ACTIVE = NONE, NEXT_TASK = NONE. SCA-054 must not start.**
+**Forbidden:** DNS, SMTP credentials/provider activation, real email, `.env`, Caddy, Docker/network/firewall, queue
+infrastructure/workers, schema/migrations (unless an unexpected hard requirement is discovered — then STOP and
+report), QR changes, Phase 2C execution. **Push only; return to ChatGPT for audit.**
