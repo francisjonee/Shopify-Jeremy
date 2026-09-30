@@ -1,10 +1,30 @@
 # NEXT TASK
 
-**STATUS: ACTIVE — `SCA-PRODUCTION-CUTOVER — Permanent QR Artifact Generator` (PUSH ONLY).**
+**STATUS: IMPLEMENTED — PUSH ONLY — awaiting ChatGPT pre-merge review.**
+`SCA-PRODUCTION-CUTOVER — Permanent QR Artifact Generator`.
 
 Promoted 2026-09-30 by ChatGPT. Implements the accepted Permanent QR Readiness Audit
 (`docs/SCA-PRODUCTION-CUTOVER-PERMANENT-QR-READINESS-AUDIT.md`). Base = deployed `bd9e3cd`. **PUSH ONLY — no
 merge/deploy, no printing/attaching, no other cutover phase.**
+
+## Implementation submitted (2026-09-30) — NOT merged, NOT deployed
+
+- **Impl repo:** `francisjonee/francisjonee-sca-platform-private`, branch **`sca-qr-artifact-generator`**, commit
+  **`c7eb163`** (base `bd9e3cd`). Task report: `app/docs/task-reports/SCA-PERMANENT-QR-ARTIFACT.md`.
+- **What:** read-only `GET admin/sca/eyewear/{id}/qr` (`admin.sca.eyewear.qr`, existing `sca.eyewear.view` ACL,
+  same `{id}` identity as item detail) → downloadable **SVG** QR of the item's **existing active** QR identity.
+  Dependency added: **`chillerlan/php-qrcode ^6.0`** (+ `php-settings-container`), verified PHP 8.3 / Laravel 12.
+- **Payload** = exactly `https://verify.secondchanceauthenticators.com/p/{public_token}` from
+  `config('app.url')` + the `sca.passport.show` route path (no hard-coded host, no `PUBLIC_QR_BASE_URL`); scan enters
+  the existing SCA-038 resolver only. Active identity only ⇒ revoked/inactive/absent never printable; fail-safe 404
+  creates nothing; raw token only inside the QR modules (never route/filename/headers/logs/flash/body).
+  ECC **H**, quiet zone **4** modules. **Zero domain mutation**; `is_production` untouched.
+- **Tests:** `tests/Feature/Sca/QrArtifactTest.php` (10) prove every required invariant incl. byte-identical SVG +
+  PNG decode round-trip == exact canonical URL. Focused 10/38; **full `tests/Feature/Sca` 651 passed / 3503**.
+- **Live preview:** restored to deployed main `bd9e3cd` (vendor `--no-dev`, chillerlan absent, no `/qr` route live);
+  pilot `:8080` + public `verify.` edge both serve passports 200 / bogus 404. Nothing merged/deployed/printed.
+
+**→ Awaiting independent pre-merge review. Do not merge, deploy, print/attach, or start another task.**
 
 ## Objective
 
