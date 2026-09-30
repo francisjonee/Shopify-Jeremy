@@ -1,42 +1,39 @@
 # NEXT TASK
 
-**STATUS: ACTIVE — `SCA-PRODUCTION-CUTOVER — EDGE PERSISTENCE HARDENING` (PUSH ONLY).**
+**STATUS: `SCA-PRODUCTION-CUTOVER — EDGE PERSISTENCE HARDENING` — IMPLEMENTED + PUSHED (push-only). Awaiting ChatGPT
+pre-merge audit. NOT merged, NOT deployed; production containers NOT recreated.**
 
-Promoted 2026-09-30 by ChatGPT. Cutover **infrastructure** hardening (not SCA-054 product development).
-Base/deployed `4095ad506e01458b5131523d4b0b9ca49ed97ac5`. Implements only the recommendation in
-`docs/SCA-PRODUCTION-CUTOVER-EDGE-PERSISTENCE-AUDIT.md`. **PUSH ONLY — do NOT merge, deploy, recreate production
-containers, or execute Phase 2C.**
+Cutover infrastructure hardening (not SCA-054). Base/deployed `4095ad5`. Feature branch `sca-edge-persistence` on
+`github-sca-platform` — **fix `97e3d693eda876e4053b84d64d2b09d1121e6563`**. Implements the audit
+`docs/SCA-PRODUCTION-CUTOVER-EDGE-PERSISTENCE-AUDIT.md`.
 
-## Executable contract
+## What was implemented (push only)
 
-1. **Edit only `/opt/sca-platform/docker-compose.yml`** (repo root of the impl repo), preserving its existing
-   structure/format:
-   - Add `sca_edge` to the **`app` service** networks: `networks: [internal, sca_edge]`.
-   - Add a top-level external network declaration `sca_edge: {external: true}` (resolves to the literal existing
-     `sca_edge`, 172.20.0.0/24).
-   - **`mariadb` stays `networks: [internal]` only.** **No static IP** on any service.
-2. **Do NOT modify `deploy-preview.sh`** unless inspection reveals a material contradiction with the accepted audit —
-   if so, **STOP** and report rather than expand scope.
-3. **Change nothing else:** Caddy/Caddyfile, `TRUSTED_PROXIES`, `.env`, DNS, ACME/TLS, `APP_URL`,
-   `PUBLIC_QR_BASE_URL`, `SESSION_SECURE_COOKIE`, `SCA_PUBLIC_PREVIEW`, SMTP, application code, DB/schema/migrations,
-   QR identities/`is_production`, provenance/domain data, DOCKER-USER/firewall, the published `:8080` fallback, or
-   smsrocket configuration.
+`docker-compose.yml` (impl repo root), **two hunks only** (scope = exactly 1 file):
+- `app` service: `networks: [internal]` → `networks: [internal, sca_edge]`.
+- top-level: added `sca_edge: {external: true}`.
 
-## Candidate verification (before returning; do NOT recreate production containers)
+`mariadb` unchanged (`networks: [internal]` only). **No static IP.** No ports/env/Caddy/deploy-script/application/.env
+change. `deploy-preview.sh` untouched (inspection found no material contradiction — it does no docker-network ops).
 
-- Validate Compose syntax (`docker compose config`); inspect the rendered config.
-- Prove the rendered `app` service has **exactly** `internal` + external `sca_edge`.
-- Prove the rendered `mariadb` remains `internal`-only.
-- Prove `sca_edge` resolves to the **literal** existing external network `sca_edge`.
-- Prove no static IP was introduced; no port/environment/Caddy/deploy-script/application change.
-- Inspect changed-file scope = exactly `docker-compose.yml` (+ this task's governance/report docs, which live in the
-  governance repo, not the impl branch).
+## Candidate verification (rendered `docker compose config`, read-only; production NOT recreated)
 
-## Restoration + evidence
+- `docker compose config` **VALID**.
+- Rendered `app.networks` = **exactly** `['internal', 'sca_edge']`; `app` has **no** `ipv4_address` (no static IP);
+  ports unchanged (`127.0.0.1:8080→80`); no `env_file`/`environment` added.
+- Rendered `mariadb.networks` = `['internal']` only; no static IP.
+- Top-level `sca_edge` = `{name: sca_edge, external: True}` → resolves to the **literal existing** external network
+  `sca_edge`; `internal` → `sca_internal`.
+- Changed-file scope = **only `docker-compose.yml`** (no `deploy-preview.sh`, no `app/` code).
 
-Feature branch from the exact baseline; minimal change; **push only**. Restore the pilot exactly as found and verify
-the live manually-connected edge remains healthy: kr-app on `sca_internal`+`sca_edge`, kr-mariadb `sca_internal`-only,
-Caddy→kr-app:80, SCA pre-DNS SNI path, smsrocket, `:8080` fallback, DOCKER-USER unchanged, production counts/QR fp
-unchanged. Return the feature SHA, exact diff/scope, rendered-Compose evidence, and restoration evidence. **STOP — no
-merge/deploy, no Phase 2C.** The actual recreate/persistence test belongs to the governed merge/deploy phase after
-audit.
+## Restoration evidence (pilot exactly as found — no recreate)
+
+Working tree restored to `main 4095ad5` (committed compose has no `sca_edge`; the change lives only on the branch).
+Live containers untouched: kr-app on `sca_edge`(172.20.0.3)+`sca_internal`(172.19.0.3), kr-mariadb `sca_internal`-only,
+sr-caddy `sca_edge`(172.20.0.2)+smsrocket; kr-app healthy on `195.26.255.80:8080`; Caddy→kr-app:80 OK; SCA SNI `/p`→200,
+`/admin`→403; smsrocket 200; `:8080` 200; DOCKER-USER 6; Caddyfile `00f16788`; production counts qr=2/certs=3/
+migrations=118; QR fp `6bb119ee0b598222bfec58bb80c7a4cb`.
+
+**PUSH ONLY — stopped for ChatGPT audit; no merge, no deploy, no recreate, no Phase 2C.** The actual recreate/
+persistence test (§10 of the audit) belongs to the governed merge/deploy phase. `SCA-PRODUCTION-CUTOVER` remains OPEN;
+Phase 2C blocked on client DNS. SCA-054 must not start.
