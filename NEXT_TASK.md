@@ -30,9 +30,23 @@ would take the store offline; DNS is at an external registrar (no access here); 
 The 2B edge is fully intact (Caddyfile `00f16788`, pin, sca_edge, smsrocket 200, `:8080` 200, DOCKER-USER unchanged,
 QR fp `6bb119ee…` unchanged).
 
-**Recommended (needs human/registrar action):** put the SCA registry on a dedicated **subdomain** (e.g.
-`verify.`/`registry.`/`app.secondchanceauthenticators.com`) → `195.26.255.80`, leaving the Shopify apex intact; then
-a revised Phase 2C points the Caddy vhost at that subdomain with public TLS.
+**Recommended (needs human/registrar action):** put the SCA registry on a dedicated **subdomain** (chosen:
+`verify.secondchanceauthenticators.com`) → `195.26.255.80`, leaving the Shopify apex intact; then a revised Phase 2C
+points the Caddy vhost at that subdomain with public TLS.
+
+**Phase 2C.1 — waiting-for-DNS readiness audit DONE 2026-09-30 (read-only, zero changes;
+`docs/SCA-PRODUCTION-CUTOVER-PHASE2C1-READINESS-AUDIT.md`).** Verdict: **READY** — the app is host-agnostic (all URLs
+request-derived via trusted proxy; no global scheme/root forcing; **zero production hard-coding** of host/IP/:8080 —
+all 7 hits are tests only; `PassportPresenter` builds no URLs; passport route has no host constraint; cert PDFs embed
+the opaque token, no URL/host; QR token immutable + host-independent). The **only genuine blocker is external**: the
+GoDaddy `verify` A record needs the client's domain-protection code. Key notes: `PUBLIC_QR_BASE_URL` is inert
+(comment-only, unused by code); password-reset URL is request-derived (`QUEUE_CONNECTION=sync`, no `ShouldQueue`) so
+correct under `verify.` with no APP_URL dependency; **keep `SESSION_DOMAIN` null** (a dot-domain would leak cookies to
+the Shopify apex); sequence `SESSION_SECURE_COOKIE=true` only **after** `:8080` login is retired; `is_production` is an
+immutable, behavior-inert print marker (2 pilot rows resolve fine — decision deferred to the printable-QR phase,
+recommend "adopt existing tokens"). Minimal Caddy diff = relabel apex→`verify.` + delete the `www` block; at cutover
+remove `tls internal` for public LE. Post-DNS checklist + rollback in the audit doc. When Shopify OAuth (`SHOPIFY-CONNECT-009`)
+is later activated, the Caddy default-deny must add an explicit allow for `/sca/*` callback/webhook (denied now).
 
 ## Authorization state
 
