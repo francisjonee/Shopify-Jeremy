@@ -1,7 +1,21 @@
 # NEXT TASK
 
-**STATUS: IMPLEMENTED — PUSH ONLY — awaiting ChatGPT pre-merge review.**
+**STATUS: PRE-MERGE VERIFICATION FAILED (2026-09-30) — NO-GO, returned to author. NOT merged/deployed.**
 `SCA-PRODUCTION-CUTOVER — Permanent QR Artifact Generator`.
+
+**Verdict:** candidate `c7eb163` FAILS one gate — **DEFECT-003**: the generated SVG uses
+`svgUseFillAttributes=false` with no `<style>`/fill attributes, so as delivered (attachment, no external CSS) every
+layer renders black → a solid black square → **not scannable** (proven by decoding the actual artifact:
+default-CSS render → `could not find enough finder patterns`; correct-CSS render + PNG cross-check → exact canonical
+URL). All other gates PASS (git identity, scope, GET-only `sca.eyewear.view` route, active-identity binding, exact
+payload, ECC H + quiet zone 4, fail-safe behavior, privacy, `public_ref` filename safety, composer/prod deps, SCA-038
+200/404, zero mutation, pilot clean on `bd9e3cd`). **Fix:** `svgUseFillAttributes => true` + a test that
+rasterizes/decodes the actual SVG body. Full report: `docs/SCA-PERMANENT-QR-ARTIFACT-PREMERGE-VERIFICATION.md`.
+Candidate never deployed; production untouched. **→ Author remediates and re-submits for fresh verification.**
+
+---
+
+_(Original task contract, retained for the re-submission:)_
 
 Promoted 2026-09-30 by ChatGPT. Implements the accepted Permanent QR Readiness Audit
 (`docs/SCA-PRODUCTION-CUTOVER-PERMANENT-QR-READINESS-AUDIT.md`). Base = deployed `bd9e3cd`. **PUSH ONLY — no
