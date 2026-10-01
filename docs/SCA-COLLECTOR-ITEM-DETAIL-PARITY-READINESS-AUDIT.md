@@ -1,7 +1,27 @@
 # SCA-COLLECTOR-ITEM-DETAIL-PARITY — Readiness / Planning Audit (READ-ONLY)
 
-**Date:** 2026-10-01 · **Deployed baseline:** `444c067` (Catalog UI Slices 1–3 DONE). **Planning only — nothing
-implemented.** ACTIVE = NONE / NEXT_TASK = NONE.
+**Date:** 2026-10-01 · **Deployed baseline:** `444c067` (Catalog UI Slices 1–3 DONE).
+
+> **IMPLEMENTED + PUSHED (push-only) 2026-10-01 — awaiting pre-merge review.** Feature branch
+> `sca-collector-item-detail-parity` @ **`14f30a6`**, base `444c067`, **1 commit, 4 files** (view-only). Operator
+> decision honored: **KEEP** the collector's Report Lost/Stolen/Recovered + Transfer actions under a separated
+> **"Manage item"** section in Overview (routes/forms/authorization/mutation unchanged). The audit's **view-only** path
+> held — **no service/controller/DTO/schema/route/ACL change**, no Krayin core/vendor edits, no mutation. `collection/
+> show.blade.php` rewritten to two-panel + **CSS-only tabs** (hidden radios + `:checked ~`, no JS) over the owner-safe
+> DTOs; `layout.blade.php` gained inline tab/two-panel CSS + a per-page wide-wrapper hook (responsive: desktop
+> two-panel, phone stacks, labels wrap). Terminology **"Registered to you" / "You"** (never "Collector #N"). Tabs:
+> Overview (status/registry/ownership/passport/Manage-item), Authentication (owner-safe read-only — no staff
+> table/refs/notes/actions), Certification (number/date + SCA-048 history — no cert/QR tokens, source-auth-id, generate-
+> PDF/correct/download-QR), Documents (is_public=1 only via opaque-handle download — no private, no upload), History
+> (neutral ownership "You" + service). Tests `CollectorItemDetailParityTest` (7): five tabs+identity; **no staff-only
+> leak** (frame_serial, QR+cert tokens, path, staff ref `4242`, `Collector #`, is_production, private-doc); You
+> terminology; retained owner actions; **non-owner & previous-owner-after-transfer → 404**; public-document boundary;
+> zero mutation. Focused 7/35; full `tests/Feature/Sca` **686 passed / 3661**; `php -l` clean. Live (feature branch)
+> render of collector 1's item 3: 200, two-panel, "Registered to you", "Manage item", no "Collector #". Pilot restored
+> to `444c067` (parity view not live, dev pruned, fp `a920dc1c…` / migrations 119 unchanged, healthy). Report (app repo):
+> `docs/task-reports/SCA-COLLECTOR-ITEM-DETAIL-PARITY.md`. **Not merged/deployed.**
+
+**Planning section below — original audit (read-only, nothing implemented at audit time).** ACTIVE = NONE / NEXT_TASK = NONE.
 
 **Goal:** redesign `/collector/collection/{ref}` so the collector item-detail *visually* follows the new admin eyewear
 detail page (left: image + identity; right: owner-safe tabs **Overview / Authentication / Certification / Documents /
