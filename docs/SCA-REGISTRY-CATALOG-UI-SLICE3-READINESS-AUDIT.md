@@ -2,8 +2,21 @@
 
 **Date:** 2026-10-01 · **Deployed baseline:** `fe08ec5` (Slice 1 + Slice 2 DONE).
 
-> **SLICE 3 IMPLEMENTED + PUSHED (push-only) 2026-10-01 — awaiting pre-merge review.** Feature branch
-> `sca-registry-catalog-ui-slice3` @ **`2b1a933`**, base `fe08ec5`, **1 commit, 13 files** (no migration). Implements
+> **SLICE 3 DONE — MERGED `--no-ff` + DEPLOYED 2026-10-01.** MERGE_SHA = ORIGIN_MAIN = DEPLOYED_HEAD =
+> **`444c0676abb852481360169c91e55414ea2f8513`** (reviewed candidate `2b1a933`, base `fe08ec5`, 1 commit). Approved by
+> ChatGPT. **Post-deploy gates all PASS:** deploy test gate **679 passed**; **Nothing to migrate** (migrations **119**,
+> unchanged). Public passport image (net-zero round-trip on item 1): `/p/{token}/image` → **exact bytes**, Content-Type
+> image/png, **no-store + nosniff**; passport HTML carries the image URL but **not the SKU** (public SKU = NO honored);
+> constant-shape **404 for bogus/malformed/no-image**; removal restored 2/2 null. Collector (live, collector 1 owns item
+> 3, net-zero): My Collection index+detail render (200), **SKU renders**, image via the owner-authorized route, **no path
+> leak**; ownership authz — **owner gets image, non-owner null**; collector image route requires auth (unauth → 302).
+> Staff `admin.sca.eyewear.image` unchanged (non-staff 403). SCA-038 `/p` 200 / bogus 404 / malformed 404; `/storage`
+> 404. **Zero QR/provenance mutation** (QR fp `a920dc1c…`, tokens + is_production + counts [qr2/certs3/auth3/own4] +
+> migrations 119 unchanged). MariaDB private; sca_edge 172.20.0.3 auto-attached; trusted-proxy pin intact; Caddyfile
+> `0faece7a` + DOCKER-USER 5 unchanged; verify. + smsrocket + :8080 healthy; dev pruned, pilot bind restored, tree clean.
+> **No further catalog slice or cutover task started.**
+>
+> _(Pre-deploy record:)_ Feature branch `sca-registry-catalog-ui-slice3` @ **`2b1a933`**, base `fe08ec5`, **1 commit, 13 files** (no migration). Implements
 > this audit with **PUBLIC SKU = NO (locked)**. Collector: `CollectionService` baseQuery +`i.sku`/`i.image_path`,
 > summary/detail DTOs +`sku`/`has_image` (path/mime server-side only); new `catalogImageForOwnedItem` + `CollectionImageController`
 > + route `GET collector/collection/{ref}/image` (current-owner authz, no-store, privacy-safe 404); views render
