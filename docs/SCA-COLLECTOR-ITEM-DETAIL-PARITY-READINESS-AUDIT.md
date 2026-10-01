@@ -2,8 +2,19 @@
 
 **Date:** 2026-10-01 · **Deployed baseline:** `444c067` (Catalog UI Slices 1–3 DONE).
 
-> **IMPLEMENTED + PUSHED (push-only) 2026-10-01 — awaiting pre-merge review.** Feature branch
-> `sca-collector-item-detail-parity` @ **`14f30a6`**, base `444c067`, **1 commit, 4 files** (view-only). Operator
+> **PRE-MERGE CORRECTION PUSHED (push-only) 2026-10-01 — awaiting re-review.** New HEAD **`df05859`** (2 commits on
+> base `444c067`: `14f30a6` + `df05859`), **4 files, view-only.** Review HOLD found `.tabbar{display:flex;flex-wrap:wrap}`
+> was **dead CSS** (no `.tabbar` element → responsive bar not realized structurally). Fixed structurally (still CSS-only/
+> no-JS, `~`/`+` selectors intact): one **`.tabhost`** flex-wrap container holds the radios (`position:absolute`, out of
+> flex flow but DOM-adjacent to labels + DOM-siblings of panels), the labels as flex items (the wrapping bar), a
+> full-width **`.tabrule`**, and full-width panels below; dead `.tabbar` removed. New **rg8** asserts the structural
+> contract (one `.tabhost`; 5 radios/labels/panels; radio→label adjacency; radios before panels; `.tabhost` flex-wrap +
+> `:checked ~ .tabpanel` CSS present; **no `tabbar`**). Focused **8/50**; full `tests/Feature/Sca` **687 passed**; live
+> render: tabhost=1/radios=5/labels=5/panels=5/tabrule=1, dead `.tabbar` gone, flex-wrap present. Pilot restored to
+> `444c067` (parity not live, dev pruned, fp `a920dc1c…` / migrations 119 unchanged, healthy). Still view-only; no
+> backend/schema/route/ACL change.
+>
+> _(Initial push:)_ Feature branch `sca-collector-item-detail-parity` @ **`14f30a6`**, base `444c067`, **1 commit, 4 files** (view-only). Operator
 > decision honored: **KEEP** the collector's Report Lost/Stolen/Recovered + Transfer actions under a separated
 > **"Manage item"** section in Overview (routes/forms/authorization/mutation unchanged). The audit's **view-only** path
 > held — **no service/controller/DTO/schema/route/ACL change**, no Krayin core/vendor edits, no mutation. `collection/
