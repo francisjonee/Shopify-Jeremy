@@ -77,5 +77,34 @@ Each slice is an independent feature branch, `--no-ff`, deploy-gated. Migration 
 legacy columns are retained through Slices 1-3, so reverting code + dropping the table restores exact
 present-day behavior. In prod the backfill would map item 3's one legacy image to position 1 (same file).
 
-**PUSH ONLY — not merged/deployed. Candidate `6879130` returned for independent pre-merge review. Do not
-begin Slice 2.**
+## DONE — MERGED --no-ff + DEPLOYED 2026-10-01 (pre-merge CONDITIONAL GO)
+
+`MERGE_SHA = ORIGIN_MAIN = DEPLOYED_HEAD = 8b03543ecd8a5754228871509b910536a9de3803` (reviewed candidate
+`6879130`, base `91dfb2a`, 1 merge of 1 commit). Pre-merge gates passed (origin/main `91dfb2a`, feature
+`6879130`, merge-base `91dfb2a`, clean tree, 7 files). The changed production baseline (item 3's real
+operator image) was explicitly accepted as real data.
+
+**Pre-deploy baseline (locked):** item 3 `image_path=sca-catalog/2EtJ7…png`, mime `image/png`, file
+SHA-256 `f3dee6510178bfb287c040e36dfaa20479ab3ac637d29298e6bd09c0cd996d34`, 793,158 bytes; Admin/Collector/
+Passport all 200 with that SHA; item 1 NULL; FP_QR `a920dc1c…` FP_CERT `22fb9f55…` FP_CERTEV `18b521db…`
+FP_AUTH `3bd0f029…` FP_OWN `831ae932…`; is_production 0,0; migrations 119; gallery table absent.
+
+**Deploy (`deploy-preview.sh`, exit 0):** test gate full tests/Feature/Sca passed (sca_domain_test, dev
+deps), then prod `migrate --force`, recreate, `--no-dev` prune, caches cleared; `Deployed main @ 8b03543`.
+
+**Migration integrity (all required checks PASS — no deviation, no rollback):** migrations **119→120**;
+gallery table created; **exactly 1 gallery row total**; item 3 = 1 row at **position 1**, item 1 = 0 rows;
+gallery `storage_path` == pre-deploy legacy `image_path` (`sca-catalog/2EtJ7…png`); legacy
+`image_path`/`image_mime` **intact**; file **SHA-256 `f3dee651…` / 793,158 bytes unchanged**, exactly one
+file on the catalog disk (no move/copy/re-encode/delete).
+
+**Post-deploy proof:** deployed HEAD == origin/main == merge SHA `8b03543`. Admin, Collector, and Passport
+all return the SAME pre-deploy bytes (SHA `f3dee651…`) through their existing routes. Item 1 remains
+no-image (admin image 404). `/storage` denied (404) — public image URL blocked; images only via routes.
+Non-owner collector 404. No gallery internals in collector HTML. verify. passport 200 / item-3 public
+image 200 / bogus 404; collector 302; :8080 passport 200; smsrocket 302. sca_edge auto-attached
+(172.20.0.3); pilot public bind `195.26.255.80:8080` re-applied after the recreate; MariaDB private.
+**All 5 provenance fingerprints unchanged; is_production 0,0; counts qr=2/certs=3/certev=4/auth=3/own=4.**
+
+**Slice 1 COMPLETE. Stop. Do NOT begin Slice 2** (multi-image Admin UI, upload-many/reorder, Collector
+gallery UI, public gallery, legacy-column removal) without its own review + GO.
