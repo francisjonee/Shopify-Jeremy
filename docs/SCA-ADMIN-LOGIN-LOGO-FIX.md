@@ -66,4 +66,35 @@ to main `f4c84e6` (working tree reverted; `--no-dev`; caches cleared): BrandLogo
 3; kr-app loopback-only `127.0.0.1:8080` (Phase B state intact); verify. passport 200; `/storage` 404;
 smsrocket 302.
 
-**PUSH ONLY — not merged/deployed. Candidate `21fe5eb` returned for independent pre-merge review.**
+## PRE-MERGE REVIEW #1 = CHANGE REQUESTED → CORRECTED + RE-PUSHED (same branch)
+
+Review of `21fe5eb`: root cause + the `admin.sca.brand-logo` streaming endpoint approved, but do not ship a
+login-only fix while header / mobile-sidebar / forgot-password / reset-password keep the same broken
+`/storage` logo source.
+
+**Correction (same branch, new HEAD `359713a`; chain `21fe5eb → 359713a`, base `f4c84e6`):** one canonical
+endpoint retained (no new endpoint, no duplicated image, still serves the EXISTING configured SCA logo).
+Added SCA-package-owned overrides (same `prependNamespace('admin', …)`) for the four remaining surfaces and
+regenerated login, each a faithful copy of its core view changed in ONLY the logo src line(s) —
+`Storage::url($logo)` → `route('admin.sca.brand-logo')` (login/forgot/reset 1 line each, header 2 lines,
+mobile-sidebar 1 line; verified by `diff` — everything else byte-identical, so dark-mode vite fallback,
+`id="logo-image"`, classes and all header/sidebar behavior are preserved; this also removed the earlier
+`w-[110px]`→`w-auto` class drift in login). Override files:
+`Registry/src/Resources/admin-override/{sessions/login,sessions/forgot-password,sessions/reset-password,
+components/layouts/header/index,components/layouts/sidebar/mobile/index}.blade.php`.
+
+**No `packages/Webkul` (Krayin core) change** (git diff vs base empty). No DB/auth/ACL/Caddy/route/
+provenance/gallery/Passport/Collector/infra change; `/storage` stays edge-denied.
+
+**Tests — AdminLoginLogoTest expanded to one branding contract (7):** login/forgot/reset + authenticated
+header+sidebar use `admin.sca.brand-logo`; the route streams the configured PNG bytes/content-type; 404 +
+vite fallback when unconfigured; no `<img>` uses `/storage` or the raw configured path; auth unchanged
+(route public pre-auth, admin pages still redirect unauthenticated). Full tests/Feature/Sca **729/3999**;
+php -l clean.
+
+**Scope:** 1 commit on top of `21fe5eb`; 4 new overrides + regenerated login + expanded test. Pilot
+re-restored to main `f4c84e6` (override dir + brand-logo route absent on the live app; `packages/Webkul`
+untouched; migrations 120; FP_QR `a920dc1c…`; is_production 0,0; gallery 3; kr-app loopback-only
+`127.0.0.1:8080`; verify. passport 200; `/storage` 404; smsrocket 302).
+
+**PUSH ONLY — not merged/deployed. New candidate HEAD `359713a` returned for independent re-review.**
