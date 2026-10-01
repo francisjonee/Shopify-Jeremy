@@ -58,5 +58,33 @@ Candidate pushed to `origin/sca-gallery-slice2` (HEAD `0ecf533`, base `8b03543`)
 0,0; counts qr=2/certs=3/auth=3/own=4. verify. passport 200 / item-3 image 200; :8080 passport 200;
 smsrocket 302.
 
-**PUSH ONLY — not merged/deployed. Candidate `0ecf533` returned for independent pre-merge review. Do not
+## PRE-MERGE REVIEW #1 = NO-GO (concurrency) → CORRECTED + RE-PUSHED
+
+Review of `0ecf533`: identity/scope PASS, but DEFECT — gallery mutation was not serialized per item. The
+8-image cap was checked by a preflight BEFORE the transaction, so two concurrent uploads could both pass
+and both append (non-unique `(item,position)` index + state-derived next position), violating the cap /
+contiguous 1..N / primary-mirror invariants.
+
+**Correction (same branch, new HEAD `4cd49f9`, base `8b03543`, 2nd commit):** every gallery mutation now
+takes `lockForUpdate()` on the parent `sca_eyewear_items` row INSIDE its transaction (`lockItem()`), with
+the authoritative re-check under that lock:
+- `storeImages` — files validated/stored BEFORE the transaction (no DB lock during file I/O); inside: lock
+  item → re-check the cap on the real count under the lock → `ValidationException` (rollback + delete every
+  file stored by this request) if `current + incoming > 8` → else `addMany`.
+- `deleteImage` — lock item → `deleteOne`/renumber/mirror; file deleted only post-commit, reference-aware.
+- `reorderImages` — lock item → re-read the authoritative id set under the lock → validate the requested
+  permutation (no missing/duplicate/foreign/invented) → `reorder`; invalid → `ValidationException`, no
+  mutation.
+No unique position constraint and no `is_primary` added (approved design preserved). New **rg13** proves the
+LOCKED re-check (not merely the preflight): a stale-count service makes the preflight pass, but the locked
+re-check at the real count of 8 blocks the 9th, rolls back, and cleans up the stored file. Existing tests
+unchanged. `CatalogGalleryAdminTest` 13/98; **full tests/Feature/Sca 710/3860**; php -l clean.
+
+**Pilot re-restored to `8b03543`** (working tree reverted; `--no-dev`; caches cleared; kr-app healthy on
+`195.26.255.80:8080`). No candidate code live (controller `storeImages`/`lockItem`, service `addMany`,
+route `images.reorder` all = 0; `updateCatalog` still carries the Slice-1 `remove_image`); prod migrations
+**120**; item 3 image intact (1 gallery row, `sca-catalog/2EtJ7…png`); FP_QR `a920dc1c…`; is_production 0,0;
+verify. item-3 image 200; smsrocket 302. The real item-3 operator image is untouched.
+
+**PUSH ONLY — not merged/deployed. New candidate HEAD `4cd49f9` returned for independent re-review. Do not
 begin Collector gallery Slice 3.**
