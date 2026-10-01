@@ -2,8 +2,21 @@
 
 **Date:** 2026-10-01 · **Deployed baseline:** `444c067` (Catalog UI Slices 1–3 DONE).
 
-> **PRE-MERGE CORRECTION PUSHED (push-only) 2026-10-01 — awaiting re-review.** New HEAD **`df05859`** (2 commits on
-> base `444c067`: `14f30a6` + `df05859`), **4 files, view-only.** Review HOLD found `.tabbar{display:flex;flex-wrap:wrap}`
+> **DONE — MERGED `--no-ff` + DEPLOYED 2026-10-01.** MERGE_SHA = ORIGIN_MAIN = DEPLOYED_HEAD =
+> **`4af8a659962f75cad7aaba262e2945b047f6033b`** (reviewed HEAD `df05859`, base `444c067`, 2 commits). Approved by
+> ChatGPT. **Post-deploy gates all PASS:** deploy test gate **687 passed**; **Nothing to migrate** (migrations **119**).
+> Live render (collector 1 / item 3, net-zero): two-panel + **tabhost=1 / radios=5 / labels=5 / panels=5 / tabrule=1**,
+> dead `.tabbar` **gone**, `.tabhost` **flex-wrap** + `#t-overview:checked ~ .tabpanel` selectors present (structural
+> parity verified — the CSS-only flex-wrap bar is the deterministic mechanism; pixel-level visual check across viewports
+> left to the operator); **"Registered to you" / "You"**, no "Collector #"; image surface works; **Documents tab shows
+> item 3's 2 real owner-visible docs**; **no staff-only leak** (QR/cert tokens, frame_serial, image_path, is_production,
+> staff ref `4242` all absent); **non-owner → 404**; Report Lost/Stolen + Transfer retained. SCA-038 `/p` 200 / bogus
+> 404 / malformed 404; `/storage` 404; collector detail auth-gated (302). **Zero QR/provenance mutation** (fp
+> `a920dc1c…`, tokens + is_production + migrations 119 unchanged). MariaDB private; sca_edge 172.20.0.3; Caddyfile
+> `0faece7a` + DOCKER-USER 5 unchanged; verify./collector/:8080/smsrocket healthy; dev pruned, pilot bind restored, tree
+> clean. **No next task.**
+>
+> _(Pre-deploy record:)_ New HEAD **`df05859`** (2 commits on base `444c067`: `14f30a6` + `df05859`), **4 files, view-only.** Review HOLD found `.tabbar{display:flex;flex-wrap:wrap}`
 > was **dead CSS** (no `.tabbar` element → responsive bar not realized structurally). Fixed structurally (still CSS-only/
 > no-JS, `~`/`+` selectors intact): one **`.tabhost`** flex-wrap container holds the radios (`position:absolute`, out of
 > flex flow but DOM-adjacent to labels + DOM-siblings of panels), the labels as flex items (the wrapping bar), a
