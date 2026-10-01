@@ -86,5 +86,31 @@ route `images.reorder` all = 0; `updateCatalog` still carries the Slice-1 `remov
 **120**; item 3 image intact (1 gallery row, `sca-catalog/2EtJ7…png`); FP_QR `a920dc1c…`; is_production 0,0;
 verify. item-3 image 200; smsrocket 302. The real item-3 operator image is untouched.
 
-**PUSH ONLY — not merged/deployed. New candidate HEAD `4cd49f9` returned for independent re-review. Do not
-begin Collector gallery Slice 3.**
+## FINAL REVIEW = PASS/GO → DONE — MERGED --no-ff + DEPLOYED 2026-10-01
+
+`MERGE_SHA = ORIGIN_MAIN = DEPLOYED_HEAD = 0bcdca5236c944ee27a9de62ad0f0abbd26d578f` (reviewed HEAD
+`4cd49f9`, base `8b03543`, 2 commits merged). Pre-merge gates passed (origin/main `8b03543`, feature
+`4cd49f9`, merge-base `8b03543`, clean tree, 2 commits/7 files).
+
+**Deploy (`deploy-preview.sh`, exit 0):** test gate full tests/Feature/Sca passed; **Nothing to migrate —
+migrations remain 120**; recreate; `--no-dev`; `Deployed main @ 0bcdca5`.
+
+**Post-deploy verification (all gates PASS):**
+- DEPLOYED_HEAD == ORIGIN_MAIN == MERGE_SHA `0bcdca5`.
+- Gallery routes live with intended ACLs: `POST {id}/images`, `POST {id}/images/reorder`,
+  `POST {id}/images/{imageId}/delete` → `sca.can:sca.eyewear.catalog`; `GET {id}/images/{imageId}` →
+  `sca.can:sca.eyewear.view` (all behind web/admin_locale/sca.auth).
+- Item 3 operator image preserved: exactly 1 gallery row at **position 1**, `storage_path` =
+  `sca-catalog/2EtJ7…png` = legacy mirror, SHA-256 `f3dee651…` (byte-identical to pre-deploy).
+- **Governed net-zero Admin gallery smoke test (real controller actions as staff):** add 2nd image → rows
+  [1,2], mirror=orig, Admin/Collector/Passport still serve orig; make test featured (reorder) → mirror=test,
+  Admin+Collector+Passport all follow to the TEST bytes; delete test → orig promoted to position 1; FINAL =
+  1 row at pos 1 with the orig path+mirror+SHA `f3dee651…`, Admin/Collector/Passport serve ORIG bytes,
+  catalog disk holds only the operator image. Contiguous positions + legacy mirror agreed after every step.
+- `/storage` denied 404; SCA-038 valid 200 / bogus 404 / malformed 404; item-3 public image 200; collector
+  302; :8080 passport 200; smsrocket 302; Caddyfile `0faece7a`, DOCKER-USER :8080 rules, sca_edge
+  (172.20.0.3), MariaDB-private all unchanged; pilot public bind `195.26.255.80:8080` re-applied post-recreate.
+- **Provenance unchanged:** all QR/cert/auth/ownership/current-state fingerprints identical before/after the
+  smoke test; is_production 0,0; migrations 120.
+
+**Slice 2 COMPLETE. Do not begin Collector gallery Slice 3 without its own review + GO.**
