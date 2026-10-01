@@ -97,4 +97,33 @@ re-restored to main `f4c84e6` (override dir + brand-logo route absent on the liv
 untouched; migrations 120; FP_QR `a920dc1c…`; is_production 0,0; gallery 3; kr-app loopback-only
 `127.0.0.1:8080`; verify. passport 200; `/storage` 404; smsrocket 302).
 
-**PUSH ONLY — not merged/deployed. New candidate HEAD `359713a` returned for independent re-review.**
+## RE-REVIEW = PASS/GO → DONE — MERGED --no-ff + DEPLOYED 2026-10-02
+
+`MERGE_SHA = ORIGIN_MAIN = DEPLOYED_HEAD = 6840503bbf8ce0f7fd6f2f790511db20b14ea574` (reviewed HEAD
+`359713a`, base `f4c84e6`, chain `21fe5eb → 359713a`). Pre-merge gates passed (origin/main `f4c84e6`,
+feature `359713a`, merge-base `f4c84e6`, clean tree, 2 commits, `packages/Webkul` untouched, all-SCA scope).
+
+**Deploy (`deploy-preview.sh`, exit 0):** full tests/Feature/Sca gate passed; **Nothing to migrate —
+migrations remain 120**; `Deployed main @ 6840503`. Code-only change (bind-mounted views) → kr-app not
+recreated, so the Phase-B loopback-only bind `127.0.0.1:8080` is intact (no public :8080, no stash
+re-apply).
+
+**Post-deploy verification (all PASS):** DEPLOYED_HEAD == ORIGIN_MAIN == MERGE_SHA `6840503`.
+- Admin logo surfaces (via loopback = app direct, bypassing the Caddy staff-IP gate for inspection):
+  **login / forget-password / reset-password** each 200 and reference `admin/sca/brand-logo` with **0
+  `/storage` `<img>`**; the **authenticated header + sidebar + mobile-sidebar** reference the route **3×**
+  with 0 `/storage` `<img>`.
+- `GET /admin/sca/brand-logo` → **200 `image/png`, 140,822 bytes** (the configured SCA logo).
+- `GET https://verify…/storage/configuration/46a8…png` → **404** (edge `/storage` deny intact).
+- Staff-IP + auth unchanged: verify. collector/login 200, admin/login **403** (non-staff allowlist),
+  `http→https` 308. Phase-B Secure cookie present on verify. (`sca_session … secure`).
+- SCA-038 passport 200/404/404; item-3 image 200 (Collector gallery unaffected); smsrocket 302.
+- Provenance unchanged: FP_QR `a920dc1c…`, FP_CERT `22fb9f55…`, FP_AUTH `3bd0f029…`, FP_OWN `831ae932…`;
+  is_production 0,0; gallery 3; migrations 120. Configured logo / DB / Caddy / `/storage` policy / infra
+  untouched.
+
+(Pixel-level in-browser rendering from a staff IP is the operator's visual confirmation; the markup +
+route + served PNG bytes prove the SCA logo now loads on every surface.)
+
+**COMPLETE. STOP — no further task.** (Deferred elsewhere: none for this fix; the whole admin-logo source is
+now canonical.)
