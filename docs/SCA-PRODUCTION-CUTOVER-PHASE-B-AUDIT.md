@@ -118,3 +118,60 @@ remove `APP_BIND_PORT`/loopback bind if desired, and hard-remove the preview cod
 execution.
 
 **AUDIT ONLY — nothing executed. Awaiting ChatGPT review + an explicit GO before any Phase B step.**
+
+---
+
+## PHASE B EXECUTED — BOTH GATES PASSED 2026-10-01 (app baseline f4c84e6, migrations 120, no code change)
+
+### Step 1 — public :8080 retired (PASS)
+- kr-app recreated on the COMMITTED loopback compose (`docker compose up -d --force-recreate app`; stash NOT
+  re-applied) → bind now `127.0.0.1:8080->80/tcp` only; sca_edge auto-attached.
+- Removed the 3 `:8080` `DOCKER-USER` rules (2 staff-IP ACCEPT + default DROP); the generic
+  `RELATED,ESTABLISHED RETURN` rule retained.
+- **Gate:** public `http://195.26.255.80:8080` → connection refused (000/exit7); loopback
+  `http://127.0.0.1:8080/admin/login` → 200 (deploy health intact); verify. collector/login 200, admin/login
+  403 (Caddy allowlist, non-staff), http→https 308, passport 200/404/404, item-3 image 200, /storage 404,
+  smsrocket 302; app-layer authenticated round-trips 200 (admin item detail + collector My-Collection
+  gallery); MariaDB 3306 unpublished (private); sca_edge+sca_internal attached; Caddyfile `0faece7a`
+  unchanged; FP_QR `a920dc1c…`/cert/auth/own/cs + is_production 0,0 + migrations 120 + gallery 3 unchanged.
+
+### Step 2 — force HTTPS session cookies (PASS)
+- `SESSION_SECURE_COOKIE=true` appended to the Laravel env **`app/.env`** (line 33) — NOTE: the Laravel app
+  reads `app/.env` (container `/var/www/html/.env`), NOT the repo-root `/opt/sca-platform/.env` (which is the
+  compose/`APP_BIND_PORT` env); an initial edit to the wrong repo-root file was fully reverted. `SESSION_DOMAIN`
+  left unset (host-derived), `same_site` stays `lax`. `php artisan config:clear` (no rebuild/migration).
+- **Gate:** `config('session.secure') === true`; Set-Cookie on verify. carries `secure` (+ httponly,
+  samesite=lax) for `sca_session` and `XSRF-TOKEN`; authenticated collector round-trip on an HTTPS request =
+  200 with both cookies `[secure]`; admin authed render = 200; public `:8080` still refused; loopback
+  `127.0.0.1:8080` health 200; `http://verify…` → 308 (no HTTP login path); passport 200/404/404 (SCA-038),
+  image 200, /storage 404, smsrocket 302; FP_QR `a920dc1c…`/cert `22fb9f55…`/auth `3bd0f029…`/own
+  `831ae932…`/cs `740a1aab…` + is_production 0,0 + migrations 120 + gallery 3 **all unchanged** (no QR
+  regen, no DB write).
+
+### Final state
+- **Bind:** kr-app `127.0.0.1:8080` (loopback only); no public :8080 listener.
+- **Firewall:** `DOCKER-USER` holds only `-m conntrack --ctstate RELATED,ESTABLISHED -j RETURN`.
+- **Session:** `app/.env` `SESSION_SECURE_COOKIE=true`; `session.secure=true`, `session.domain` unset,
+  `same_site=lax`, driver file.
+- **Preview banner:** already off (`SCA_PUBLIC_PREVIEW=0`), untouched.
+
+### Rollback material preserved (do NOT drop until finalization)
+- `git stash@{0}` (public-bind diff `127.0.0.1→195.26.255.80:8080`) — kept undropped.
+- `app/.env.phaseB.bak` (pre-Step-2 Laravel env) — kept.
+- DOCKER-USER rule specs (verbatim) to re-add:
+  `-A DOCKER-USER -s 103.225.137.242/32 -p tcp -m conntrack --ctorigdstport 8080 -j ACCEPT`
+  `-A DOCKER-USER -s 103.200.35.2/32 -p tcp -m conntrack --ctorigdstport 8080 -j ACCEPT`
+  `-A DOCKER-USER -p tcp -m conntrack --ctorigdstport 8080 -j DROP`
+- Rollback: re-apply stash + `docker compose up -d app` + `git checkout -- docker-compose.yml` + re-add the
+  3 rules (restores public :8080); and/or `cp app/.env.phaseB.bak app/.env` + `config:clear` (reverts secure
+  cookie). Non-destructive; QR/DB untouched.
+
+### Operator confirmation still open
+A live **credentialed staff-source HTTPS admin login** (from 103.225.137.242 / 103.200.35.2) is the
+operator's to confirm — this session cannot originate from a staff IP (Caddy correctly 403s it), so admin
+was verified by proxy (Caddy allowlist + app-layer authed render + Secure HTTPS cookies). The deploy
+GOTCHA's "re-apply the public-bind stash post-deploy" step is now **RETIRED** — future deploys must leave
+kr-app loopback-only.
+
+**PHASE B COMPLETE. STOP — no further cutover task; preview-code removal, SMTP, permanent-QR printing, and
+stash/backup finalization remain deferred.**
