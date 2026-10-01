@@ -54,4 +54,29 @@ intact. This is useful real N≥2 data that the UX refinement is designed to pre
 View/CSS-only; no schema. Reverting the commit restores the current deployed presentation. Feature branch,
 `--no-ff`, deploy-gated, push-only first for independent review.
 
-**PUSH ONLY — not merged/deployed. Candidate `582690b` returned for independent pre-merge review.**
+## FINAL REVIEW = PASS/GO → DONE — MERGED --no-ff + DEPLOYED 2026-10-01
+
+`MERGE_SHA = ORIGIN_MAIN = DEPLOYED_HEAD = 5db1ab03319a43b43bbd4c9320c07ff8a4043384` (reviewed HEAD
+`582690b`, base `a8a6d88`, 1 commit). Pre-merge gates passed (origin/main `a8a6d88`, feature `582690b`,
+merge-base `a8a6d88`, clean tree, 1 commit/3 files).
+
+**Deploy (`deploy-preview.sh`, exit 0):** full tests/Feature/Sca gate passed; **Nothing to migrate —
+migrations remain 120**; recreate; `--no-dev`; `Deployed main @ 5db1ab0`. Pilot public bind
+`195.26.255.80:8080` re-applied post-recreate; sca_edge attached.
+
+**Post-deploy structural gallery gate (live Collector detail, item 3 = the 3 real operator images, NOT
+modified):** 3 separate 66×66 square thumbnail tiles (`type="button" class="sca-thumb"` ×3); stable
+`.sca-gallery-main-canvas` at `height:240px` with `object-fit:contain`; thumbnails `flex:0 0 auto` +
+`width/height:66px` + `object-fit:contain`; strip `overflow-x:auto` + scrollbar hidden
+(`scrollbar-width:none` + `::-webkit-scrollbar{display:none}`); switching script present; no `/storage` or
+raw-path leak. Ordinals 1/2/3 stream their exact operator bytes (793158 / 1050172 / 553473), ordinal 4 →
+404; item 3 gallery untouched (3 rows, mirror = original `2EtJ7…` at position 1 — nothing added/deleted/
+reordered for verification). (Pixel-level in-browser rendering is the operator's visual confirmation; the
+structural/CSS contract is proven deterministically here.)
+
+**Security/invariant smoke (all unchanged):** migrations 120; FP_QR `a920dc1c…`, FP_CERT `22fb9f55…`,
+FP_AUTH `3bd0f029…`, FP_OWN `831ae932…`; is_production 0,0; counts qr=2/certs=3/auth=3/own=4; SCA-038 valid
+200 / bogus 404 / malformed 404; `/storage` 404; collector 302; :8080 200; smsrocket 302; Caddyfile
+`0faece7a`; sca_edge + MariaDB-private intact.
+
+**Collector gallery UX refinement COMPLETE. STOP — do not start another gallery/cutover task.**
