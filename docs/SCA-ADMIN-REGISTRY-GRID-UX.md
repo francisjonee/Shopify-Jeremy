@@ -47,4 +47,25 @@ candidate CSS/markup live (`.sca-registry .sca-card` and `class="sca-card"` in t
 migrations **120**; FP_QR `a920dc1c…`; is_production 0,0; item 3 still has its **3 operator gallery images,
 untouched** (this task never touched gallery data); verify. passport 200; smsrocket 302.
 
-**PUSH ONLY — not merged/deployed. Candidate `380116d` returned for independent pre-merge review.**
+## GO → DONE — MERGED --no-ff + DEPLOYED 2026-10-01
+
+`MERGE_SHA = ORIGIN_MAIN = DEPLOYED_HEAD = 974cbfcb3f77e2a5337e64c61ece95439867d3aa` (reviewed HEAD
+`380116d`, base `5db1ab0`, 1 commit). Pre-merge gates passed (origin/main `5db1ab0`, feature `380116d`,
+merge-base `5db1ab0`, clean tree, 1 commit, exactly the 2 approved files).
+
+**Deploy (`deploy-preview.sh`, exit 0):** full tests/Feature/Sca gate passed; **Nothing to migrate —
+migrations remain 120**; recreate; `--no-dev`; `Deployed main @ 974cbfc`. Pilot public bind
+`195.26.255.80:8080` re-applied post-recreate; sca_edge attached.
+
+**Post-deploy verification (all PASS):** DEPLOYED_HEAD == ORIGIN_MAIN == MERGE_SHA `974cbfc`.
+`/admin/sca/eyewear` renders (new grid): scoped `.sca-registry` CSS present (no Admin-wide bleed); 2 cards /
+2 equal `.sca-canvas` (item 3 featured image via `/admin/sca/eyewear/3/image`; item 1 the equal-size
+`.sca-noimg` placeholder); `object-fit:contain`; clean `sca-pill-*` pills; responsive grid-cols-1/2/3/4; QR
+lookup (`name="qr"`) + all search/filter/date/sort controls + View item present; no `/storage` leak.
+Collector gallery unaffected (verify. item-3 image 200). `/storage` denied 404; SCA-038 valid 200 / bogus
+404 / malformed 404. **Item 3's 3 operator gallery images untouched** (3 rows; no gallery data modified
+during verification). Migrations 120; FP_QR `a920dc1c…`, FP_CERT `22fb9f55…`, FP_AUTH `3bd0f029…`, FP_OWN
+`831ae932…` unchanged; is_production 0,0; :8080 200; smsrocket 302; Caddyfile `0faece7a`; sca_edge +
+MariaDB-private intact.
+
+**COMPLETE. STOP — no further task.**
