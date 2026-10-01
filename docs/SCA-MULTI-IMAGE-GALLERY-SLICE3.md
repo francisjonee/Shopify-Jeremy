@@ -58,5 +58,36 @@ service `image_count` = 0. Prod migrations **120**; item 3 image intact (1 galle
 `sca-catalog/2EtJ7…png`); FP_QR `a920dc1c…`; is_production 0,0; verify. item-3 image 200; collector 302;
 smsrocket 302.
 
-**PUSH ONLY — not merged/deployed. Candidate `6275a45` returned for independent pre-merge review. Do not
-merge/deploy, and do not begin any public-Passport gallery or legacy-column-removal work.**
+## FINAL REVIEW = PASS/GO → DONE — MERGED --no-ff + DEPLOYED 2026-10-01
+
+`MERGE_SHA = ORIGIN_MAIN = DEPLOYED_HEAD = a8a6d8821617a2506a679254e83cb6593353c9d5` (reviewed HEAD
+`6275a45`, base `0bcdca5`, 1 commit). Pre-merge gates passed (origin/main `0bcdca5`, feature `6275a45`,
+merge-base `0bcdca5`, clean tree, 1 commit/8 files).
+
+**Deploy (`deploy-preview.sh`, exit 0):** full tests/Feature/Sca gate passed; **Nothing to migrate —
+migrations remain 120**; recreate; `--no-dev`; `Deployed main @ a8a6d88`. Pilot public bind
+`195.26.255.80:8080` re-applied after the recreate; sca_edge auto-attached; collector ordinal route live.
+
+**Post-deploy GOVERNED NET-ZERO GALLERY VERIFICATION (real Admin endpoints + Collector/Passport reads) —
+all PASS:**
+- Baseline: item 3 = 1 gallery row (operator image, position 1, SHA-256 `f3dee651…`).
+- Added 2 test images via the real Admin `storeImages` → 3 rows, positions 1,2,3, position 1 still the
+  original.
+- Collector detail showed 3 ordered thumbnails with the original at position 1; each ordinal's Collector
+  stream returned the EXACT expected bytes (ordinal 1 = original, 2 = test-1, 3 = test-2; all 200).
+- Reordered test-1 to position 1 (Admin `reorderImages`) → Collector ordinal 1 and **Passport both followed
+  to the new primary** (test-1 bytes).
+- Deleted both test images (Admin `deleteImage`) → **FINAL restored: item 3 = 1 row at position 1 = original
+  path + legacy mirror + SHA `f3dee651…`**; Collector ordinal 1 and Passport serve the original; out-of-range
+  ordinal 2 → 404; catalog disk holds ONLY the operator image (both test files removed — nothing left
+  behind).
+- **Provenance unchanged** across the whole sequence: QR/cert/auth/ownership/current-state fingerprints
+  identical; is_production 0,0; migrations 120.
+- Owner access 200; non-owner / out-of-range privacy-safe 404; Collector tabs (Overview/Authentication/
+  Certification/Documents/History) 5/5 intact; no `/storage` or internal gallery-metadata leak in the
+  Collector HTML.
+- `/storage` denied 404; SCA-038 valid 200 / bogus 404 / malformed 404; :8080 passport 200; smsrocket 302;
+  Caddyfile `0faece7a`, sca_edge, MariaDB-private unchanged.
+
+**Slice 3 COMPLETE. STOP — do not begin a public Passport gallery, legacy-column removal, or another cutover
+task.**
