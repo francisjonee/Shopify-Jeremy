@@ -29,8 +29,21 @@
 > unchanged). Report: `app`-repo `docs/task-reports/SCA-REGISTRY-CATALOG-UI-SLICE1.md`. **Not merged/deployed. Slices 2
 > (catalog card-grid index) + 3 (collector/passport image+SKU) follow after review.**
 
-> **SLICE 2 IMPLEMENTED + PUSHED (push-only) 2026-09-30 — awaiting pre-merge review.** Feature branch
-> `sca-registry-catalog-ui-slice2` @ **`6e8a063`**, base = deployed Slice-1 main **`3ef9ed0`**. **2 commits, 5 files:**
+> **SLICE 2 DONE — MERGED `--no-ff` + DEPLOYED 2026-10-01.** MERGE_SHA = ORIGIN_MAIN = DEPLOYED_HEAD =
+> **`fe08ec5325806acc6a4871c5050ebe1c6ccd916a`** (reviewed candidate `6e8a063`, base `3ef9ed0`, 2 commits preserved
+> `dccc680`+`6e8a063`). Approved by ChatGPT. **Post-deploy gates all PASS:** deploy test gate **667 passed**;
+> **Nothing to migrate** (migrations **119**, unchanged — no Slice-2 schema); live card grid renders against prod —
+> 2 cards (both prod items), Certified+QR badges ×2, **No-image placeholder + SKU: — ×2** (null handling), filters +
+> QR lookup present; **search narrows** (item-1 ref → only item 1), **intake filter** → 1 card; temp image → card uses
+> the **authorized `admin.sca.eyewear.image` route, no /storage leak**, cleared net-zero; index ACL (`/admin` non-staff
+> → 403 at edge; `:8080` unauth → 302 login); **zero QR/provenance mutation** (fp `a920dc1c…`, is_production unchanged,
+> items 2/2 null); SCA-038 `/p` 200 / bogus 404 / malformed 404; `/storage` 404, `/` 404, `/collector` 200; MariaDB
+> private (sca_internal only); `sca_edge` auto-attached on recreate (172.20.0.3); Caddyfile `0faece7a` + DOCKER-USER 5
+> unchanged; verify. + smsrocket + :8080 healthy; dev deps pruned, pilot bind restored, tree clean. **Slice 3 NOT
+> started — it gets its own readiness/planning audit (collector/public-passport presentation + passport DTO allowlist +
+> a `/p`-namespaced image surface).**
+>
+> _(Pre-deploy record:)_ Feature branch `sca-registry-catalog-ui-slice2` @ **`6e8a063`**, base = deployed Slice-1 main **`3ef9ed0`**. **2 commits, 5 files:**
 > `dccc680` Slice 2 (controller `index()` select + presence-only `cs_cert`/`cs_qr` flags; `eyewear/index.blade.php`
 > card grid; `CatalogGridTest.php`; report) + `6e8a063` **c13 de-flake** (test-only). The catalog **card grid** renders
 > over the SAME SCA-051 result set — header, POST QR-lookup, and the full GET filter/search/sort form preserved
