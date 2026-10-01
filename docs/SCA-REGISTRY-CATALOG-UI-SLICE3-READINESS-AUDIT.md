@@ -1,7 +1,26 @@
 # SCA-REGISTRY-CATALOG-UI — Slice 3 Readiness / Planning Audit (READ-ONLY)
 
-**Date:** 2026-10-01 · **Deployed baseline:** `fe08ec5` (Slice 1 + Slice 2 DONE). **Planning only — nothing
-implemented, no branch, no prod change, no migration.** ACTIVE = NONE / NEXT_TASK = NONE.
+**Date:** 2026-10-01 · **Deployed baseline:** `fe08ec5` (Slice 1 + Slice 2 DONE).
+
+> **SLICE 3 IMPLEMENTED + PUSHED (push-only) 2026-10-01 — awaiting pre-merge review.** Feature branch
+> `sca-registry-catalog-ui-slice3` @ **`2b1a933`**, base `fe08ec5`, **1 commit, 13 files** (no migration). Implements
+> this audit with **PUBLIC SKU = NO (locked)**. Collector: `CollectionService` baseQuery +`i.sku`/`i.image_path`,
+> summary/detail DTOs +`sku`/`has_image` (path/mime server-side only); new `catalogImageForOwnedItem` + `CollectionImageController`
+> + route `GET collector/collection/{ref}/image` (current-owner authz, no-store, privacy-safe 404); views render
+> thumbnail+SKU. Passport: `PublicAllowlist` +`image_url` (only new field; **no SKU**); `PassportPresenter` builds
+> `image_url` from the item's active-QR token (= the token already in `/p/{token}`) only when an image exists; new
+> `PassportController::image` + route `GET /p/{token}/image` (same group → `PublicPassportHeaders`) reusing
+> `PassportResolver` → bytes for valid+image, **identical constant-shape 404** for malformed/bogus/revoked/inactive/
+> no-image; view renders `<img>` only when present (CSP `img-src 'self'` already allows — no CSP change). No Krayin
+> core/vendor edits, no QR/is_production/cert/auth/ownership/transfer/service change, no schema. Tests `CollectorCatalogTest`
+> (6; incl. **previous-owner-after-transfer 404** + raw-path non-disclosure) + `PassportCatalogImageTest` (6; incl.
+> **public-SKU non-disclosure**, constant-shape failures, byte correctness, SCA-038 unchanged, zero mutation). Focused
+> 12/49; full `tests/Feature/Sca` **679 passed / 3626**; `php -l` clean. Live (feature branch) proof: `/p/{valid}` 200
+> (no `<img>` for no-image prod items), `/p/{valid}/image` + `/p/{bogus}/image` 404, `/storage` 404. Pilot restored to
+> `fe08ec5` — no candidate routes live, prod fp `a920dc1c…` / migrations 119 unchanged, healthy. Report (app repo):
+> `docs/task-reports/SCA-REGISTRY-CATALOG-UI-SLICE3.md`. **Not merged/deployed.**
+
+**Planning only — nothing implemented at audit time, no branch, no prod change, no migration.** ACTIVE = NONE / NEXT_TASK = NONE.
 
 Slice 3 surfaces the **catalog image + SKU** (from the Slice-1 columns) on the two customer surfaces: the authenticated
 **collector "My Collection"** and the public **SCA-038 passport** — presentation only, reusing existing patterns, with
