@@ -60,3 +60,35 @@ auth, header/sidebar, and the canonical logo route are all untouched.
 
 **Recommendation: GO** for the 3-line inline-style edit (push-only → review → governed merge/deploy), scoped
 to the three auth-page overrides. **AUDIT ONLY — awaiting review + GO before implementing.**
+
+---
+
+## IMPLEMENTED + PUSHED (push-only) 2026-10-02
+
+**Base:** deployed main `6840503`. **Candidate HEAD:** `3d69585` on branch `sca-auth-logo-size`.
+**Status:** PUSH ONLY — not merged, not deployed. Awaiting final pre-merge review.
+
+**Change (exactly as audited):** in the three auth overrides (`sessions/login.blade.php`,
+`sessions/forgot-password.blade.php`, `sessions/reset-password.blade.php`) the configured-logo `<img>` line
+changed from `class="h-10 w-[110px]"` → `style="width: 150px; height: auto; max-width: 100%;"`. `src="{{
+route('admin.sca.brand-logo') }}"`, the `alt`, the centered flex parent, and the `@else` vite fallback
+(`class="w-max"`) are unchanged. Diff = 1 line per view (3 lines) + `AdminLoginLogoTest` (+13).
+
+**Scope:** 4 files — the 3 auth overrides + `tests/Feature/Sca/AdminLoginLogoTest.php`. **No change** to
+header/mobile-sidebar overrides, `BrandLogoController`, the route, configured logo, vite fallbacks, auth,
+`/storage` policy, Caddy, Secure cookies, DB, gallery, Collector, Passport, provenance, infra, or
+`packages/Webkul` (Krayin core).
+
+**Tests (AdminLoginLogoTest 7/35; full tests/Feature/Sca 729/4006; php -l clean):** rg1/rg5/rg6 now assert
+each auth page carries `width: 150px; height: auto; max-width: 100%;`, still uses `admin.sca.brand-logo`,
+and has no `/storage` `<img>`; rg7 asserts the authenticated header/sidebar use the route AND do **not**
+carry the auth-page sizing (header/sidebar unchanged). rg2/rg3/rg4 unchanged.
+
+**Push-only + restoration (production remains on 6840503):** candidate pushed to
+`origin/sca-auth-logo-size` (`3d69585`, base `6840503`). Pilot restored to main `6840503` (working tree
+reverted; `--no-dev`; caches cleared): the candidate sizing is NOT live (`width: 150px` absent from the live
+overrides; the live login override still has `h-10 w-[110px]`). Migrations 120; FP_QR `a920dc1c…`;
+is_production 0,0; gallery 3; kr-app loopback-only `127.0.0.1:8080`; brand-logo route 200; verify. passport
+200; `/storage` 404; smsrocket 302.
+
+**PUSH ONLY — not merged/deployed. Candidate `3d69585` returned for final pre-merge review.**
