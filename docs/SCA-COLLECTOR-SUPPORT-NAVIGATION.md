@@ -64,3 +64,40 @@ pilot's `all`-type operators.
   gallery 3.
 
 **STOP after push. Not merged/deployed. Awaiting review of `1730576` (base `af84b0a`).**
+
+---
+
+## DONE — MERGED (--no-ff) + DEPLOYED 2026-10-02
+
+Pre-merge review = PASS/GO. Fail-closed gate re-checked: origin/main `af84b0a`, candidate local+origin
+`1730576`, merge-base `af84b0a`, ahead 1 / behind 0, clean tree, exactly the reviewed 2-file scope
+(Blade +9 / CatalogGridTest +32), no menu.php/ACL/controller/route/service/schema/core change.
+
+**MERGE_SHA = ORIGIN_MAIN = DEPLOYED_HEAD = `236acd93f06b2267c3d209aee0675550b09e1cb5`** (governed `--no-ff`
+merge of `1730576` onto `af84b0a`). Deployed via `scripts/deploy-preview.sh` (exit 0, first run — no flake):
+gate **full tests/Feature/Sca 764 passed (4231 assertions)** before any production change;
+**`Nothing to migrate` — migrations remain 120**; `Deployed main @ 236acd9`. Code-only (bind-mounted view) →
+kr-app NOT recreated; Phase-B loopback intact; stash NOT re-applied.
+
+**Post-deploy verification (NON-MUTATING; no temporary prod user created):**
+- Deployed index.blade carries the gated link: `bouncer()->hasPermission('sca.collector.support')` present,
+  route `admin.sca.collector.support.index` present, text "Collector support" present → targets the EXISTING
+  route `…/admin/sca/collectors`.
+- Gating correctness (authorized `all`; authorized custom WITH `sca.collector.support`; custom WITHOUT →
+  hidden; direct route retains its ACL 403-without/200-with) is proved by the deploy-gate CatalogGridTest
+  rg13/rg14 (ran green in the 764/4231 gate). No prod user/role created (per instruction).
+- **No new route/controller/permission:** exactly the two existing routes
+  `admin.sca.collector.support.{index,show}`; exactly one existing ACL key `sca.collector.support`.
+- **No Collector/public navigation receives the link:** grep of collector + passport views finds no
+  `admin.sca.collector.support` / "Collector support" reference (admin-only blade).
+- Collector Support search/data behavior unchanged (its controller/views/service untouched — not in the diff).
+- Standard regression (live): SCA-038 `/p` valid 200/200, bogus/malformed 404/404; `/storage` 404;
+  `/admin/sca/eyewear` 403 + `/admin/sca/collectors` 403 (staff-IP + ACL); `/collector/login` 200;
+  `http→https` 308; `secure` cookie (Phase B); gallery + QR download/reissue routes registered; public `:8080`
+  retired — kr-app `127.0.0.1:8080` loopback-only + healthy; MariaDB private.
+- **ZERO provenance/domain mutation — AFTER == BEFORE (`c3fea71ad6ecf93345b2eefc5f5cbef4`):** projection, QR
+  tokens + is_production, status_events 6, cert/cert-events/auth/ownership, gallery 3, QR lifecycle,
+  migrations 120 — all unchanged.
+
+The final-readiness P1 (Collector Support unreachable) is resolved. **COMPLETE. STOP — do not begin the P2
+bundle.**
