@@ -80,3 +80,51 @@ schema/migration; `deriveLifecycleState` unchanged; no projection rebuild; no hi
 
 **STOP after push. Not merged/deployed; no next task started. Awaiting independent pre-merge review of
 `f6015a8` (base `f85e8c5`).**
+
+---
+
+## DONE — MERGED (--no-ff) + DEPLOYED 2026-10-02
+
+Pre-merge review = PASS/GO. Fail-closed gate re-checked: origin/main `f85e8c5`, candidate local+origin
+`f6015a8`, merge-base `f85e8c5`, ahead 1 / behind 0, clean tree, exactly the reviewed 10-file scope (2 new +
+8 modified), no ProjectionService/migration/route/ACL/core/vendor/infra change.
+
+**MERGE_SHA = ORIGIN_MAIN = DEPLOYED_HEAD = `8d466d1a89dd238d3cbbc4d8c07921dfa08dc22d`** (governed `--no-ff`
+merge of `f6015a8` onto base `f85e8c5`). Deployed via `scripts/deploy-preview.sh` (exit 0, first run — no
+flake): mandatory gate **full tests/Feature/Sca 760 passed (4211 assertions)** incl. `ItemStateLabelsTest`,
+before any production change; **`Nothing to migrate` — migrations remain 120**; `Deployed main @ 8d466d1`.
+Code-only on the bind-mounted `app/` → kr-app NOT recreated (uptime unchanged); Phase-B loopback intact;
+public-bind stash NOT re-applied.
+
+**Post-deploy verification (READ-ONLY; existing production state only — no item mutated to manufacture a
+state):**
+- **Passport** item 3 (token `10c739b7…`, owned + certified + **recovered**): provenance = "Certified in the
+  SCA provenance registry" (from the certification fact, not lifecycle); registry reads **clear** ("No adverse
+  reports on the SCA registry") — the deliberate recovered-as-clear public-privacy policy is intact (0
+  "Recovered"/"Reported" on the public page); `qr_status` = "Active"; **0** raw `REGISTERED`/`CERTIFIED`. The
+  only 32-hex in the body is the self-referential active-QR token already in the `/p/{token}` URL (per
+  `PublicAllowlist` — not a new disclosure).
+- **Collector** item 3 detail DTO (owner, runtime read-only): `ownership`="Registered to you",
+  `status`="Certified", `authenticity_status`="Authenticated & Certified" (certified=true),
+  `registry_status`="Recovered — no active loss report" — certification shown **independently** of ownership,
+  and the owner (unlike the public) sees the recovered wording.
+- **Admin** canonical labels (runtime): lifecycle `REGISTERED`→"Registered", `CERTIFIED`→"Certified";
+  `registryShort('recovered')`→"Recovered"; index + detail blades call the shared presenter (3× each). Lifecycle
+  **filter option VALUES unchanged** (`value="{{ $ls }}"`; `LIFECYCLE_STATES` const intact) — only labels
+  humanized; filter/search/sort/QR-lookup behavior preserved. "Collector #<id>" left untouched ([A-F9]).
+- **Regression (live):** SCA-038 `/p` valid 200 / 200 / bogus 404 / malformed 404; `/storage` 404;
+  `/admin/sca/eyewear` 403 (non-staff); `/collector/login` 200; `http→https` 308; `secure` cookie (Phase B);
+  gallery (item 3 = 3 images) + QR download/reissue routes registered; kr-app `127.0.0.1:8080` loopback-only +
+  healthy; kr-mariadb private.
+- **ZERO production mutation — AFTER == BEFORE (`b9a668d631e9ce59860f8b2535572d2f`):** projection unchanged
+  (item1 `CERTIFIED`/normal/unowned/activeQr1/cert1; item3 `REGISTERED`/recovered/owner1/activeQr2/cert3); QR
+  tokens + is_production unchanged; status_events 6; cert/cert-events/auth/ownership unchanged; gallery 3; QR
+  lifecycle unchanged; migrations 120. (Rendering is pure; no projection rebuild; `deriveLifecycleState`
+  untouched.)
+
+**Known minor residual (documented for a future polish task, NOT in this scope):** the Admin *registry filter
+dropdown* label still uses `ucfirst($rs)` ("Disputed"/"Lost"), whereas the canonical display label for
+`disputed` is "Under review". The filter VALUES are correct and unchanged; only the dropdown label vocabulary
+differs. Out of the reviewed 10-file scope (only the lifecycle dropdown was humanized) — left for a follow-up.
+
+Phase-B production state preserved. **COMPLETE. STOP — no next task.**
