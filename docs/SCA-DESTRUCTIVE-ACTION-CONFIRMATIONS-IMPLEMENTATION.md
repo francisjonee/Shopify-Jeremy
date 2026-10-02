@@ -78,3 +78,46 @@ new `confirm`/typed-word/reason by default; `AdverseRecoveryTest`/`CollectorItem
 
 **STOP after push. Not merged/deployed; next P1 not started. Awaiting independent pre-merge review of
 `ed78407` (base `daf7c65`).**
+
+---
+
+## DONE — MERGED (--no-ff) + DEPLOYED 2026-10-02
+
+Pre-merge review = PASS/GO. Fail-closed gate re-checked: origin/main `daf7c65`, candidate local+origin
+`ed78407`, merge-base `daf7c65`, ahead 1 / behind 0, clean tree, reviewed 16-file scope, no
+migration/service-semantic/ACL/core/vendor/QR/gallery/SMTP/env/infra change.
+
+**MERGE_SHA = ORIGIN_MAIN = DEPLOYED_HEAD = `f85e8c5a3d935c6909f315cac4590f82d783e1bd`** (governed `--no-ff`
+merge of `ed78407` onto base `daf7c65`). Deployed via `scripts/deploy-preview.sh` (exit 0): mandatory gate
+**full tests/Feature/Sca 753 passed (4155 assertions)** incl. `DestructiveActionConfirmationTest` PASS, before
+any production change; **`Nothing to migrate` — migrations remain 120**; `Deployed main @ f85e8c5`. Code-only on
+the bind-mounted `app/` → kr-app NOT recreated (uptime unchanged); Phase-B loopback bind intact; public-bind
+stash NOT re-applied.
+
+**Deploy note (flaky gate, no production impact):** the FIRST `deploy-preview.sh` run aborted at the test gate
+on `QrArtifactTest::rg2` with `DECODE_FAILED: checkAndNudgePoints …` — a known random-token QR rasterize/decode
+flake, unrelated to this change (which touches no QR code). `set -e` aborted BEFORE any production migrate/
+build/recreate, so production was untouched. Re-ran `QrArtifactTest` ×3 → 10/10 each (confirmed flaky), then
+re-ran the deploy unchanged → clean pass (gate 753/4155). LESSON: this QR decode gate is occasionally flaky;
+a bare deploy re-run clears it.
+
+**Post-deploy verification (all PASS; NON-MUTATING — no status action executed):**
+- All 7 confirm routes live: collector `status/{lost,stolen,recovered}/confirm` (→ `CollectorAuthenticate`);
+  admin `resolve/confirm` + `admin/{recover,retire,invalidate}/confirm` (→ `ScaAuthorize:sca.eyewear.status`).
+  No admin Lost/Stolen setter route exists. Standard `status/{ref}/{retire,invalidate}` (+confirm) and the QR
+  download + reissue routes remain registered.
+- Structural (deployed views): collector `collection/show.blade` has **0** direct status-POST forms and **3**
+  confirm links; admin `status/show.blade` has **4** confirm links (resolve + the three 024 valve actions);
+  `status/confirm.blade` carries the typed-word + reason contract. Behaviors (typed RETIRE/INVALIDATE,
+  required reason, explicit confirm, previous-owner stale → 404, valve 409 for non-orphaned) are proven by the
+  deploy gate's `DestructiveActionConfirmationTest`.
+- Live regression: `/p/bee93d2b…` 200, `/p/10c739b7…` 200, `/p/bogus` 404, `/p/short` 404 (SCA-038 constant
+  shape); `/storage` 404; `/admin/sca/status/*` 403 from a non-staff source; `/collector/login` 200;
+  `http→https` 308; `secure` cookie present (Phase B); public `:8080` retired (`127.0.0.1:8080` loopback only);
+  kr-app + kr-mariadb healthy.
+- **ZERO production mutation — AFTER == BEFORE (`55ed32ebc5a27f7d592a2c4e02388c26`):** `sca_status_events` 6;
+  projection (item1 normal/owner none/activeQr1/no-cert excluded; item3 recovered/owner1/activeQr2) unchanged;
+  QR identities 2 (`bee93d2b…`, `10c739b7…`, is_production 0,0); QR lifecycle 2; certifications 3; cert events
+  4; authentications 3; ownership events 4; gallery 3; migrations 120.
+
+Phase-B production state preserved. **COMPLETE. STOP — next P1 not started.**
