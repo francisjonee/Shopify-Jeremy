@@ -41,3 +41,35 @@ provenance/SMTP/infra/`deriveLifecycleState` change. `git diff 8d466d1..ef4c3a5`
   mutation run): migrations 120, status_events 6, QR tokens `bee93d2b…`/`10c739b7…` intact.
 
 **STOP after push. Not merged/deployed. Awaiting review of `ef4c3a5` (base `8d466d1`).**
+
+---
+
+## DONE — MERGED (--no-ff) + DEPLOYED 2026-10-02
+
+Pre-merge review = PASS/GO. Fail-closed gate re-checked: origin/main `8d466d1`, candidate local+origin
+`ef4c3a5`, merge-base `8d466d1`, ahead 1 / behind 0, clean tree, exactly the reviewed 2-file diff.
+
+**MERGE_SHA = ORIGIN_MAIN = DEPLOYED_HEAD = `af84b0a1c585ddcd6f3bc911cb6c06f3dcee1a6c`** (governed `--no-ff`
+merge of `ef4c3a5` onto `8d466d1`). Deployed via `scripts/deploy-preview.sh` (exit 0, first run — no flake):
+gate **full tests/Feature/Sca 762 passed (4219 assertions)** before any production change;
+**`Nothing to migrate` — migrations remain 120**; `Deployed main @ af84b0a`. Code-only (bind-mounted views) →
+kr-app NOT recreated (uptime unchanged); Phase-B loopback intact; stash NOT re-applied.
+
+**Post-deploy verification (READ-ONLY):**
+- Deployed Admin registry filter (runtime render): `?registry_status=disputed` → `<option value="disputed"
+  selected>Under review</option>` — displays **"Under review"**, HTML option **value remains exactly
+  "disputed"**, and the selection **round-trips** (selected on the submitted value). Other labels canonical:
+  recovered→"Recovered", lost→"Lost", invalidated→"Invalidated"; **no raw `>Disputed</option>`**.
+- Search/filter/sort/QR-lookup/pagination controls unchanged (same request field names + values); Collector &
+  Passport presentation unchanged (not in the diff).
+- Live regression: SCA-038 `/p` valid 200 / 200 / bogus 404 / malformed 404; `/storage` 404;
+  `/admin/sca/eyewear` 403 (non-staff staff-IP boundary); `/collector/login` 200; `http→https` 308; `secure`
+  cookie (Phase B); public `:8080` retired — kr-app `127.0.0.1:8080` loopback-only + healthy; MariaDB private.
+- **ZERO provenance mutation — AFTER == BEFORE (`c3fea71ad6ecf93345b2eefc5f5cbef4`):** projection, QR tokens +
+  is_production, status_events 6, cert/cert-events/auth/ownership, gallery 3, QR lifecycle, migrations 120 —
+  all unchanged. (The runtime render check created+deleted a transient Krayin admin user/role to render the
+  authenticated admin page — net-zero, a non-provenance `users`/`roles` write, 0 leftover confirmed; the
+  provenance fingerprint above is unaffected.)
+
+The SCA-STATUS-TERMINOLOGY-CONSISTENCY residual is resolved: the Admin registry filter now consumes the
+canonical `ItemStateLabels` mapping. **COMPLETE. STOP — no next task.**
