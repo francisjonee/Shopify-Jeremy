@@ -91,4 +91,28 @@ overrides; the live login override still has `h-10 w-[110px]`). Migrations 120; 
 is_production 0,0; gallery 3; kr-app loopback-only `127.0.0.1:8080`; brand-logo route 200; verify. passport
 200; `/storage` 404; smsrocket 302.
 
-**PUSH ONLY — not merged/deployed. Candidate `3d69585` returned for final pre-merge review.**
+## FINAL REVIEW = PASS/GO → DONE — MERGED --no-ff + DEPLOYED 2026-10-02
+
+`MERGE_SHA = ORIGIN_MAIN = DEPLOYED_HEAD = dff27812d95698a54287d4268010d911cfe08b50` (reviewed HEAD
+`3d69585`, base `6840503`, 1 commit). Pre-merge gates passed (origin/main `6840503`, feature `3d69585`,
+merge-base `6840503`, clean tree, exactly the 4-file scope, `packages/Webkul` untouched).
+
+**Deploy (`deploy-preview.sh`, exit 0):** full tests/Feature/Sca gate passed; **Nothing to migrate —
+migrations remain 120**; `Deployed main @ dff2781`. Code-only (bind-mounted views) → kr-app not recreated,
+Phase-B loopback bind `127.0.0.1:8080` intact.
+
+**Post-deploy verification (all PASS):** DEPLOYED_HEAD == ORIGIN_MAIN == MERGE_SHA `dff2781`.
+- Each auth page (login / forget-password / reset-password) references `admin.sca.brand-logo`, carries
+  `width: 150px; height: auto; max-width: 100%;`, and has **0 `/storage` `<img>`**.
+- Authenticated header/sidebar/mobile use the route **3×** and carry **NO** `width: 150px` (header/sidebar
+  sizing unchanged); 0 `/storage` img.
+- `/admin/sca/brand-logo` → **200 image/png, 140,822 bytes** (configured SCA logo). Edge
+  `/storage/configuration/46a8…png` → **404**.
+- Admin auth intact (admin/login 403 non-staff allowlist); collector/login 200; `http→https` 308; **Secure
+  cookie** present on verify. (Phase B intact); public `:8080` stays retired, kr-app loopback-only.
+- SCA-038 passport 200/404/404; Collector item-3 passport image 200; smsrocket 302.
+- Invariants unchanged: migrations 120; gallery 3; FP_QR `a920dc1c…`, FP_CERT `22fb9f55…`, FP_AUTH
+  `3bd0f029…`, FP_OWN `831ae932…`; is_production 0,0. Configured logo / DB / routes / Caddy / firewall /
+  session config / infra untouched.
+
+**COMPLETE. STOP — no next task.**
