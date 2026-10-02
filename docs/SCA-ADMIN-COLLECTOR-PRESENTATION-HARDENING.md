@@ -1,8 +1,50 @@
 # SCA Admin + Collector presentation hardening (P2 bundle) — PUSH-ONLY
 
 **Date:** 2026-10-02 · **Base:** deployed main `236acd9`, migrations **120**.
-**Status: IMPLEMENTED + TESTED + PUSHED. NOT merged, NOT deployed. For independent review.**
-Implements the four P2 findings from `SCA-ADMIN-COLLECTOR-PRESENTATION-HARDENING-AUDIT.md` (gov `455ef98`).
+**Status: DONE — reviewed (PASS), merged `--no-ff`, and DEPLOYED `a594ea8` 2026-10-02.** (History below kept
+as the push-only review record.) Implements the four P2 findings from
+`SCA-ADMIN-COLLECTOR-PRESENTATION-HARDENING-AUDIT.md` (gov `455ef98`).
+
+---
+## DEPLOYMENT RESULT (2026-10-02)
+**Independent pre-merge review: PASS** (GitHub-verified: base `236acd9`, candidate `c8f9410`, merge-base exactly
+`236acd9`, ahead 2/behind 0, exactly 12 files, no migration/route/ACL/core/infra).
+
+**Fail-closed re-gate before merge (all held):** origin/main `236acd9`; candidate local==origin `c8f9410`;
+merge-base `236acd9`; ahead 2/behind 0; clean tree; exact reviewed 12-file scope; forbidden-change guards
+(migrations/routes/acl/core/infra) all 0.
+
+**Tests (candidate, pre-merge):** `php -l` clean; focused + affected suites (Presentation/OwnershipHistory/
+OwnershipCorrection/CollectorSupport) 60/60; **full `tests/Feature/Sca` 770 passed (4264 assertions), 0 failed.**
+The deploy-gate full suite inside `deploy-preview.sh` also passed under `set -e` (no QR-decode flake this run).
+
+**Governed merge + deploy:** `git merge --no-ff sca-presentation-hardening` → **MERGE_SHA `a594ea8`**, pushed
+origin/main; `scripts/deploy-preview.sh` exit 0, "Deployed main @ a594ea8", kr-app not recreated (code-only,
+Phase-B loopback intact). **MERGE_SHA == ORIGIN_MAIN == DEPLOYED_HEAD == `a594ea8`; migrations 120.**
+
+**Post-deploy live verification (non-mutating; no temp prod user; stash not reapplied):**
+- **Zero prod mutation:** canonical combined `AFTER_FP = c3fea71ad6ecf93345b2eefc5f5cbef4` (== `236acd9`
+  baseline) · migrations 120 · gallery 3 · status_events 6 · both QR tokens unchanged is_production 0,0 ·
+  qr_count 2 / qr_lifecycle 2 (no QR regen).
+- **F1 (deployed code live):** `show.blade` + `ownership-history.blade` render owner via `$currentOwnerRef`/
+  `owner_ref`, support deep-link gated on `sca.collector.support`, **zero literal "Collector #"** on either;
+  `EyewearItemController::collectorRef()` + `public_ref` read-join present. A→B→A covered by PresentationHardeningTest.
+- **F2:** `show.blade` surfaces the `eligibleAuth` CTA POSTing the existing `admin.sca.eyewear.certification.issue`
+  under the existing `sca.eyewear.certify` ACL — no second path.
+- **F3:** `support-show`/`support-index` use `ItemStateLabels::registryShort/certificationShort` + `ucfirst`
+  account status; **zero raw "Not certified"**.
+- **F4:** deployed `PrivacyController::destroy()` flashes `->with('status', …)` (line 70; the only `status_notice`
+  occurrence is the explanatory comment on line 67); `login.blade` renders `session('status')`. The mutating
+  anonymization path is covered by the deploy-gate regression (no production collector anonymized).
+- **Live regression:** `/p/<valid>` 200, `/p/<bogus>` 404 (SCA-038 Option-A constant shape); `/storage/x` 404;
+  `/admin/login` & `/admin/sca/eyewear` 403 (staff-IP boundary); `/collector/login` 200; `http→https` 308;
+  Secure cookies present; loopback `127.0.0.1:8080` 302 while public `195.26.255.80:8080` 000 (retired);
+  co-tenant `smsrocket.io` 302; kr-app + kr-mariadb healthy.
+
+**Outcome:** Admin+Collector P2 presentation hardening LIVE. Zero production provenance/domain mutation.
+Do **not** begin Passport trust/safety work (separate, unstarted).
+
+---
 
 ## Candidate
 - **SHA (HEAD):** `c8f9410` · **Branch:** `origin/sca-presentation-hardening`
