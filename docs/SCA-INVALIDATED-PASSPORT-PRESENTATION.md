@@ -1,9 +1,48 @@
 # SCA Invalidated Passport Presentation (Option A) — PUSH-ONLY
 
 **Date:** 2026-10-05 · **Base:** deployed production `f78e31d`, migrations **120**.
-**Status: IMPLEMENTED + TESTED + PUSHED. NOT merged, NOT deployed. For independent pre-merge review.**
-Implements **Option A** from `SCA-RETIRED-INVALIDATED-PASSPORT-POLICY-AUDIT.md` (gov `1868134`). Presentation /
-view-only.
+**Status: DONE — reviewed (PASS), merged `--no-ff`, and DEPLOYED `98ae654` 2026-10-05.** (History below kept as
+the push-only review record.) Implements **Option A** from `SCA-RETIRED-INVALIDATED-PASSPORT-POLICY-AUDIT.md` (gov
+`1868134`). View-only.
+
+---
+## DEPLOYMENT RESULT (2026-10-05)
+**Fail-closed re-gate (all held):** origin/main `f78e31d`; candidate local==origin `5b511a6`; merge-base
+`f78e31d`; ahead 1/behind 0; clean tree; exactly the reviewed 3 files; forbidden guards (migrations/routes/
+**PassportResolver/PassportPresenter/ItemStateLabels/PublicAllowlist/Config/layout/Middleware**/core/vendor) all 0.
+
+**Pre-merge full suite:** `tests/Feature/Sca` **803 passed (4426 assertions), 0 failed**.
+
+**Governed merge + deploy:** `git merge --no-ff` → **MERGE_SHA `98ae654`**, pushed origin/main;
+`scripts/deploy-preview.sh` exit 0 (full-suite gate re-passed under `set -e`), "Deployed main @ 98ae654"; kr-app
+**not recreated** (code-only, "Up 3 days"); Phase-B public :8080 stays retired/loopback-only; stash NOT reapplied.
+**MERGE_SHA == ORIGIN_MAIN == DEPLOYED_HEAD == `98ae654`; migrations 120 (no migration).**
+
+**Post-deploy verification:**
+- **Zero prod mutation:** `AFTER_FP = c3fea71ad6ecf93345b2eefc5f5cbef4` (== baseline) · migrations 120 · gallery 3.
+- **Deployed `show.blade` (structural; no production status mutated):** adverse branch `@if ($adverse)` →
+  `role="alert"` banner → `@if ($sev === 'invalid')` → historical notice ("retained as a historical SCA record …
+  must not be treated as current verification … details shown below remain part of the historical record"), **no**
+  green badge; `@else` → green "✓ Authenticated & Certified" retained for lost/stolen/disputed/**retired**; clear
+  branch → green. Detail rows (Certification No., Authenticity, Authenticated) still render = historical cert/auth
+  facts preserved. The 10 `PublicPassportInvalidatedPresentationTest` cases (invalidated no-green + historical
+  notice; cert/auth rows + `current_certification_id` unmutated; retired keeps green; 404 shape; mobile rule;
+  no leak; zero mutation) passed in pre-merge and the deploy gate against this exact code.
+- **Live CLEAR passport (runtime `/p/<valid>`):** green badge present (1), **no** RECORD INVALIDATED (0), **no**
+  historical notice (0); mobile `@media (max-width: 480px)` (1) + `class="row"` (8) → normal unchanged + mobile
+  stacked layout intact.
+- **Diff `f78e31d..98ae654` = exactly 3 files** (show.blade + 2 tests); resolver/presenter/labels/allowlist/config/
+  layout/CSP/routes/migrations untouched.
+- **Live regression:** `/p/<valid>` 200; `/p/<bogus>` & `/p/<malformed>` 404 (SCA-038 constant shape); `/storage/x`
+  404; `http→https` 308; Secure cookies present; loopback `:8080` 302 while public `195.26.255.80:8080` 000
+  (retired); co-tenant smsrocket.io 302; kr-app + kr-mariadb healthy.
+
+**Outcome:** invalidated public Passport now presents as a historical, non-current record (no green all-clear)
+while retaining its provenance facts; Retired and every other state unchanged. Zero production provenance/domain
+mutation; resolver/eligibility/SCA-038/CSP/mobile layout all intact. Option B (cert-revocation→404) remains the
+separate, un-chosen domain alternative.
+
+---
 
 ## Candidate
 - **SHA:** `5b511a6` · **Branch:** `origin/sca-invalidated-presentation`
