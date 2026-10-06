@@ -1,0 +1,9 @@
+# Shopify CLI local/linked state — NEVER commit (project cache, linked-app state, possible tokens).
+.shopify/
+# Local or secret config overrides — never commit.
+*.local.toml
+shopify.app.*.local.toml
+# Any env/secret files that might be dropped here by tooling.
+.env
+.env.*
+*.secret
