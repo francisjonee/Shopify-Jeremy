@@ -145,3 +145,50 @@ No Caddy edit, no recreate. The callback route, the public exact-path `GET` edge
 
 ### D-FIXTURES — operator browser steps provided in chat; Shopify actions are operator-only.
 Archive order #3281; unpublish+delete the `ZZ-SCA-DRYRUN-TEST (DO NOT SELL)` product only. STOPPED for operator; P5-3/P5-4 to run after completion. No SCA mutation; all provenance retained.
+
+---
+
+## Gate P5-3 — zero SCA mutation from Shopify cleanup (read-only, PASS)
+
+Operator completed authorized Shopify cleanup: order **#3281 archived** (not cancelled); product **`ZZ-SCA-DRYRUN-TEST (DO NOT SELL)`** set to Draft then **deleted** after the delete-confirmation dialog was reviewed. D-EDGE remained Option A; no Caddy change.
+
+| Check | Expected | Result |
+|---|---|---|
+| provenance fingerprint | `62b2e42f` | **`P5-3_FP = 62b2e42fe409b4ec91f3381b35da819e`** ✓ |
+| webhook receipts | 3 | **3** ✓ |
+| item 4 lifecycle/registry/owner | REGISTERED / disputed / 3 | **REGISTERED / disputed / 3** ✓ |
+| item 4 sale-link | `revoked_refund` | **`revoked_refund`** ✓ |
+| item 4 ownership / claim / status | 1 / 1 / 1 | **1 / 1 / 1** ✓ |
+| certification (4) / QR (3) | issued / active | cert 4 `state=issued`; QR 3 (`927e2d59…`) ✓ |
+| pre-existing id1 | CERTIFIED/normal/null/0/0 | **unchanged** ✓ |
+| pre-existing id3 | REGISTERED/recovered/owner1/4oe/6se | **unchanged** ✓ |
+| migrations / scope | 120 / read_orders | 120; config+granted scope `read_orders` ✓ |
+| connection | connected, offline token encrypted | shop correct, token SET(enc), `expires_at` null ✓ |
+
+**Zero SCA provenance mutation was caused by the Shopify cleanup** — archiving the order and deleting the test product emitted no SCA-subscribed webhook (`products/*` and archive are not subscribed; item 4's link was already `revoked_refund` ∉ `ACTIVE_STATES`), so nothing reached the receiver. The fingerprint is byte-identical to the pre-cleanup value.
+
+## Gate P5-4 — production-ready acceptance (PASS)
+
+| # | Acceptance criterion | Result |
+|---|---|---|
+| 1 | App `98ae654` unchanged; migrations 120; no code/schema/scope change | ✓ |
+| 2 | Connected: shop `second-chance-eyewear-accessories.myshopify.com`, granted scope exactly `read_orders`, offline token encrypted at rest | ✓ |
+| 3 | Webhook subscriptions unchanged since Gate C (`orders/paid`, `orders/cancelled`, `refunds/create` → `…/sca/shopify/webhook`, api `2026-07`); no app redeploy, no webhook change | ✓ |
+| 4 | **Permanent** `POST /sca/shopify/webhook` reachable + **fail-closed** (no-HMAC → 401) | ✓ |
+| 5 | **Retained** OAuth callback (Option A): `GET /sca/shopify/oauth/callback` reachable + **fail-closed** (no-params → 400); `auth.redirect_urls` retained; route+handle unchanged; no Caddy mutation | ✓ |
+| 6 | Public `/p/*` (200) + `/collector` (302) reachable; `/storage/*` denied (404); `/admin` staff-IP only (403 for non-staff); install initiator `/sca/shopify/connect` non-staff → 404; arbitrary `/sca/*` → 404 (**no wildcard**); webhook wrong-method → 404 | ✓ |
+| 7 | smsrocket co-tenant healthy (302); sr-caddy owns 80/443; no Caddy change | ✓ |
+| 8 | `FINAL_FP = 62b2e42f`; all Phase-4 test artifacts retained as audit record; pre-existing provenance byte-identical; no customer PII persisted by the integration | ✓ |
+| 9 | Shopify test fixtures dispositioned (#3281 archived, test product deleted) with **zero** SCA provenance change | ✓ |
+| 10 | Governance: Phase 4 (`de50ec03`) + Phase 5 plan/exec evidence committed; memory/index updated | ✓ |
+| 11 | Go-live note (operational, not a code gate): real sales use one-of-one qty-1 listings with `sca_item_ref=<public_ref>`; buyer claim-link delivery manual (mailer=log; SMTP separate track) | noted |
+
+**Observation (no action required):** the test item's public passport (`/p/927e2d59…`) still resolves **200** and correctly displays the **disputed** adverse-status banner — this is the intended "retained audit record" behaviour. If the business later wants it off the public surface, the governed **non-destructive** levers (retire/invalidate or certification-revoke→404) are available as a separate optional task — **never** a DB delete.
+
+---
+
+## PHASE 5 — COMPLETE (production-ready)
+
+D-EDGE Option A (retain callback, no Caddy change) ✓ · P5-1 baseline ✓ · D-FIXTURES disposed (operator) ✓ · P5-3 zero-mutation ✓ · P5-4 acceptance ✓. The Shopify integration is **activated, dry-run-verified end-to-end, and in a steady production posture**. Deployed app `98ae654` (no app code changed across the entire activation), migrations 120, scope `read_orders`, 3 webhooks, permanent receiver fail-closed, retained callback fail-closed, `FINAL_FP = 62b2e42fe409b4ec91f3381b35da819e`, pre-existing provenance untouched, co-tenant healthy.
+
+**No further cleanup or production mutation performed. Phase 5 closed.**
