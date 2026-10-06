@@ -44,3 +44,36 @@ Then tell Claude "paid". Claude will run Gate D1 (verify one receipt + one eligi
 `sca_item_ref`, no PII persisted / `shopify_customer_ref` null, pre-existing items untouched, idempotency).
 
 (No order is created by Claude; `shopify app deploy` is not re-run; Phase 5 not started.)
+
+## Gate D1 — BLOCKED at order creation: `read_orders` is read-only (no draft-order write)
+The Shopify admin "Custom item" dialog does not expose line-item properties, so the operator could not attach
+`sca_item_ref` there. Creating the order via the **Admin API** was evaluated and **stopped before any mutation**:
+- **`draftOrderCreate` (and legacy REST `POST /draft_orders.json`) require `write_draft_orders`** (verified against
+  Shopify docs, 2025-01/current). Creating via the Orders API would require `write_orders`.
+- The integration app's **granted scope is exactly `read_orders`** (confirmed Gate B/C; `optional_scopes=[]`). It is
+  **read-only for orders by design** and therefore **cannot create a draft/test order** under current authorization.
+- No API write was attempted; scopes were **not** broadened and the app config was **not** changed (both forbidden).
+
+This is the intended security posture — the inbound integration app holds no order-write power. The test must
+therefore use the **genuine inbound path** (a real checkout that carries the line-item property), which is exactly
+how production sales will deliver `sca_item_ref`.
+
+### Safest alternative (no scope/app/SCA-code change) — RECOMMENDED
+**Storefront test checkout** on `second-chance-eyewear-accessories.myshopify.com`, where the line item carries the
+`sca_item_ref` line-item property (value `SCA-A960A57D3124`, quantity 1), paid via the test/Bogus gateway so
+`orders/paid` fires:
+- Line-item properties are emitted by the product add-to-cart form (`properties[sca_item_ref]`) or the Storefront
+  API cart line attributes — the Storefront API uses its own (separate) access token, not the Admin order scopes.
+- Options to inject the property without a full theme build: (a) add a hidden `properties[sca_item_ref]` input to a
+  dedicated test product's form via a theme snippet; or (b) build a test cart via the Storefront API with the line
+  attribute; then complete a test (Bogus-gateway) checkout.
+- This validates the real production mapping end-to-end and needs **no** Admin order-write scope, no app-config
+  change, and no SCA code change.
+
+### Alternatives NOT taken (require a change that is out of scope here)
+- Granting `write_draft_orders`/`write_orders` to the app, or using a separate order-write Admin credential, would
+  change scopes/app config — **not authorized**; flag for operator/ChatGPT if an admin-side draft is preferred over
+  the storefront path.
+
+**STOP — operator decision required:** proceed with the storefront test-checkout path above (recommended), or
+authorize a scope/credential change out-of-band. No order created; nothing marked paid; Phase 5 not started.
