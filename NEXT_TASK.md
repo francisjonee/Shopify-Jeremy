@@ -1,8 +1,8 @@
 # NEXT TASK
 
-**STATUS: ACTIVE — SCA SHOPIFY ACTIVATION / EXISTING APP CONNECTION.**
+**STATUS: ACTIVE — SCA SHOPIFY ACTIVATION / PHASE 4 CONTROLLED DEV-STORE DRY-RUN.**
 
-Promoted 2026-10-06 by ChatGPT/operator. This task continues the already-built Shopify integration. **Do not create another Shopify app and do not rebuild the integration.** The operator has confirmed the existing Shopify Dev app **SCA Eyewear Registry** and released version **`sca-shopify-activation-v2`**. The permanent Shopify store domain is **`second-chance-authenticators.myshopify.com`**.
+Promoted 2026-10-06 by ChatGPT/operator. This task continues the already-built Shopify integration. **Do not create another Shopify app and do not rebuild the integration.** The operator has confirmed the existing Shopify Dev app **SCA Eyewear Registry** and released version **`sca-shopify-activation-v2`**. The connected Shopify store domain is **`second-chance-eyewear-accessories.myshopify.com`**. Phases 0–3 are complete; Gate C passed and the three required webhooks are live on the existing app. **Only Phase 4 below is now executable. Do not repeat Phases 0–3 and do not begin Phase 5.**
 
 ## Objective
 
@@ -15,7 +15,7 @@ Activate the existing deployed SCA Shopify integration against the existing Shop
 - Existing integration package/routes already deployed; this is **activation, not a software build**.
 - Existing Shopify app: **SCA Eyewear Registry**. Do not create a replacement app.
 - Existing released Shopify version: **`sca-shopify-activation-v2`**.
-- Shopify store domain: **`second-chance-authenticators.myshopify.com`**.
+- Shopify store domain: **`second-chance-eyewear-accessories.myshopify.com`**.
 - Approved scope: **`read_orders` only**. Do not re-add `read_products`.
 - API version: **`2026-07`**. Do not bump merely for newness.
 - OAuth callback already configured in Shopify as:
@@ -124,21 +124,79 @@ Prove all three required topics are registered exactly as intended, no unnecessa
 
 ## Phase 4 — controlled dev-store dry-run
 
-This is the first allowed domain mutation in this task and must use **one new dedicated Shopify/SCA test item**, never the existing provenance pilot items.
+**Authorization:** GO granted by operator/ChatGPT on 2026-10-06 after Gate C PASS. This is the only executable phase. Use one new dedicated test item/order only. Never touch existing real provenance/pilot items.
 
-Before the test, record a fresh baseline and identify the dedicated test item clearly as test data. The Shopify line item must be quantity **1** and carry:
-`sca_item_ref=<that test item's public_ref>`
+### Phase 4A — pre-mutation gate
 
-Run the minimum end-to-end sequence needed to prove:
+1. Pull latest governance and deployed implementation state. Confirm Gate C evidence remains true: existing app connected, scope exactly `read_orders`, exactly the three live webhook topics, receiver fail-closed, migrations 120, and co-tenant healthy.
+2. Record BEFORE counts/fingerprint for all provenance tables and separately identify all pre-existing item IDs/public_refs so later proof can show they were untouched.
+3. Inspect the deployed paid/cancel/refund handlers and `ClaimWorkflow::claim` before mutation. Confirm the exact expected transitions for the test. If the deployed code cannot support the test without code/schema changes, STOP.
+4. Create/identify **one new SCA test item only**, unmistakably labeled test data. Do not reuse any existing item. Record its safe internal/public reference in the report. Do not authenticate/certify/claim it beyond what the existing workflow requires for this test.
+5. Prepare one dedicated Shopify test product/variant/order path with quantity **1** and line-item property exactly `sca_item_ref=<test public_ref>`. Do not place the property on any other item.
 
-1. `orders/paid` is HMAC-accepted and idempotently received.
-2. The event maps by `sca_item_ref` to the intended dedicated SCA item and creates/updates only the expected sale-link/eligibility records.
-3. Buyer claim uses the **existing `ClaimWorkflow::claim`** path — no parallel ownership mechanism.
-4. Re-delivery/duplicate webhook ID is idempotent and does not duplicate ownership/effects.
-5. **GATE-R2 empirical refund test:** perform an amount-only partial refund that keeps the item. Inspect the actual Shopify webhook payload/receipt safely (no customer PII in report) and prove the SCA line is absent from `refund_line_items`; expected SCA result = **no eligibility revocation and no `disputed`**. If Shopify sends the SCA line or SCA becomes disputed, **STOP immediately**; do not continue and do not patch ad hoc.
-6. Then, only if the controlled test plan already provides a safe way to do so without affecting real data, prove the returned/full SCA line behavior: eligibility revoked; if already claimed, registry becomes `disputed` while ownership is preserved. If this requires additional irreversible setup beyond the dedicated test item, document it and stop for approval rather than expanding scope.
+If Shopify UI/operator action is required to create/pay/refund/cancel the order, STOP at that point and give the operator exact minimal UI steps. Do not ask for or expose customer PII or secrets.
 
-Throughout the dry-run, verify no customer PII is persisted by the Shopify integration (`shopify_customer_ref` remains null as designed) and no existing pilot item's ownership/status/certification/QR changes.
+### Gate D1 — paid order + idempotency
+
+After the operator pays the dedicated test order:
+- prove a real Shopify `orders/paid` delivery was HMAC-accepted;
+- record webhook ID/topic/shop/order references only as safe non-PII identifiers;
+- prove exactly one receipt and exactly one expected sale-link/eligibility effect for the test item;
+- prove mapping occurred by `sca_item_ref`, not SKU;
+- prove no pre-existing item changed;
+- prove no customer PII was persisted and `shopify_customer_ref` remains null as designed;
+- exercise the existing idempotency path safely (prefer replay of the already-recorded delivery only if the implementation has a sanctioned test/replay mechanism that does not fabricate a new Shopify event). A duplicate webhook ID must not duplicate receipts, sale links, eligibility, ownership, or other effects. If safe replay requires secret handling, payload fabrication, or code change, STOP and report rather than improvising.
+
+### Gate D2 — claim through canonical workflow
+
+Use the existing collector/claim path and **`ClaimWorkflow::claim` only**. If human browser action is required, STOP and give the operator the exact steps.
+
+Prove:
+- claim completes for the dedicated test item through the canonical workflow;
+- ownership is appended exactly once;
+- current-state projection resolves to the test collector;
+- Shopify sale-link/claim entitlement is retained as designed;
+- no parallel/direct owner mutation occurred;
+- duplicate/repeated claim cannot create duplicate ownership.
+
+### Gate R2 — mandatory amount-only partial-refund empirical test
+
+This gate is mandatory and must occur **before any returned-line/full refund test**.
+
+Ask the operator to issue a small **amount-only partial refund while keeping the eyewear item**. Do not select/return/refund the SCA line item quantity. After Shopify delivers `refunds/create`:
+- inspect the stored/received payload only to the minimum needed and redact/omit customer PII from all evidence;
+- prove the SCA item is **absent from `refund_line_items`**;
+- expected SCA result: sale eligibility remains valid, ownership remains, registry does **not** become `disputed`, and no adverse status/ownership event is appended;
+- prove receipt idempotency and no duplicate effects;
+- prove all pre-existing items remain byte/logically unchanged by the test.
+
+**HARD STOP on contradiction:** if Shopify includes the SCA line in `refund_line_items`, eligibility is revoked, registry becomes disputed, ownership changes, or any unexpected mutation occurs, STOP immediately. Do not patch code or continue to a full return.
+
+### Gate R3 — returned/full SCA-line behavior (conditional)
+
+Proceed only after Gate R2 PASS and only if Shopify provides a safe, explicit operator flow using this same dedicated test order/item. Ask the operator before performing the return/refund action.
+
+Expected behavior when the SCA line itself is returned/refunded:
+- eligibility is revoked according to the existing handler;
+- because the item has already been claimed, registry becomes `disputed` through append-only status/event semantics;
+- ownership history is preserved and current ownership is **not erased**;
+- duplicate delivery remains idempotent.
+
+If proving this requires new code, schema, fabricated payloads, touching a real item, or another irreversible setup outside this dedicated test fixture, STOP and document it as deferred rather than expanding scope.
+
+### Gate D4 — closeout and contamination check
+
+After the last authorized test action:
+- compare BEFORE/AFTER fingerprints/counts and isolate every delta to the dedicated test item/order/receipts/sale-link/claim/status events;
+- prove every pre-existing provenance/pilot item is unchanged;
+- prove no customer PII was persisted by the Shopify integration;
+- verify connection still healthy, granted scope exactly `read_orders`, three webhook subscriptions unchanged, unsigned/forged receiver still fails closed;
+- verify public passport/Collector/admin edge/storage/SCA-038/retired :8080 and smsrocket co-tenant remain healthy;
+- do not delete provenance history merely to make counts look clean. Test records may remain clearly marked test data unless the existing architecture has a governed non-destructive test-data disposition mechanism.
+
+Write evidence to `docs/SCA-SHOPIFY-ACTIVATION-PHASE4-DRYRUN.md`. Record no secrets, access tokens, HMAC values, callback code/state, or customer PII.
+
+**STOP after Gate D4. Phase 5 is not authorized.**
 
 ## Phase 5 — post-activation hardening / edge cleanup decision
 
