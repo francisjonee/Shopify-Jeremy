@@ -1,31 +1,22 @@
 # NEXT TASK
 
-**STATUS: ACTIVE — SCA STAFF OPERATIONAL DASHBOARD / WORKLISTS. Executable stage: DISCOVERY/PLAN ONLY (DONE, awaiting audit).**
+**STATUS: NONE — awaiting promotion.**
 
-Promoted 2026-10-06. Deployed baseline `703fbde9884ddeb9219c0cf54d34f5fe9e3f48a8`, migrations **120**, FP **`62b2e42fe409b4ec91f3381b35da819e`**.
+Reconciled 2026-10-06. No executable task. ChatGPT/operator promotes exactly one item from `TASK_QUEUE.md` ("RECONCILED REMAINING WORK") into this file before any implementation begins. Claude must not start a feature autonomously.
 
-## Objective
+## Most recently CLOSED (do NOT reopen / do NOT start a follow-on without promotion)
 
-A small, read-only staff operational surface answering **"what items need my attention next?"** — operational action, **not** analytics/reporting/charts/KPIs/market-value.
+- **SCA Staff Operational Dashboard / Worklists — CLOSED** (deployed `0f86b4af90134de6c60664e16aad440a1d111204`). Read-only "what needs my attention next?" dashboard: counts + drill-downs reusing the projection, the existing Registry filters, and the adverse-status queue. **No second dashboard/worklists slice.** The deferred draft-auth "awaiting finalize" worklist and the precise `qr=missing` Registry filter remain **optional future items only**. Evidence: `docs/SCA-STAFF-OPERATIONAL-DASHBOARD-{DISCOVERY,IMPLEMENTATION,DEPLOY-RESULT}.md`.
+- **SCA Staff Navigation / Discoverability — CLOSED** (`703fbde`).
+- **Production QR/Label Workflow — CLOSED** (`0ca7158`/`4d92ec9`/`30b680f`).
+- **SCA Shopify Activation — CLOSED** (Phases 0–5). Do NOT reopen Phase 4 or Phase 5.
 
-## Current stage — DISCOVERY/PLAN (complete; STOP for audit)
+## Current deployed baseline
 
-Plan committed at `docs/SCA-STAFF-OPERATIONAL-DASHBOARD-DISCOVERY.md`. **Do not implement yet.** Key verified findings:
+- Deployed implementation `main` = **`0f86b4af90134de6c60664e16aad440a1d111204`**
+- Migrations **120**; provenance fingerprint **`62b2e42fe409b4ec91f3381b35da819e`**
+- Public edge LIVE: `https://verify.secondchanceauthenticators.com`; `:8080` loopback-only; `SESSION_SECURE_COOKIE=true`.
 
-- `lifecycle_state` is effectively a **5-value** enum in practice (`INTAKE, AUTH_FAILED, AUTHENTICATED, CERTIFIED, REGISTERED`); the 4 other CHECK tokens (`SOLD_AWAITING_CLAIM, TRANSFER_PENDING, RETIRED, INVALIDATED`) are **never written** → worklists on them are always empty. `registry_status` is the separate 7-value adverse axis.
-- The **Eyewear Registry index already** makes most worklists URL-achievable (`?lifecycle=…`, `&owned=unowned`, `?registry_status=…`); the **adverse-status queue already** exists; there is **no dashboard/aggregate/counts** anywhere. Gap = a single "attention" surface with counts + links.
-- Recommended product: a **dashboard (counts + links)** reusing the existing index filters + adverse queue. **Zero schema.**
+## Promotion rule
 
-## Recommended implementation scope (for the NEXT executable stage, if approved)
-
-Tiles (count + link): Awaiting authentication (`?lifecycle=INTAKE`) · Authentication failed (`?lifecycle=AUTH_FAILED`) · Authenticated-not-certified (`?lifecycle=AUTHENTICATED`) · Certified-unclaimed (`?lifecycle=CERTIFIED&owned=unowned`) · Needs-attention adverse (link to existing `admin.sca.status.queue`) · Exception "certified, no active QR" (count indicator). Non-analytics orientation header (total / registered counts).
-
-Files: **new** `DashboardController.php` + `dashboard/index.blade.php` + `StaffDashboardTest.php`; **modified** `admin-routes.php` (one `GET admin/sca/dashboard`, ACL `sca.eyewear`) + `Config/menu.php` (one sidebar entry mirroring the existing Registry entry). No `EyewearItemController`/index change in the smallest scope.
-
-## Hard constraints
-
-Reuse existing read ACLs (`sca.eyewear` / `sca.eyewear.status`); no new ACL keys, no broadening. No provenance mutation from reads. **Do NOT change lifecycle semantics to populate tiles** (never start writing the dead enum tokens). No analytics/charts/KPIs/market-value. No change to Shopify, collector workflows, QR, certification, ownership, SMTP, schema/migrations, public routes, Caddy/Docker, or infrastructure. Deferred (optional, not part of closing): draft-auth "awaiting finalize" list; precise `qr=missing` index filter; transfer-pending.
-
-## Stage gate
-
-**Executable stage is DISCOVERY/PLAN ONLY — complete and committed. STOP for ChatGPT audit.** Implementation is a separate stage requiring explicit promotion. Completing the recommended scope would **CLOSE** Staff Operational Dashboard / Worklists.
+See `TASK_QUEUE.md` → "RECONCILED REMAINING WORK (easiest → hardest, 2026-10-06)". Remaining candidates (unstarted): #3 Shopify operational listing SOP · #4 service/repair history staff UX · #5 inventory onboarding · #6 SMTP + notifications (external/DNS-gated) · #7 off-site backup (external) · #8 post-core expansion. **NOT promoted here.** Until explicit promotion: **ACTIVE = NONE, NEXT_TASK = NONE.**
