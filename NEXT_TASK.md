@@ -1,24 +1,33 @@
 # NEXT TASK
 
-**STATUS: NONE — awaiting promotion.**
+**STATUS: ACTIVE — SCA STAFF NAVIGATION / DISCOVERABILITY. Executable stage: DISCOVERY/PLAN ONLY (DONE, awaiting audit).**
 
-Reconciled 2026-10-06. There is **no executable task** right now. Claude must not start a feature; ChatGPT/operator promotes exactly one item from `TASK_QUEUE.md` ("RECONCILED REMAINING WORK") into this file before any implementation begins.
+Promoted 2026-10-06 after governance reconciliation (`0c8c090`) passed ChatGPT audit. Deployed baseline `30b680f797bdcf0d9bf2e6031c32c4f80c41dfc4`, migrations **120**, FP **`62b2e42fe409b4ec91f3381b35da819e`**.
 
-## Why this file was reset
+## Objective
 
-The previous contents were the **SCA Shopify Activation — Phase 4 controlled dev-store dry-run** executable instruction. That work is **COMPLETE and CLOSED** (Phases 0–5 all passed), so the Phase 4 instruction is **stale and must not be re-executed**. It has been removed from this file; the full Phase 0–5 audit history is preserved in committed governance evidence (see below) — nothing was lost.
+Make already-built staff capabilities reachable naturally, without knowing hidden URLs — **discoverability only**. No new functionality, no replacement workflows, existing ACLs preserved (navigation visibility must never grant authorization).
 
-## Recently CLOSED (do NOT reopen or re-execute)
+## Current stage — DISCOVERY/PLAN (complete; STOP for audit)
 
-- **SCA Shopify Activation — CLOSED.** Phases 0–5 passed against the existing **SCA Eyewear Registry** app (not rebuilt); scope exactly **`read_orders`**; `orders/paid`, `orders/cancelled`, `refunds/create` operational; real paid-order → claim → shipping-only refund (no-op) → SCA-line refund (append-only `disputed`, ownership preserved) proven; OAuth callback intentionally **retained** (hardened). Evidence: `docs/SCA-SHOPIFY-ACTIVATION-PHASE0.md` … `PHASE4-DRYRUN.md`, `docs/SCA-SHOPIFY-PHASE5-PLAN.md`. **Do NOT reopen Phase 4 or Phase 5.**
-- **Production QR/Label Workflow — CLOSED.** Slice 1 single print view (`0ca7158`), Slice 2 batch/sheet printing (`4d92ec9`), Slice 3 print polish (`30b680f`); final closure gov `15f62abec999dd04e3a417cd0c26024a501ec953`. Single + batch label printing complete. PDF export / size presets / cross-page selection / compact variants / printer-specific integrations are **optional future enhancements, not unfinished work**.
+The discovery/plan is committed at `docs/SCA-STAFF-NAV-DISCOVERABILITY-DISCOVERY.md`. **Do not implement yet.** Summary of findings:
 
-## Current deployed baseline
+- SCA sidebar has exactly two entries (Eyewear Registry, Shopify Integration). Krayin forces single-segment menu keys, so dotted-ACL capabilities are **by design** surfaced as permission-gated in-page buttons, not sidebar items.
+- **Collector Support (SCA-040)** is **already discoverable** via a permission-gated button on the Eyewear Registry index → **optional convenience, not a true gap**; recommend **no change** (a sidebar entry would fight the menu-key/ACL constraint).
+- **Ownership Correction (SCA-035)** is the **one true raw-URL-only gap**: its link lives on the ownership-history page, which item-detail links **only when `ownership > 0`** → **zero-ownership items have no UI path**. **Fix = a permission-gated "Correct ownership…" link on the item-detail page (`show.blade.php`), shown to `sca.eyewear.ownership.correct` holders regardless of ownership state**, pointing at the existing confirm route. Navigation-only.
+- No other built capability is raw-URL-only.
 
-- Deployed implementation `main` = **`30b680f797bdcf0d9bf2e6031c32c4f80c41dfc4`**
-- Migrations **120**; provenance fingerprint **`62b2e42fe409b4ec91f3381b35da819e`**
-- Public edge LIVE: `https://verify.secondchanceauthenticators.com` (Let's Encrypt); `:8080` retired to loopback; `SESSION_SECURE_COOKIE=true`.
+## Recommended implementation scope (for the NEXT executable stage, if approved)
 
-## Promotion rule
+1. **(Required)** Add the permission-gated "Correct ownership…" item-detail link in `packages/Sca/Registry/src/Resources/views/eyewear/show.blade.php` → existing `admin.sca.eyewear.ownership.correct.confirm` route; gated by `bouncer()->hasPermission('sca.eyewear.ownership.correct')`; shown regardless of ownership count.
+2. **(Optional, default none)** Collector Support — already reachable; no change recommended.
 
-See `TASK_QUEUE.md` → "RECONCILED REMAINING WORK (easiest → hardest, 2026-10-06)". ChatGPT/operator promotes **one** item here with explicit authorization. Until then: **ACTIVE = NONE, NEXT_TASK = NONE.**
+Tests: item-detail shows the link to authorized staff incl. **zero-ownership** items; hidden for unauthorized staff who still get 403 on the route (visibility ≠ authorization); link targets the confirm route; full `tests/Feature/Sca` green; zero provenance mutation; no schema change.
+
+## Hard constraints
+
+Discoverability only. **Do NOT** change provenance/ownership semantics, collector behavior, QR, certification, Shopify, SMTP, schema/migrations, public routes, Caddy/Docker, or infrastructure. **Do NOT** add sidebar entries for dotted-ACL capabilities, build a dashboard/worklists, create replacement workflows, or broaden any permission to make a link visible.
+
+## Stage gate
+
+**Executable stage is DISCOVERY/PLAN ONLY — now complete and committed. STOP for ChatGPT audit.** Implementation is a separate stage requiring explicit promotion/authorization. Completing the recommended scope would **CLOSE** Staff Navigation / Discoverability.
