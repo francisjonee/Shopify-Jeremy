@@ -257,3 +257,32 @@ Gate R2 empirically verifies the partial-refund invariant: `SaleLinkEventProcess
 - The refund **cannot be performed as amount-only** (UI forces selecting/returning the line to issue any refund).
 
 Operator browser steps provided in chat. **STOPPED for operator action.**
+
+---
+
+## Gate R2 — HARD STOP: Shopify UI will not issue an amount-only refund on a single qty-1 line (empirical)
+
+**Date:** 2026-10-06 · **Status: HARD STOP fired correctly by operator. No refund clicked, no webhook delivered, no Shopify/SCA mutation. Proposing next permitted path for ChatGPT audit before any mutation.**
+
+### Empirical UI result (operator, order #3281)
+The operator opened **Orders → #3281 → Refund** and attempted an amount-only refund per the Gate R2 steps:
+- Entered **$1.00** in the Refund amount field while leaving the SCA test line quantity at 0.
+- **Shopify automatically changed the SCA test line from 0/1 to 1/1**, the summary became **"Item subtotal (1) $1.00"**, and **"Restock item" became selected**.
+- The operator **did NOT click "Refund $1.00"**. No refund was performed.
+
+This matches a Gate R2 HARD STOP trigger: "if Shopify … [would] include the SCA line in `refund_line_items` … STOP immediately. Do not patch code or continue to a full return." The operator stopped correctly.
+
+### Root cause (consistent with pre-flight analysis)
+Order #3281 is a **single line, quantity 1, one-of-one** SCA item. Shopify's per-order Refund screen, when given a refund amount against such an order, attributes that amount to the only refundable line — it has no "amount only, no line" mode for the SCA line itself. This is exactly the pre-flight conclusion: for a qty-1 one-of-one SCA line there is **no amount-only partial _within the SCA line_** — the only genuine amount-only (empty `refund_line_items`) vector is a **non-SCA-line amount** (shipping / tax / order adjustment / a separate non-SCA line).
+
+### State proof (nothing changed)
+`NOW_FP = 859c053630690bb5ffaec7aaea2ddd4d` == `PRE_R2_FP` == `POST_D2_FP`. item 4 sale-link still `claimed`, owner collector 3, status_events 0, webhook receipts still 1. No `refunds/create` delivery occurred.
+
+### Proposed next permitted path (for ChatGPT audit — NOT yet executed)
+Gate R2 is mandatory and must PASS before Gate R3 (full-line return). To obtain a genuine amount-only refund (empty `refund_line_items`) **without** ever selecting/returning the SCA line, use a **non-SCA-line refund amount**:
+
+- **Option R2-a (PREFERRED, if available on #3281): shipping-only refund.** In the #3281 Refund screen, leave the SCA line quantity at **0** and refund **only the Shipping amount** (the "Refund shipping" field). A shipping-only refund produces `refund_line_items: []` (SCA line absent) → SCA no-op. Requires #3281 to carry a refundable shipping/non-line amount. Operator confirms from the Refund screen whether a refundable Shipping amount exists.
+- **Option R2-b (if #3281 has no shipping/non-line refundable amount): a new dedicated test order that includes a shipping charge**, then shipping-only refund on it. This is a new operator Shopify mutation (one more dedicated test order, qty-1, `sca_item_ref` on its own test item) and must be separately authorized/audited; existing provenance/pilot items remain untouched.
+- **Option R2-c (governance ruling): accept amount-only-within-line as structurally N/A for qty-1 one-of-one.** The code invariant (`handleRefund` keys only on the SCA line's presence in `refund_line_items`, ignoring qty/amount) is already structurally established and deployed-tested; for a qty-1 one-of-one line there is no amount-only-within-line case to produce. If ChatGPT rules R2-a/R2-b unnecessary, the empirical no-op is instead demonstrated by R3's full-return payload showing the handler's keying behavior. (This is a ruling, not a code/scope change.)
+
+**Recommended:** R2-a if #3281 has a refundable shipping amount; else bring the R2-b vs R2-c decision to ChatGPT. **No mutation performed. STOP for ChatGPT audit of the chosen path before any Shopify action.**
