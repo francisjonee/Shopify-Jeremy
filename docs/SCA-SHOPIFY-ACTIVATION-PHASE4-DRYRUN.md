@@ -389,3 +389,80 @@ Operator refunded the dedicated SCA test line (`sca_item_ref = SCA-A960A57D3124`
 **Conclusion:** returning the claimed SCA line revokes Shopify eligibility (`revoked_refund`) and raises a single append-only `disputed` registry status for staff, while **current ownership, ownership history, the claim, the certification, and the QR are all preserved and nothing is deleted or overwritten**. Delivery is accepted, recorded once, and idempotent. **Gate R3 PASS.**
 
 **STOP.** Awaiting ChatGPT audit. Phase 5 not started; no further Shopify mutation performed. Gate D4 (closeout/contamination check) is the remaining authorized step.
+
+---
+
+## Gate D4 — closeout & contamination check (PASS)
+
+**Date:** 2026-10-06 · **Status: PASS (read-only). Entire Phase 4 delta reconciled and isolated to the dedicated test artifacts; all pre-existing provenance byte-identical; no cleanup performed. No code/schema/scope/config change. Phase 5 NOT started.**
+
+### Full reconciliation — pre-Phase-4 BEFORE vs final AFTER
+BEFORE (pre-Phase-4, `BEFORE_FP = c3fea71ad6ecf93345b2eefc5f5cbef4`) → AFTER (final, `FINAL_FP = 62b2e42fe409b4ec91f3381b35da819e`):
+
+| Table | BEFORE | AFTER | Δ | Attributed to (test artifact + gate) |
+|---|---|---|---|---|
+| eyewear_items | 2 | 3 | +1 | test item **id4** `SCA-A960A57D3124` (4A) |
+| item_current_state | 2 | 3 | +1 | id4 (4A) |
+| authentications | 3 | 4 | +1 | id4 (4A) |
+| certifications | 3 | 4 | +1 | id4 cert **4** `state=issued` (4A) |
+| certification_events | 4 | 5 | +1 | id4 (4A) |
+| qr_identifiers | 2 | 3 | +1 | id4 QR **3** (test token, `is_production=0`) (4A) |
+| qr_lifecycle_events | 2 | 3 | +1 | id4 (4A) |
+| ownership_events | 4 | 5 | +1 | **oe id5** item4 `claim`→collector3 (D2) |
+| status_events | 6 | 7 | +1 | **se id7** item4 `disputed` (R3) |
+| claims | 1 | 2 | +1 | **claim id2** item4 `shopify_sale` (D2) |
+| external_claim_grants | 1 | 1 | 0 | — |
+| shopify_sale_links | 0 | 1 | +1 | item4 link, now `revoked_refund` (D1→D2→R3) |
+| shopify_webhook_receipts | 0 | 3 | +3 | id1 `orders/paid` (D1) · id2 `refunds/create` shipping-only (R2) · id3 `refunds/create` line-return (R3) |
+| collector_accounts | 2 | 3 | +1 | test collector **id3** `COL-5B833408C461` (D2) |
+| eyewear_item_images | 3 | 3 | 0 | — |
+| shopify_credentials | 1 | 1 | 0 | OAuth token from Phase 2 (pre-4A), scope `read_orders` |
+
+**Every delta maps to the dedicated test item id4 / test collector id3 / test order #3281. No delta is unaccounted for.**
+
+### Pre-existing provenance — byte-identical to baseline
+- **id1:** `CERTIFIED` / registry `normal` / owner null / cert 1 / qr 1 · ownership 0, status 0, claims 0 — unchanged.
+- **id3:** `REGISTERED` / registry `recovered` / owner 1 / cert 3 / qr 2 · ownership 4, status 6, claims 1 — unchanged.
+
+### Ownership append-only proof
+All ownership-event ids are intact and only one was appended: ids **1–4 belong to pre-existing item 3** (`claim`, `transfer_out`, `transfer_in`, `admin_correction`), and the single new row is **id5 = item4 `claim`→collector3**. No ownership row was deleted, renumbered, or overwritten by the R3 dispute (the dispute is a `status_events` append only).
+
+### Final test-item internal consistency (id4)
+`REGISTERED` + registry `disputed` + owner **collector 3** + cert **4** (`issued`, not revoked) + QR **3** (active) + sale-link **`revoked_refund`** + `shopify_customer_ref` null + ownership 1 + claims 1 + status 1 (`disputed`). This is the expected end-state of *claimed → SCA line returned*: eligibility revoked, staff-dispute raised, ownership retained. Internally consistent.
+
+### Integration / config / scope / schema invariants
+- migrations **120** (no schema change); config `scopes=read_orders`, `api=2026-07`, `line_item_ref_property=sca_item_ref`, `expected_shop_domain=second-chance-eyewear-accessories.myshopify.com`.
+- Stored credential: shop correct, **granted scope `read_orders`** (no extra scope), access token encrypted (not shown), offline (`expires_at` null).
+- Webhook subscriptions unchanged since Gate C (`shopify.app.toml`: 3 topics `orders/paid`, `orders/cancelled`, `refunds/create` → `…/sca/shopify/webhook`, api 2026-07; no re-deploy since). Observed deliveries used only registered topics.
+
+### Receiver fail-closed + shared edge / co-tenant health
+- `POST /sca/shopify/webhook` no HMAC → **401**; `GET /sca/shopify/oauth/callback` no params → **400**; `/sca/shopify/install` → **404** (stays staff-IP `/admin`, no public exposure); no `/sca/*` wildcard.
+- `/collector` **302**; `/storage/*` **404** (denied); smsrocket.io **302** (co-tenant healthy).
+
+### No customer PII persisted by the Shopify integration
+Receipts table is digest-only (no customer columns); every sale-link `shopify_customer_ref` is null. The only PII in play is the **test collector's self-registered email** (collector id3), created via the normal self-registration flow — not by the Shopify integration — and it is part of the ownership/audit record.
+
+---
+
+## Test-artifact disposition — CLEANUP vs RETAIN (analysis only; nothing cleaned up)
+
+**MUST RETAIN (provenance / audit record — do NOT delete):**
+- All SCA rows for test item **id4** (item, state, auth, cert 4, cert_events, qr 3, qr_lifecycle, ownership oe5, claim id2, status se7) and test collector **id3**. SCA provenance is **append-only by design with no governed destructive-delete path**; per the Phase 4 rule, test records remain as clearly-marked test data. Deleting them would itself be a destructive provenance mutation and would break referential links (`claim id2.source_sale_link_id=2`, `oe5.source_claim_id=2`).
+- **shopify_webhook_receipts (ids 1–3)** — the idempotency ledger; deleting them could permit webhook replay. Retain.
+- Governance evidence docs + commits — permanent audit record.
+- **Live integration objects are NOT test artifacts:** the OAuth credential, the 3 webhook registrations, and the **permanent** `POST /sca/shopify/webhook` edge handle stay.
+
+**MAY be cleaned up later — OPERATOR-GATED, NOT now, and each is a separate authorized action:**
+- **Shopify-side test fixtures (operator-only, Shopify mutation):** the dedicated test **order #3281** (archive/close) and the dedicated test **product/variant** (unpublish/delete) on the store. Removing them on Shopify does **not** and must **not** alter SCA (SCA is the registry of record). Do not perform now.
+- **Temporary OAuth callback edge handle** (`GET /sca/shopify/oauth/callback`): designed as transient, but its removal is **Phase 5** (post-activation edge cleanup) — explicitly **not authorized** here. Never remove the permanent POST webhook handle; never broaden to `/sca/*`.
+- **Test-item public/registry surface (optional, product/business decision):** if the business wants id4 to not appear as a live registry record, the governed **non-destructive** levers are the existing retire/invalidate or certification-revoke→404 flows — **never** a DB delete. Optional; operator/business-gated.
+- **Test collector PII (optional):** collector id3 holds a test self-registered email; retain as audit record. If disposal is desired, use the existing governed anonymization flow — not a raw delete. Optional; operator-gated.
+- **Server-local `.env` backups** (`app/.env.bak.*`, `/root/sca-env-backup.*`): these hold secrets and are **security backups, not test artifacts** — keep server-local, never commit, do not clean as part of this task.
+
+---
+
+## Phase 4 — FINAL RESULT: PASS (all gates)
+
+4A pre-mutation ✓ · D1 paid+idempotency ✓ · D2 claim ✓ · R2 amount-only no-op ✓ · R3 returned-line append-only dispute ✓ · D4 closeout/contamination ✓. Deployed app `98ae654` (no app code changed), migrations 120, scope `read_orders`, 3 webhooks, receiver fail-closed, co-tenant healthy. `FINAL_FP = 62b2e42fe409b4ec91f3381b35da819e`; entire delta isolated to dedicated test artifacts; pre-existing provenance untouched.
+
+**STOP after Gate D4. Phase 5 (post-activation hardening / edge cleanup) is NOT authorized.** No cleanup performed; no Shopify/SCA mutation.
