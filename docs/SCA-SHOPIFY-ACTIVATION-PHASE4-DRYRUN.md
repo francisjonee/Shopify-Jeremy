@@ -219,3 +219,41 @@ Read-only verification (no second claim performed, no request fabricated):
 
 **Gate D2 PASS.** Next: **Gate R2 (mandatory amount-only partial-refund empirical test)** — requires an operator
 Shopify refund action; Claude will give exact steps. No Phase 5; no further Shopify mutation by Claude.
+
+---
+
+## Gate R2 — amount-only partial refund (PREPARATION / pre-refund baseline)
+
+**Date:** 2026-10-06 · **Status: pre-R2 baseline captured (read-only). No refund performed, no webhook fabricated, no scope/config/code/schema change. STOPPED for operator browser action.**
+
+Gate R2 empirically verifies the partial-refund invariant: `SaleLinkEventProcessor::handleRefund` keys **only** on the presence of the SCA line in `refund_line_items[].line_item_id` and **ignores quantity/amount**. An amount-only partial refund (money refunded, SCA line NOT returned) must therefore carry an **empty/absent SCA line in `refund_line_items`** → SCA performs a **no-op**: ownership stays with collector 3, sale-link stays `claimed`, and **no `disputed` event/state** is created.
+
+### Pre-R2 baseline (what MUST remain unchanged on the provenance side)
+| Fact | Value | Expect after amount-only refund |
+|---|---|---|
+| item 4 lifecycle | `REGISTERED` | unchanged |
+| item 4 registry_status | `normal` (NOT disputed) | unchanged |
+| item 4 current owner | collector `3` (`COL-5B833408C461`) | unchanged |
+| item 4 Shopify sale-link | `claimed` (order 8019293831455 / #3281, line 18855278313759) | **stays `claimed`** |
+| item 4 status_events | `0` | **stays 0 (no `disputed`)** |
+| item 4 ownership_events / claims | `1` / `1` | unchanged |
+| provenance fingerprint | `PRE_R2_FP = 859c053630690bb5ffaec7aaea2ddd4d` (== POST_D2_FP) | **UNCHANGED** |
+| webhook receipts (global) | `1` | `2` — the `refunds/create` delivery is accepted + recorded (idempotent), but is a provenance no-op |
+
+### Environment / invariants at baseline
+- Pre-existing **id1** `CERTIFIED` owner NULL, 0 ownership events — untouched.
+- Pre-existing **id3** `REGISTERED` owner 1, 4 ownership events — untouched.
+- Receiver fail-closed: `POST /sca/shopify/webhook` with no HMAC → **401**; `sca-shopify.webhook_secret` SET.
+- Co-tenant smsrocket.io → **302** (healthy). migrations 120.
+
+### Gate R2 PASS criteria (to verify AFTER the operator refund + Shopify `refunds/create` delivery)
+1. `refunds/create` receipt recorded (receipts 1→2), topic `refunds/create`, no PII (`shopify_customer_ref` stays null).
+2. The SCA line (`sca_item_ref = SCA-A960A57D3124`, line 18855278313759) is **ABSENT** from `refund_line_items`.
+3. SCA **no-op**: item 4 sale-link still `claimed`, owner still collector 3, **no `disputed` status event**, no adverse registry status, no new ownership event.
+4. `POST_R2_FP == PRE_R2_FP == 859c0536…` (provenance unchanged); pre-existing id1/id3 untouched.
+
+### HARD STOP conditions (abort the refund, do NOT confirm)
+- Shopify's refund UI indicates the **SCA line item itself** will be refunded/returned/restocked (any line quantity ≥ 1 on the SCA line).
+- The refund **cannot be performed as amount-only** (UI forces selecting/returning the line to issue any refund).
+
+Operator browser steps provided in chat. **STOPPED for operator action.**
