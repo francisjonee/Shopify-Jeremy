@@ -50,3 +50,49 @@ Re-scanned the corrected TOML: no Client Secret / webhook secret / token / `shp*
 ## STOP
 No Shopify CLI auth/link/deploy/release, no Shopify-side mutation, no new app. Correction committed to source
 control. See [[sca-shopify-activation-preflight]], `docs/SCA-SHOPIFY-CLI-CONFIG-PROJECT.md`.
+
+---
+## Reconciliation readiness (2026-10-06) — CLI NOT installed on the prod host; operator-interactive from here
+**Host check:** this server (the shared production edge, Ubuntu 26.04, 5.8 GB RAM / no swap) has **no Node/npm/
+Shopify CLI**. Installing `@shopify/cli` here would add a Node toolchain to the production edge host, and the
+decisive steps (`shopify auth login`, `shopify app config link`, app selection) are **interactive and operator-
+run** regardless. Decision: **did not install a Node toolchain on the prod edge**; the gov repo can be reconciled
+from any machine and pushed. (If you specifically want the CLI on this host instead, say so and I'll install
+Node 18+ and `@shopify/cli` on your go — but auth/link stay interactive/operator.)
+
+**Current committed config @ `fdbb1cd` (pre-reconciliation) verified:** scope == `read_orders`; redirect ==
+`https://verify.secondchanceauthenticators.com/sca/shopify/oauth/callback`; webhooks api_version `2026-07` + the
+three subscriptions → `…/sca/shopify/webhook`; `application_url` + `use_legacy_install_flow=false` match active v2;
+no secret values; `.shopify/` not tracked.
+
+**Operator reconciliation commands (recommended: on your own machine; HARD STOP before deploy):**
+```
+# 1. get the gov repo
+git clone git@github.com:francisjonee/Shopify-Jeremy.git && cd Shopify-Jeremy/shopify-app
+#    (install CLI if needed: Node 18+ then `npm i -g @shopify/cli@latest`, or `brew install shopify-cli`)
+
+# 2. AUTH + LINK TO THE EXISTING APP ONLY (interactive) — select "SCA Eyewear Registry" (424307752961).
+#    NEVER choose "Create a new app".
+shopify app config link
+
+# 3. `link` PULLS the live app config into shopify.app.toml. Ensure the ONLY difference vs the pulled config is
+#    the [webhooks] block below (add it if the pull didn't include it; reconcile to EXACTLY these three):
+#       [webhooks]
+#       api_version = "2026-07"
+#         [[webhooks.subscriptions]]
+#         topics = ["orders/paid", "orders/cancelled", "refunds/create"]
+#         uri = "https://verify.secondchanceauthenticators.com/sca/shopify/webhook"
+
+# 4. PROVE only webhooks changed, confirm scope + redirect preserved, no secrets / no .shopify staged:
+git --no-pager diff
+git status --porcelain            # .shopify/ must stay untracked (it's git-ignored)
+
+# 5. commit + push the reconciled toml (NO deploy yet)
+git add shopify-app/shopify.app.toml && git commit -m "reconcile shopify.app.toml with live app 424307752961 + add 3 webhook subscriptions" && git push
+
+# HARD STOP — do NOT run `shopify app deploy` until ChatGPT audits the reconciled config and explicitly approves.
+```
+After you push the reconciled toml, I will show the **sanitized git diff vs `fdbb1cd`** proving only the
+`[webhooks]` subscriptions were added (scope still `read_orders`, redirect unchanged, no secrets / no `.shopify/`
+committed), for ChatGPT's deployment audit. **No `shopify app deploy` / release will be run until explicit
+approval.**
