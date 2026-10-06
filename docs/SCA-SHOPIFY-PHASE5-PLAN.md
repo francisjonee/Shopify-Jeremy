@@ -127,3 +127,21 @@ No Caddy change. Update the Caddyfile comment to record the governed decision ("
 - **D-WINDOW:** if Option B, pick a quiet hour for the sr-caddy recreate (brief smsrocket blip).
 
 **No execution performed. Awaiting ChatGPT audit + operator decisions.** See [[sca-shopify-activation-preflight]], `docs/SCA-SHOPIFY-ACTIVATION-PHASE4-DRYRUN.md`.
+
+---
+
+## Phase 5 — EXECUTION (operator decisions applied)
+
+**Date:** 2026-10-06 · **Operator decisions:** D-EDGE = **Option A (RETAIN callback; no Caddy change)**; D-FIXTURES = **dispose now (operator-only Shopify actions)**; D-WINDOW = N/A.
+
+### D-EDGE = Option A — RETAIN (applied; no mutation)
+No Caddy edit, no recreate. The callback route, the public exact-path `GET` edge handle, and `shopify.app.toml auth.redirect_urls` are retained; the permanent `POST` webhook is unchanged. Posture is already correct — recorded as the governed final decision (the "temporary" marker in the Caddyfile is now superseded by "retained: hardened, fail-closed, required for future reauth"; no standalone recreate performed to avoid a needless co-tenant blip).
+
+### Gate P5-1 — pre-execution baseline (read-only, PASS)
+- `P5-1_FP = 62b2e42fe409b4ec91f3381b35da819e` (== FINAL_FP). receipts **3**. migrations **120**.
+- Connected: shop `second-chance-eyewear-accessories.myshopify.com`, scope `read_orders`, token SET (encrypted), **offline** (`expires_at` null). config scopes `read_orders`, api `2026-07`.
+- item 4 `REGISTERED` / `disputed` / owner collector **3** / sale-link `revoked_refund`; public_ref `SCA-A960A57D3124`.
+- **Edge posture (Option A, unchanged):** `POST /sca/shopify/webhook` no-HMAC → **401** (permanent, fail-closed); `GET /sca/shopify/oauth/callback` no-params → **400** (retained, fail-closed); `GET` webhook wrong-method → **404**; `/sca/shopify/connect` (non-staff) → **404** (install initiator stays staff-IP `/admin`); `/collector` 302; `/storage/*` 404; smsrocket.io **302**.
+
+### D-FIXTURES — operator browser steps provided in chat; Shopify actions are operator-only.
+Archive order #3281; unpublish+delete the `ZZ-SCA-DRYRUN-TEST (DO NOT SELL)` product only. STOPPED for operator; P5-3/P5-4 to run after completion. No SCA mutation; all provenance retained.
