@@ -186,3 +186,36 @@ duplicate ownership. Pre-existing items (id1, id3) must remain untouched.
 
 STOP — awaiting the operator browser claim. Claude performs no claim, fabricates no request, and does not start
 Phase 5.
+
+## Gate D2 — claim through canonical workflow — PASS (first genuine browser claim)
+Operator completed the browser claim of item 4 as a new test collector; "Registered to you" shown in My Collection.
+Read-only verification (no second claim performed, no request fabricated):
+- **Ownership appended exactly once:** `sca_ownership_events` for item 4 = **1** row (id 5, `event_type=claim`,
+  `collector_account_id=3`, `source_claim_id=2`).
+- **Exactly one `shopify_sale` claim:** `sca_claims` for item 4 = **1** row (id 2, `claim_source=shopify_sale`,
+  `state=completed`, `source_sale_link_id=2`) — via the canonical `ClaimWorkflow::claim` → `ClaimService::complete`
+  (QR-path). No parallel/direct owner mutation.
+- **Projection resolves to the test collector:** item 4 `current_owner_collector_id=3`; `ProjectionService::
+  currentOwner(4).collector_id=3`; collector `id=3`, `public_ref=COL-5B833408C461`, `status=active` (public ref
+  only — no email/PII). Lifecycle `CERTIFIED → REGISTERED`.
+- **Shopify sale-link transitioned `eligible → claimed`** (order 8019293831455; `shopify_customer_ref` still NULL)
+  — entitlement consumed/retained as designed.
+- **Deltas isolated to the test item + new test collector:** collectors 2→3, claims_total 1→2, ownership_total
+  4→5; sale_links 1 (state flipped), receipts 1 (unchanged). `POST_D2_FP = 859c053630690bb5ffaec7aaea2ddd4d`,
+  migrations 120.
+- **Pre-existing items untouched:** id1 CERTIFIED/normal/unowned (0 ownership events), id3 REGISTERED/recovered/
+  owner1 (4 ownership events) — unchanged.
+
+### Duplicate / repeat-claim protection — structural (read-only; no second claim, no fabricated request)
+- **Entitlement single-use:** no `eligible` sale-link remains for item 4 (`eligible_sale_link_for_item4 = NULL`);
+  `ClaimWorkflow::eligibleSaleLinkId` keys on `eligibility_state=eligible`, so any fresh claim → `NOT_ELIGIBLE`.
+- **Already owned:** `currentOwner(4)=3` → a repeat by the same collector short-circuits to `already_yours` (no new
+  event); a different collector → `ALREADY_OWNED` (409). `ClaimService::complete` re-locks the item and re-checks
+  owner + sale-link eligibility under the lock → fails closed.
+- **Claim idempotency key unique:** `sca_claims_idempotency_key_unique` (key `claim:<itemId>:<collectorId>`) → a
+  same-collector retry reuses the existing claim, never a second row.
+- **Singleton state confirms:** item 4 ownership_events = 1, claims = 1. (Also covered by deployed
+  `ClaimWorkflowTest` concurrency/double-submit cases.) No second claim was invoked to prove this.
+
+**Gate D2 PASS.** Next: **Gate R2 (mandatory amount-only partial-refund empirical test)** — requires an operator
+Shopify refund action; Claude will give exact steps. No Phase 5; no further Shopify mutation by Claude.
