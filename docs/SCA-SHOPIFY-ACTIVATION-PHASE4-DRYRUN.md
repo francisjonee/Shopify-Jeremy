@@ -314,3 +314,45 @@ Operator performed a **shipping-only $4.90 refund** on order #3281: SCA line lef
 **Conclusion:** an amount-only (shipping-only) refund that keeps the SCA item produces an empty `refund_line_items` and is a complete provenance no-op — ownership, claim, eligibility, and registry status all unchanged; the delivery is accepted, recorded once, and idempotent. **Gate R2 PASS.**
 
 **STOP.** Awaiting ChatGPT audit. R3 (full-line return) and Phase 5 not started; no further Shopify mutation performed.
+
+---
+
+## Gate R3 — returned/full SCA-line behavior (PREPARATION / pre-return baseline)
+
+**Date:** 2026-10-06 · **Status: pre-R3 baseline captured (read-only); expected behavior traced from deployed code. No refund performed, no webhook fabricated, no code/schema/scope/config change. STOPPED before the operator's final Shopify confirmation.**
+
+Gate R3 is the inverse of R2: the operator genuinely refunds/returns the **SCA line itself** on order #3281. Because the item is already **claimed** (collector 3 owns it), the deployed handler must record the reversal and raise a `disputed` registry status **append-only**, while **preserving ownership**.
+
+### Expected behavior — traced from deployed code (not asserted)
+Path: `WebhookController` (HMAC/idempotent receipt) → `SaleLinkEventProcessor::handleRefund` → `SaleLinkService::revokeLine(shop, 18855278313759, 'revoked_refund')` → `CommerceService::refund(saleLinkId, 'revoked_refund')`, all inside one DB transaction with `lockForUpdate` on the sale-link and `sca_item_current_state`.
+
+- `handleRefund` iterates `refund_line_items`; this time the SCA `line_item_id` **18855278313759 is present** → `revokeLine` is called for it.
+- `revokeLine` matches the sale-link only while its state ∈ `ACTIVE_STATES = {eligible, claimed}`. It is currently `claimed` → matched → `CommerceService::refund`.
+- `CommerceService::refund`:
+  - sets the sale-link `eligibility_state` → **`revoked_refund`**;
+  - `hasOwner = currentOwner(item4) !== null` → **true** → **inserts exactly one** `sca_status_events` row: `status='disputed'`, `reason='commerce reversal after claim (revoked_refund)'`, then `projection->rebuild(item4)`;
+  - projection recompute sets `sca_item_current_state.registry_status` → **`disputed`**.
+
+### What MUST change (append-only) vs what MUST NOT be deleted/overwritten
+| Field | PRE-R3 | Expected POST-R3 |
+|---|---|---|
+| Shopify sale-link (item 4) | `claimed` | **`revoked_refund`** |
+| item 4 `sca_status_events` | 0 | **1** (one new `disputed` row; append-only) |
+| item 4 `registry_status` (projection) | `normal` | **`disputed`** |
+| item 4 current owner (projection) | collector **3** | **collector 3 — UNCHANGED (ownership NOT erased)** |
+| item 4 `sca_ownership_events` | 1 | **1 — UNCHANGED (history preserved, nothing deleted)** |
+| item 4 `sca_claims` | 1 | **1 — UNCHANGED** |
+| item 4 lifecycle_state | `REGISTERED` | `REGISTERED` — unchanged |
+| item 4 certification (`4`) / QR (`3`) | present | **UNCHANGED** |
+| webhook receipts | 2 | **3** (one new `refunds/create`) |
+
+**MUST NOT happen:** no row in `sca_ownership_events` or `sca_claims` is deleted/updated/overwritten; current-owner projection is not cleared; the certification/QR are not revoked; the prior receipts (ids 1,2) are untouched. The `disputed` state is reached **only** by appending a new status event + projection rebuild — the previous `normal` fact is superseded by recomputation, never edited in place.
+
+**Idempotency / double-protection:** a redelivery of the same `refunds/create` webhook_id is blocked by the unique `idempotency_key` (not reprocessed). Independently, once the sale-link is `revoked_refund` it is no longer in `ACTIVE_STATES`, so any further `revokeLine` for that line returns 0 (noop) → **no second `disputed` event** even on a distinct redelivery.
+
+### Pre-R3 baseline (verified now)
+item 4 sale-link `claimed`; lifecycle `REGISTERED`; registry `normal`; owner collector 3; status_events 0; ownership_events 1; claims 1; cert 4; QR 3. `disputed` anywhere = 0. receipts 2. `PRE_R3_FP = 859c053630690bb5ffaec7aaea2ddd4d`. Pre-existing id1 `CERTIFIED` 0 events, id3 `REGISTERED` 4 events.
+
+> Note: unlike R2, the provenance fingerprint **will legitimately change** at R3 (a new `disputed` status event + registry projection flip). Gate D4 must isolate the entire delta to item 4's single `disputed` event + its registry projection, with ownership/claims/cert/QR and all pre-existing items unchanged.
+
+### Operator browser steps provided in chat. STOPPED before the operator's final Shopify confirmation.
