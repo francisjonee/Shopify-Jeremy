@@ -1,23 +1,29 @@
 # NEXT TASK
 
-**STATUS: NONE — awaiting promotion.**
+**STATUS: ACTIVE — SCA SERVICE / REPAIR HISTORY STAFF UX. Executable stage: DISCOVERY/PLAN ONLY (DONE, awaiting audit).**
 
-Reconciled 2026-10-06. No executable task. ChatGPT/operator promotes exactly one item from `TASK_QUEUE.md` ("RECONCILED REMAINING WORK") into this file before any implementation begins. Claude must not start a feature autonomously.
+Promoted 2026-10-06. Deployed baseline `1b029fd981388da76b66d50c7a851f3254aa1e5d`, migrations **120**, FP **`62b2e42fe409b4ec91f3381b35da819e`**. Shopify Operational Listing SOP remains CLOSED.
 
-## Most recently CLOSED (do NOT reopen / do NOT start a follow-on without promotion)
+## Objective
 
-- **Shopify Operational Listing SOP — CLOSED** (deployed `1b029fd981388da76b66d50c7a851f3254aa1e5d`). Operator SOP `docs/SOP-SHOPIFY-OPERATIONAL-LISTING.md` (contract: line-item property `sca_item_ref` = `public_ref`, `SCA-XXXXXXXXXXXX`, qty 1, copy-never-type) + a deployed one-click Copy affordance for `public_ref` on item detail. The Shopify theme/metafield setup (`custom.sca_item_ref` is a recommended **storefront convention**, not the SCA contract) and the first real-inventory sale are **operator actions**, not unfinished SCA work; **no second SOP slice.**
-- **SCA Staff Operational Dashboard / Worklists — CLOSED** (`0f86b4a`).
-- **SCA Staff Navigation / Discoverability — CLOSED** (`703fbde`).
-- **Production QR/Label Workflow — CLOSED** (`0ca7158`/`4d92ec9`/`30b680f`).
-- **SCA Shopify Activation — CLOSED** (Phases 0–5). Do NOT reopen Phase 4 or Phase 5.
+Smallest complete staff workflow to record + view legitimate service/repair history while preserving append-only provenance.
 
-## Current deployed baseline
+## Current stage — DISCOVERY/PLAN (complete; STOP for audit)
 
-- Deployed implementation `main` = **`1b029fd981388da76b66d50c7a851f3254aa1e5d`**
-- Migrations **120**; provenance fingerprint **`62b2e42fe409b4ec91f3381b35da819e`**
-- Public edge LIVE: `https://verify.secondchanceauthenticators.com`; `:8080` loopback-only; `SESSION_SECURE_COOKIE=true`.
+Plan committed at `docs/SCA-SERVICE-REPAIR-HISTORY-STAFF-UX-DISCOVERY.md`. **Do not implement yet.** Verified findings:
 
-## Promotion rule
+- The staff **record + view workflow ALREADY EXISTS and is complete**: ACL-gated (`sca.eyewear.service`) "Record service" form (GET `…service.create` + POST `…service.store`) **and** a full service-history table on the item-detail History tab (Date/Type/Condition/Notes) + a count. Append-only (DB `no_update`/`no_delete` triggers), projection-untouched, owner-visible in My Collection, **never** on the public passport.
+- `sca_service_events` fields: `service_type` (CHECK repair/lens/polish/tuneup/inspection/other), `performed_by_staff_ref` (soft), `condition_grade_after` (A–D observation), `notes`, `occurred_at`, `created_at` (no `updated_at`). **No cost/provider/condition-before/parts/media columns.**
+- **No correction/void/supersede path** for a mistaken service event; **no service-evidence media UX** (schema permits `subject_type='service'` but nothing wires it).
 
-See `TASK_QUEUE.md` → "RECONCILED REMAINING WORK (easiest → hardest, 2026-10-06)". Remaining candidates (unstarted): #4 service/repair history staff UX · #5 inventory onboarding · #6 SMTP + notifications (external/DNS-gated) · #7 off-site backup (external) · #8 post-core expansion. **NOT promoted here.** Until explicit promotion: **ACTIVE = NONE, NEXT_TASK = NONE.**
+## Recommendation — **Option E (existing functionality is sufficient)**
+
+No new recording/viewing feature/route/service/schema is required; the item-context add-form + history table already deliver the complete staff workflow. **Closes with zero code.** One **optional**, view-only micro-polish is offered: add **Performer + Recorded-at** columns to the staff service-history table (staff-only; reuse `sca.eyewear.view`; no schema). Deferred (separate future slices, NOT this task): an append-only service **correction** semantic, and service-**evidence media** UX.
+
+## Hard constraints
+
+Append-only must hold — **no edit/delete of historical service events**. No Shopify/dashboard/QR/ownership/transfer/certification/SMTP/bulk-onboarding/analytics/infra change. No public/collector exposure change. **Prefer zero schema — none is required.**
+
+## Stage gate
+
+**Executable stage is DISCOVERY/PLAN ONLY — complete and committed. STOP for ChatGPT audit.** Either accept E (close immediately, no code) or approve the single optional view-only enrichment — **either closes Service/Repair History Staff UX with no follow-on slice.** Implementation (if any) is a separate promoted stage.
