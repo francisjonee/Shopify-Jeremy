@@ -1,33 +1,21 @@
 # NEXT TASK
 
-**STATUS: ACTIVE — SCA STAFF NAVIGATION / DISCOVERABILITY. Executable stage: DISCOVERY/PLAN ONLY (DONE, awaiting audit).**
+**STATUS: NONE — awaiting promotion.**
 
-Promoted 2026-10-06 after governance reconciliation (`0c8c090`) passed ChatGPT audit. Deployed baseline `30b680f797bdcf0d9bf2e6031c32c4f80c41dfc4`, migrations **120**, FP **`62b2e42fe409b4ec91f3381b35da819e`**.
+Reconciled 2026-10-06. No executable task. ChatGPT/operator promotes exactly one item from `TASK_QUEUE.md` ("RECONCILED REMAINING WORK") into this file before any implementation begins. Claude must not start a feature autonomously.
 
-## Objective
+## Most recently CLOSED (do NOT reopen / do NOT start a follow-on without promotion)
 
-Make already-built staff capabilities reachable naturally, without knowing hidden URLs — **discoverability only**. No new functionality, no replacement workflows, existing ACLs preserved (navigation visibility must never grant authorization).
+- **SCA Staff Navigation / Discoverability — CLOSED** (deployed `703fbde9884ddeb9219c0cf54d34f5fe9e3f48a8`). Added one permission-gated "Correct ownership…" item-detail link closing the zero-ownership raw-URL dead-end; Collector Support was already discoverable and required no change. **No further navigation slice.** Evidence: `docs/SCA-STAFF-NAV-DISCOVERABILITY-{DISCOVERY,IMPLEMENTATION,DEPLOY-RESULT}.md`.
+- **Production QR/Label Workflow — CLOSED** (Slice 1 `0ca7158` / Slice 2 `4d92ec9` / Slice 3 `30b680f`; closure `15f62abec`).
+- **SCA Shopify Activation — CLOSED** (Phases 0–5). Do NOT reopen Phase 4 or Phase 5.
 
-## Current stage — DISCOVERY/PLAN (complete; STOP for audit)
+## Current deployed baseline
 
-The discovery/plan is committed at `docs/SCA-STAFF-NAV-DISCOVERABILITY-DISCOVERY.md`. **Do not implement yet.** Summary of findings:
+- Deployed implementation `main` = **`703fbde9884ddeb9219c0cf54d34f5fe9e3f48a8`**
+- Migrations **120**; provenance fingerprint **`62b2e42fe409b4ec91f3381b35da819e`**
+- Public edge LIVE: `https://verify.secondchanceauthenticators.com`; `:8080` loopback-only; `SESSION_SECURE_COOKIE=true`.
 
-- SCA sidebar has exactly two entries (Eyewear Registry, Shopify Integration). Krayin forces single-segment menu keys, so dotted-ACL capabilities are **by design** surfaced as permission-gated in-page buttons, not sidebar items.
-- **Collector Support (SCA-040)** is **already discoverable** via a permission-gated button on the Eyewear Registry index → **optional convenience, not a true gap**; recommend **no change** (a sidebar entry would fight the menu-key/ACL constraint).
-- **Ownership Correction (SCA-035)** is the **one true raw-URL-only gap**: its link lives on the ownership-history page, which item-detail links **only when `ownership > 0`** → **zero-ownership items have no UI path**. **Fix = a permission-gated "Correct ownership…" link on the item-detail page (`show.blade.php`), shown to `sca.eyewear.ownership.correct` holders regardless of ownership state**, pointing at the existing confirm route. Navigation-only.
-- No other built capability is raw-URL-only.
+## Promotion rule
 
-## Recommended implementation scope (for the NEXT executable stage, if approved)
-
-1. **(Required)** Add the permission-gated "Correct ownership…" item-detail link in `packages/Sca/Registry/src/Resources/views/eyewear/show.blade.php` → existing `admin.sca.eyewear.ownership.correct.confirm` route; gated by `bouncer()->hasPermission('sca.eyewear.ownership.correct')`; shown regardless of ownership count.
-2. **(Optional, default none)** Collector Support — already reachable; no change recommended.
-
-Tests: item-detail shows the link to authorized staff incl. **zero-ownership** items; hidden for unauthorized staff who still get 403 on the route (visibility ≠ authorization); link targets the confirm route; full `tests/Feature/Sca` green; zero provenance mutation; no schema change.
-
-## Hard constraints
-
-Discoverability only. **Do NOT** change provenance/ownership semantics, collector behavior, QR, certification, Shopify, SMTP, schema/migrations, public routes, Caddy/Docker, or infrastructure. **Do NOT** add sidebar entries for dotted-ACL capabilities, build a dashboard/worklists, create replacement workflows, or broaden any permission to make a link visible.
-
-## Stage gate
-
-**Executable stage is DISCOVERY/PLAN ONLY — now complete and committed. STOP for ChatGPT audit.** Implementation is a separate stage requiring explicit promotion/authorization. Completing the recommended scope would **CLOSE** Staff Navigation / Discoverability.
+See `TASK_QUEUE.md` → "RECONCILED REMAINING WORK (easiest → hardest, 2026-10-06)". The next-easiest unstarted candidate is **#2 Staff operational dashboard / worklists** — **NOT started, NOT promoted here.** Until explicit promotion: **ACTIVE = NONE, NEXT_TASK = NONE.**
