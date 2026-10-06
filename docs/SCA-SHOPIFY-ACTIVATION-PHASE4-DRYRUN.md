@@ -77,3 +77,37 @@ how production sales will deliver `sca_item_ref`.
 
 **STOP — operator decision required:** proceed with the storefront test-checkout path above (recommended), or
 authorize a scope/credential change out-of-band. No order created; nothing marked paid; Phase 5 not started.
+
+## Gate D1 setup — storefront AJAX-cart mechanism (operator; no theme change, no scope change)
+Chosen mechanism = **Shopify AJAX Cart API** (`/cart/add.js` with a line-item `properties` object) against a
+**dedicated hidden/draft TEST product**. Rationale: line-item properties attach at the **cart** layer, so NO live
+theme edit is needed (a theme product-form `properties[...]` input would risk affecting real products — rejected
+per the "stop before a theme change that could affect real customers" instruction). Reversible: the only
+persistent artifact is one hidden test product the operator can delete afterward; the cart is ephemeral. Uses no
+Admin order-write scope and no SCA app/scope/OAuth/webhook/code/schema change. Claude performs none of this (no
+store/admin access; app is read-only); steps below are operator-run, STOP before payment.
+
+Operator steps (test data only; no real customer PII):
+1. Admin → Products → **Add product**: title e.g. `ZZ-SCA-DRYRUN-TEST (do not sell)`, a price, set **inventory /
+   continue selling** so it's purchasable; set **Status = Active but UNLISTED** — remove it from the Online Store
+   sales channel OR keep the product hidden; do not feature it. (A draft product can't be bought, so make it
+   Active-but-hidden, not Draft.) Note its **variant ID** (Admin product URL / variant).
+2. Open the store's storefront in a browser (enter the store password if the dev store is password-protected).
+3. In the browser DevTools console (same storefront origin), attach the line-item property via the cart API:
+   ```js
+   fetch('/cart/add.js', {method:'POST', headers:{'Content-Type':'application/json'},
+     body: JSON.stringify({ items:[{ id: <VARIANT_ID>, quantity:1,
+       properties:{ sca_item_ref: 'SCA-A960A57D3124' } }] }) }).then(r=>r.json()).then(console.log)
+   ```
+4. **VERIFY the property is genuinely on the line BEFORE paying** (not a note/attribute/metafield):
+   ```js
+   fetch('/cart.js').then(r=>r.json()).then(c=>console.log(JSON.stringify(
+     c.items.map(i=>({title:i.title, quantity:i.quantity, properties:i.properties})))))
+   ```
+   Confirm the line shows `quantity: 1` and `properties: { "sca_item_ref": "SCA-A960A57D3124" }`.
+5. Proceed to **/checkout**, complete payment with the **test/Bogus gateway** (no real charge, no real PII).
+   Paying fires `orders/paid` → the webhook → SCA.
+
+STOP before payment: operator confirms the `/cart.js` output shows `sca_item_ref=SCA-A960A57D3124` on the qty-1
+line, then pays. After "paid", Claude runs Gate D1 (one receipt + one eligible sale-link for item 4, mapped by
+`sca_item_ref` not SKU, no PII / `shopify_customer_ref` null, pre-existing items untouched, idempotency).
