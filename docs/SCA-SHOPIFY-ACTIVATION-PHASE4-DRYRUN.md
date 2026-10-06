@@ -111,3 +111,46 @@ Operator steps (test data only; no real customer PII):
 STOP before payment: operator confirms the `/cart.js` output shows `sca_item_ref=SCA-A960A57D3124` on the qty-1
 line, then pays. After "paid", Claude runs Gate D1 (one receipt + one eligible sale-link for item 4, mapped by
 `sca_item_ref` not SKU, no PII / `shopify_customer_ref` null, pre-existing items untouched, idempotency).
+
+## Gate D1 — paid order + mapping + idempotency — PASS (order #3281)
+Operator paid Shopify order **#3281** (one test line, `sca_item_ref=SCA-A960A57D3124`). Read-only verification:
+- **Real `orders/paid` delivery HMAC-ACCEPTED:** exactly **one** `sca_shopify_webhook_receipts` row — topic
+  `orders/paid`, shop `second-chance-eyewear-accessories.myshopify.com`, webhook_id
+  `12eb1029-49ab-5de6-8681-dcaf7184d02b` (Shopify delivery UUID, non-PII), api_version `2026-07`,
+  status `received`, `payload_sha256` present (64 chars). (A receipt is only written after HMAC verification →
+  empirically confirms `SHOPIFY_WEBHOOK_SECRET` = app Client Secret verifies the real signed delivery.)
+- **Exactly one eligible sale-link for the test item:** 1 row, `eyewear_item_id=4`, `eligibility_state=eligible`,
+  order `8019293831455`, line `18855278313759`, product `10632814199071`, variant `52983511089439`,
+  idempotency_key `…:orders/paid:8019293831455:18855278313759`.
+- **Mapped by `sca_item_ref`, NOT SKU:** `sale_link.eyewear_item_id=4` → `public_ref SCA-A960A57D3124` (the
+  `sca_item_ref` line-item property). The processor reads `line_items[].properties[sca_item_ref]`; the sale-link
+  stores no SKU and SKU is never the key.
+- **No customer PII persisted:** `shopify_customer_ref = NULL` (as designed). The receipts table has no PII columns
+  (`id, idempotency_key, shop_domain, topic, webhook_id, api_version, payload_sha256, status, received_at,
+  created_at`) — a one-way digest only, no raw body.
+- **Eligibility ≠ ownership:** `sca_ownership_events = 4` (unchanged); test item 4 `current_owner_collector_id =
+  NULL`. No ownership/status/cert/QR created by the paid webhook.
+- **Pre-existing provenance untouched:** items=3 (2 original + test item 4), auth=4, cert=4, qr=3, status=6,
+  claims=1; id1 CERTIFIED/normal/unowned, id3 REGISTERED/recovered/owner1 (baseline). Passports: item3 200, item4
+  200. `POST_D1_FP = 3c51f3bea31835db7d4e9bdf7bd77aec` (migrations 120) — this provenance FP differs from the
+  pre-Phase-4 baseline `c3fea71a` **solely** because of the Phase-4A test item; **Gate D1 itself added zero
+  provenance rows** (only the Shopify-table receipt + sale-link, which are outside the provenance FP). All deltas
+  isolated to the dedicated test item/order.
+- **Receiver still fail-closed:** unsigned `POST /sca/shopify/webhook` → 401 (HMAC not weakened). Co-tenant
+  smsrocket 302.
+
+### Idempotency / redelivery — structural proof (active replay NOT safely possible → not improvised)
+A live replay of the exact delivery is **not** safely possible: the receipt stores only a SHA-256 **digest, not the
+raw body**, and there is no sanctioned replay endpoint — reconstructing a redelivery would require **fabricating a
+payload and signing it with the webhook secret** (secret handling + payload fabrication), which the task forbids.
+Per Gate D1's own rule, this is reported rather than improvised. Idempotency is guaranteed and evidenced instead by:
+- `sca_shopify_webhook_receipts.idempotency_key` is **UNIQUE** (keyed on shop+topic+`X-Shopify-Webhook-Id`), and
+  `WebhookController` runs domain processing **only for a newly-recorded receipt** → a duplicate delivery (same
+  webhook id) is acknowledged without reprocessing.
+- `sca_shopify_sale_links` has **UNIQUE `(shopify_shop_id, shopify_line_item_id)`** and **UNIQUE
+  `webhook_idempotency_key`** → a duplicate paid for the same line cannot create a second sale-link/eligibility.
+- Deployed `ShopifySaleLinkTest` covers duplicate-delivery idempotency + retry-after-500; and the current state
+  (exactly 1 receipt, 1 sale-link) shows no duplication occurred for the real delivery.
+
+**Gate D1 PASS.** Next: Gate D2 (claim via `ClaimWorkflow::claim` using the test item's QR token) — requires an
+operator/collector browser step; Claude will give exact steps. No Phase 5; no further Shopify mutation by Claude.
