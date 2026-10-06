@@ -286,3 +286,31 @@ Gate R2 is mandatory and must PASS before Gate R3 (full-line return). To obtain 
 - **Option R2-c (governance ruling): accept amount-only-within-line as structurally N/A for qty-1 one-of-one.** The code invariant (`handleRefund` keys only on the SCA line's presence in `refund_line_items`, ignoring qty/amount) is already structurally established and deployed-tested; for a qty-1 one-of-one line there is no amount-only-within-line case to produce. If ChatGPT rules R2-a/R2-b unnecessary, the empirical no-op is instead demonstrated by R3's full-return payload showing the handler's keying behavior. (This is a ruling, not a code/scope change.)
 
 **Recommended:** R2-a if #3281 has a refundable shipping amount; else bring the R2-b vs R2-c decision to ChatGPT. **No mutation performed. STOP for ChatGPT audit of the chosen path before any Shopify action.**
+
+---
+
+## Gate R2 — PASS (amount-only / shipping-only refund = SCA no-op)
+
+**Date:** 2026-10-06 · **Status: PASS. Real `refunds/create` delivery verified as a provenance no-op. No code/scope/schema change. R3/Phase 5 NOT started; no further Shopify mutation.**
+
+Operator performed a **shipping-only $4.90 refund** on order #3281: SCA line left at quantity 0/1; refund summary showed **Shipping $4.90 only, no item subtotal** (the R2-a path). Shopify delivered a real `refunds/create` webhook.
+
+### Evidence
+| Check | Result |
+|---|---|
+| `refunds/create` HMAC-accepted + recorded | receipt **id=2**, topic `refunds/create`, shop `second-chance-eyewear-accessories.myshopify.com`, webhook_id `81852206-…`, api `2026-07`, status `received`, received 2026-10-06 17:05:15 |
+| receipts total | 1 → **2** (one new, as expected) |
+| no PII persisted | receipts table has **no customer columns** (digest `payload_sha256` only); sale-link `shopify_customer_ref` = **null** |
+| **SCA line absent from `refund_line_items`** | **PROVEN structurally**: `handleRefund` revokes + (if claimed) disputes **iff** the SCA `line_item_id` (18855278313759) appears in `refund_line_items`. Observed outcome = no revoke, no dispute ⇒ SCA line was absent (consistent with a shipping-only refund → `refund_line_items: []`). (No raw body stored, per no-PII design.) |
+| SCA no-op — eligibility | item 4 sale-link still **`claimed`** (no `revoked_refund`); `sale_links` total still 1 |
+| SCA no-op — ownership | item 4 owner still collector **3**; ownership_events **1**, claims **1** (unchanged) |
+| SCA no-op — registry | item 4 `REGISTERED` / registry `normal`; item 4 status_events **0**; **`disputed` count anywhere = 0** |
+| provenance fingerprint | `POST_R2_FP = 859c053630690bb5ffaec7aaea2ddd4d` == `PRE_R2_FP` == `POST_D2_FP` (**unchanged**) |
+| idempotency | exactly **1** receipt for webhook_id `81852206-…`; unique index `sca_shopify_webhook_receipts_idempotency_key_unique` (non_unique=0) ⇒ any redelivery hits the unique key → no second effect |
+| pre-existing untouched | id1 `CERTIFIED`/owner null/0 events; id3 `REGISTERED`/owner 1/4 events |
+| receiver still fail-closed | `POST /sca/shopify/webhook` no HMAC → **401** |
+| edge / co-tenant health | `/collector` 302 (auth redirect), smsrocket.io **302**, migrations 120 |
+
+**Conclusion:** an amount-only (shipping-only) refund that keeps the SCA item produces an empty `refund_line_items` and is a complete provenance no-op — ownership, claim, eligibility, and registry status all unchanged; the delivery is accepted, recorded once, and idempotent. **Gate R2 PASS.**
+
+**STOP.** Awaiting ChatGPT audit. R3 (full-line return) and Phase 5 not started; no further Shopify mutation performed.
