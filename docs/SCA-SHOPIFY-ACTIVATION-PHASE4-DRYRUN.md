@@ -356,3 +356,36 @@ item 4 sale-link `claimed`; lifecycle `REGISTERED`; registry `normal`; owner col
 > Note: unlike R2, the provenance fingerprint **will legitimately change** at R3 (a new `disputed` status event + registry projection flip). Gate D4 must isolate the entire delta to item 4's single `disputed` event + its registry projection, with ownership/claims/cert/QR and all pre-existing items unchanged.
 
 ### Operator browser steps provided in chat. STOPPED before the operator's final Shopify confirmation.
+
+---
+
+## Gate R3 — PASS (claimed SCA line returned → append-only `disputed`, ownership preserved)
+
+**Date:** 2026-10-06 · **Status: PASS. Real `refunds/create` of the SCA line verified: eligibility revoked, one `disputed` event appended, registry disputed, ownership preserved. No code/scope/schema change. Phase 5 NOT started; no further Shopify mutation.**
+
+Operator refunded the dedicated SCA test line (`sca_item_ref = SCA-A960A57D3124`) on order #3281, quantity 1/1, $1.00. Shopify delivered a real `refunds/create` whose `refund_line_items` included the SCA line (18855278313759).
+
+### Evidence
+| Check | Expected | Result |
+|---|---|---|
+| `refunds/create` HMAC-accepted + recorded | new receipt | receipt **id=3**, topic `refunds/create`, shop `second-chance-eyewear-accessories.myshopify.com`, webhook_id `7087b3c9-…`, api `2026-07`, `received` 17:27:52 |
+| receipts increment exactly once | 2 → 3 | **3** (ids 1 paid, 2 shipping-only refund, 3 this return) |
+| sale-link → revoked | `revoked_refund` | item 4 sale-link = **`revoked_refund`**; `sale_links` total still 1 |
+| exactly one appended `disputed` event | 1 | status_event **id=7**, `status=disputed`, `reason="commerce reversal after claim (revoked_refund)"`, effective 17:27:52; item 4 status_events = **1**; `disputed` anywhere = **1** |
+| registry → disputed | `disputed` | item 4 `registry_status` = **`disputed`** (via projection rebuild) |
+| **owner remains collector 3** | collector 3 | item 4 current owner = **3** (ownership NOT erased) |
+| ownership history intact | 1, unchanged | `sca_ownership_events` id=5 `event_type=claim`, `collector_account_id=3`, `source_claim_id=2` — **unchanged, not deleted/overwritten** |
+| claim intact | 1, unchanged | `sca_claims` id=2 `claim_source=shopify_sale` — **unchanged** |
+| certification intact | not revoked | cert id=4 `state=issued`, `revoked_at=null` — **unchanged** |
+| QR intact | active | QR id=3 (token `927e2d59…`) — **unchanged**; item 4 lifecycle still `REGISTERED` |
+| no customer PII | null | receipts digest-only; sale-link `shopify_customer_ref` = null |
+| idempotency | 1 + double-protect | exactly 1 receipt for webhook_id `7087b3c9-…`; link now `revoked_refund` ∉ `ACTIVE_STATES` ⇒ any re-revoke = 0 noop ⇒ no second `disputed` |
+| pre-existing untouched | unchanged | id1 `CERTIFIED`/`normal`/owner null/0 oe/0 se; id3 `REGISTERED`/`recovered`/owner 1/4 oe/6 se |
+| receiver / co-tenant | healthy | POST no-HMAC → **401**; smsrocket **302**; `/collector` 302; migrations 120 |
+
+### Fingerprint delta (legitimately changed; isolated to item 4)
+`PRE_R3_FP = 859c053630690bb5ffaec7aaea2ddd4d` → `POST_R3_FP = 62b2e42fe409b4ec91f3381b35da819e`. The **only** differences: item 4 projection `registry_status normal → disputed`, and global status-event count `6 → 7` (the one appended `disputed` row). `ownership_total` unchanged at 5; certifications/QR/images/migrations unchanged; pre-existing items identical.
+
+**Conclusion:** returning the claimed SCA line revokes Shopify eligibility (`revoked_refund`) and raises a single append-only `disputed` registry status for staff, while **current ownership, ownership history, the claim, the certification, and the QR are all preserved and nothing is deleted or overwritten**. Delivery is accepted, recorded once, and idempotent. **Gate R3 PASS.**
+
+**STOP.** Awaiting ChatGPT audit. Phase 5 not started; no further Shopify mutation performed. Gate D4 (closeout/contamination check) is the remaining authorized step.
