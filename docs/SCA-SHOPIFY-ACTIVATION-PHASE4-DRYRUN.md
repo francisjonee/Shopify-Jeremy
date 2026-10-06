@@ -154,3 +154,35 @@ Per Gate D1's own rule, this is reported rather than improvised. Idempotency is 
 
 **Gate D1 PASS.** Next: Gate D2 (claim via `ClaimWorkflow::claim` using the test item's QR token) — requires an
 operator/collector browser step; Claude will give exact steps. No Phase 5; no further Shopify mutation by Claude.
+
+## Gate D2 — preparation + baseline (claim NOT performed by Claude)
+### D2 baseline (read-only; proves item 4 claimable-but-unclaimed)
+- Test item 4: `lifecycle=CERTIFIED`, `registry=normal`, **`current_owner_collector_id=NULL` (unowned)**,
+  active_qr_id 3, current_cert 4.
+- Shopify sale-link for item 4: **1 row, `eligibility_state=eligible`** (order 8019293831455, line 18855278313759).
+- Item 4 **ownership_events = 0**, **claims = 0** (no prior claim/ownership).
+- Global baseline for later delta: collectors 2, claims_total 1, ownership_total 4, sale_links_total 1,
+  receipts 1. `D2_BASELINE_FP = 3c51f3bea31835db7d4e9bdf7bd77aec`, migrations 120 (unchanged since D1).
+- Claim entry live + gated: `GET /collector/claim/927e2d594775c21be67f91019b3648a9` → 302 (redirect to collector
+  login when logged out; `collector.auth`). This is the canonical QR-path claim that calls
+  `ClaimWorkflow::claim(token, collectorId)`.
+
+### Operator / collector browser steps (operator performs; Claude does NOT claim)
+Test data only; no real customer PII. Claim entitlement comes from the `eligible` Shopify sale-link (set at D1);
+item 4's QR/passport token is `927e2d594775c21be67f91019b3648a9`.
+1. **Register a NEW dedicated TEST collector** (do not reuse a real collector; collector 1 owns the real pilot
+   item 3): https://verify.secondchanceauthenticators.com/collector/register — use a **test email you control** +
+   a password. (Email is the collector identity — the only customer datum SCA stores; use a test mailbox.)
+2. While signed in as that test collector, open the **claim URL** (same as scanning the physical QR then
+   claiming): `https://verify.secondchanceauthenticators.com/collector/claim/927e2d594775c21be67f91019b3648a9`
+   (If opened logged-out, you're redirected to login/register and returned here via `url.intended`.)
+   (Passport preview, optional: `https://verify.secondchanceauthenticators.com/p/927e2d594775c21be67f91019b3648a9`.)
+3. Review the item and **confirm the claim** (the Claim button → POST `collector.claim.perform`).
+4. You should reach the success/result page ("added to your collection").
+Then tell Claude **"claimed"**. Claude will run Gate D2 verification: ownership appended **exactly once** for item 4
+→ the test collector, current-state resolves to that collector, the Shopify sale-link flips `eligible→claimed`
+(entitlement retained as designed), no parallel/direct owner mutation, and a duplicate/repeat claim cannot create
+duplicate ownership. Pre-existing items (id1, id3) must remain untouched.
+
+STOP — awaiting the operator browser claim. Claude performs no claim, fabricates no request, and does not start
+Phase 5.
