@@ -1,39 +1,24 @@
-# SCA Eyewear Registry — Shopify CLI app CONFIGURATION ONLY (manages the EXISTING Dev Dashboard app).
-#
-# Dev Dashboard app:        SCA Eyewear Registry  (app ID 424307752961)
-# Store:                    second-chance-eyewear-accessories.myshopify.com
-#
-# This project declares app CONFIG (scopes, OAuth redirect, webhook subscriptions) so it can be managed /
-# deployed through Shopify CLI against the ALREADY-EXISTING app. It is NOT a Shopify app runtime/scaffold and
-# must NEVER be used to create a new app.
-#
-# SECRETS: `client_id` below is the app's PUBLIC API key (non-secret; it already appears in every OAuth
-# authorize URL). The Client Secret, the webhook signing secret, and the OAuth access token live ONLY in the
-# server's app/.env (encrypted at rest for the token) and must NEVER appear in this file or this repo.
+# Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
 
 client_id = "64a260185ad3845818801c83d4e055f7"
 name = "SCA Eyewear Registry"
-# Matches the active v2 app URL (Shopify's default app-home). We do NOT change the app URL merely to add webhooks.
 application_url = "https://shopify.dev/apps/default-app-home"
 embedded = false
 
+[webhooks]
+api_version = "2026-07"
+
+  [[webhooks.subscriptions]]
+  uri = "https://verify.secondchanceauthenticators.com/sca/shopify/webhook"
+  topics = [ "orders/cancelled", "orders/paid", "refunds/create" ]
+
 [access_scopes]
-# Minimum scope for order webhooks. Do NOT add read_products (or any other scope) for this pilot.
+# Learn more at https://shopify.dev/docs/apps/tools/cli/configuration#access_scopes
 scopes = "read_orders"
-# Match the active v2 value EXACTLY (v2 shows false). Our custom OAuth authorization-code flow worked under
-# false (Gate B), so this is preserved as-is; do NOT flip it to true merely to add webhooks.
 use_legacy_install_flow = false
+optional_scopes = [ ]
 
 [auth]
 redirect_urls = [
   "https://verify.secondchanceauthenticators.com/sca/shopify/oauth/callback"
 ]
-
-[webhooks]
-api_version = "2026-07"
-
-  # Exactly the three supported topics, all delivered to the SCA receiver. Deliveries are HMAC-signed with
-  # the app's Client Secret (= server SHOPIFY_WEBHOOK_SECRET) because these are app-managed subscriptions.
-  [[webhooks.subscriptions]]
-  topics = [ "orders/paid", "orders/cancelled", "refunds/create" ]
-  uri = "https://verify.secondchanceauthenticators.com/sca/shopify/webhook"
