@@ -13,14 +13,16 @@
 
 client_id = "64a260185ad3845818801c83d4e055f7"
 name = "SCA Eyewear Registry"
-application_url = "https://verify.secondchanceauthenticators.com"
+# Matches the active v2 app URL (Shopify's default app-home). We do NOT change the app URL merely to add webhooks.
+application_url = "https://shopify.dev/apps/default-app-home"
 embedded = false
 
 [access_scopes]
 # Minimum scope for order webhooks. Do NOT add read_products (or any other scope) for this pilot.
 scopes = "read_orders"
-# Non-embedded app using SCA's own OAuth authorization-code flow (our callback), not Shopify managed install.
-use_legacy_install_flow = true
+# Match the active v2 value EXACTLY (v2 shows false). Our custom OAuth authorization-code flow worked under
+# false (Gate B), so this is preserved as-is; do NOT flip it to true merely to add webhooks.
+use_legacy_install_flow = false
 
 [auth]
 redirect_urls = [

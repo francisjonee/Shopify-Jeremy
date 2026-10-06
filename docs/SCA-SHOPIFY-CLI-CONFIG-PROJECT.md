@@ -18,12 +18,12 @@ Placed under the **governance repo**, separate from the Laravel runtime (the rec
 ```toml
 client_id = "64a260185ad3845818801c83d4e055f7"   # PUBLIC API key of app 424307752961 (non-secret)
 name = "SCA Eyewear Registry"
-application_url = "https://verify.secondchanceauthenticators.com"
+application_url = "https://shopify.dev/apps/default-app-home"   # CORRECTED to match active v2 (was verify.)
 embedded = false
 
 [access_scopes]
 scopes = "read_orders"
-use_legacy_install_flow = true
+use_legacy_install_flow = false   # CORRECTED to match active v2 (was true) — preserves working install behavior
 
 [auth]
 redirect_urls = [ "https://verify.secondchanceauthenticators.com/sca/shopify/oauth/callback" ]
