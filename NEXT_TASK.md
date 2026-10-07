@@ -1,8 +1,15 @@
 # NEXT TASK
 
-**STATUS: NONE — awaiting promotion.**
+**STATUS: ACTIVE (DISCOVERY/PLAN ONLY) — SCA TRANSACTIONAL EMAIL / SMTP.**
 
-Reset 2026-10-07 after closing SCA Shopify Sale / Claim Staff Visibility. No executable task. ChatGPT/operator promotes exactly one item from `TASK_QUEUE.md` ("RECONCILED REMAINING WORK") into this file before any implementation begins. Claude must not start a feature autonomously.
+Promoted 2026-10-07. **Stage: discovery + production-readiness plan committed — awaiting ChatGPT audit. NO implementation, NO `.env`/DNS/provider/email/restart change.** Objective: make SCA reliably deliver essential transactional email to collectors; immediate business-critical case = **collector password reset** (built, but undelivered because prod `MAIL_MAILER=log`). Discovery + plan in `docs/SCA-TRANSACTIONAL-EMAIL-SMTP-DISCOVERY.md`.
+
+- **Recommendation: B — small code hardening + configuration.** The reset flow is complete, synchronous (no worker), enumeration-safe, transport-hardened; delivery is a pure `.env`/provider/DNS switch with no functional code change — **except** one security item: the emailed reset-link host is request-derived (`url(route(...,false))`, no `URL::forceRootUrl`) with no app-level `TrustHosts` pin → latent host-header-poisoning (mitigated today only by edge topology: `MAIL_MAILER=log` + `TrustProxies` ignores forwarded-host + loopback-only kr-app behind Caddy Host match). Must pin the host to `config('app.url')` before enabling real delivery.
+- **Provider plan:** Postmark over SMTP (no composer change); dedicated sending subdomain `send.secondchanceauthenticators.com` (domain DKIM); DNS = DKIM + Return-Path + subdomain SPF (provider-generated values, none fabricated); DMARC unchanged (relaxed alignment covers subdomain); apex/Shopify/`verify.` untouched (apex has no SPF/MX to break).
+- **Hard constraints (verbatim intent):** no prod config change; no provider provisioned; no DNS change; no email sent; no code yet. Secrets entered only by the operator on the server (SET/UNSET recorded, never values). Claim/transfer send no email today (manual links) — enabling SMTP sends nothing for them; automating those is out of scope.
+- **Next gate:** ChatGPT audits this discovery/plan. On approval, likely first implementation = the §3 host-pin hardening (candidate→audit→merge→deploy), then operator-led provider/DNS setup + `.env` switch + §12 delivery test matrix.
+
+Claude must not start implementation autonomously — this file is at the discovery/plan stage only.
 
 ## Most recently CLOSED (do NOT reopen / do NOT start a follow-on without promotion)
 
