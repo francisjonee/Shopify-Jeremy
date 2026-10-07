@@ -52,6 +52,25 @@ Modified: `Collector/.../SubmissionController.php` (result derivation + `claim()
 - **Stripe DORMANT** (`enabled=false`), **`MAIL_MAILER=log`**, Caddy/DNS untouched. No production mutation, no deploy.
 
 ## Candidate gate
-**NOT merged. NOT deployed. Stripe NOT activated. No production mutation. No Slice 6. No SMTP.** Awaiting ChatGPT candidate audit of head `f9e9ed6dccf9c77c8303718c4c78178f3a3e499b`.
+**NOT merged. NOT deployed. Stripe NOT activated. No production mutation. No Slice 6. No SMTP.**
+
+---
+
+## Remediation R1 (candidate audit FAIL → fixed) — adverse status is not collector-claimable
+
+**Previous candidate head:** `f9e9ed6dccf9c77c8303718c4c78178f3a3e499b`
+**New candidate head:** `116054eaeca10519830b7386c673b1a737875aeb`
+
+**Blocker (audit):** `boundItemResult()` derived claimability from certified + issued-grant + unowned but **omitted the registry-status eligibility check**. So if an item turned adverse (`disputed`/`lost`/`stolen`/`retired`/`invalidated`) AFTER a grant was issued, the collector page still rendered the "Add this authenticated frame to My Collection" action. The mutation itself was already fail-closed (`claimByGrant` re-checks `StatusService::ADVERSE_STATUSES` at consumption — no ownership bypass), but the derived-state/UI eligibility was wrong.
+
+**Fix:** result derivation now uses the **canonical** `StatusService::ADVERSE_STATUSES` (no hard-coded list). An adverse current registry status yields the existing non-claimable **`unavailable`** state even when certification is current, an issued grant exists, and there is no owner. The owned-by-you / owned-elsewhere / non-certified paths are unchanged. No schema/status migration.
+
+**Test (strengthened):** `r15` is now a `#[DataProvider]` over **all** `StatusService::ADVERSE_STATUSES`, proving BOTH layers for each: (1-2) set the current status adverse + rebuild projection; (3-5) the claim URL/button is absent AND the page does not say the frame is ready to add; (6) a forced `POST .../claim` is rejected by the canonical workflow (redirect to the submission page); (7-8) zero ownership events + owner remains null; (9) the issued grant is NOT consumed by the rejected attempt.
+
+**Test totals (remediated):** `ExternalIntakeResultClaimTest` **19 passed / 94 assertions** (15 methods; `r15` ×5 adverse data sets). **Full SCA gate 978 passed / 5187 assertions** (959 baseline + 19).
+
+**Production-safety re-verified:** live tree restored to `main` @ `5b30120`; candidate code absent (collector-claim route ABSENT; 0 `ADVERSE_STATUSES` occurrences in the collector controller on main); prod migrations **129**; provenance counts byte-identical (items 3 / ownership 5); `config('sca-stripe.enabled')=false`; Stripe/MAIL/Shopify/Caddy/DNS untouched.
+
+**Candidate gate:** NOT merged, NOT deployed, Stripe NOT activated, no production mutation. Awaiting ChatGPT **re-audit** of head `116054eaeca10519830b7386c673b1a737875aeb`.
 
 See `docs/SCA-EXTERNAL-PAID-AUTHENTICATION-INTAKE-DISCOVERY.md`, `docs/SCA-EXTERNAL-PAID-AUTH-INTAKE-SLICE{1,2,3,4}-*`.
