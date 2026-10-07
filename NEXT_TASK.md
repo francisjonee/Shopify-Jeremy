@@ -1,24 +1,28 @@
 # NEXT TASK
 
-**STATUS: NONE — awaiting promotion.**
+**STATUS: ACTIVE — SCA INVENTORY ONBOARDING / BULK CSV. Executable stage: DISCOVERY/PLAN ONLY (DONE, awaiting audit).**
 
-Reconciled 2026-10-06. No executable task. ChatGPT/operator promotes exactly one item from `TASK_QUEUE.md` ("RECONCILED REMAINING WORK") into this file before any implementation begins. Claude must not start a feature autonomously.
+Promoted 2026-10-07. Deployed baseline `1b029fd981388da76b66d50c7a851f3254aa1e5d`, migrations **120**, FP **`62b2e42fe409b4ec91f3381b35da819e`**. Service / Repair History Staff UX remains CLOSED.
 
-## Most recently CLOSED (do NOT reopen / do NOT start a follow-on without promotion)
+## Objective
 
-- **SCA Service / Repair History Staff UX — CLOSED (existing production capability; zero-code closure).** Discovery proved the scoped staff record+view workflow was already deployed (append-only events, `sca.eyewear.service` form + item-detail history table, owner-only collector history, no passport exposure). No implementation/merge/deploy. Correction/annotation semantics, evidence/media attachment, and audit-display enrichment are separate optional future features, **not** unfinished work. Evidence: `docs/SCA-SERVICE-REPAIR-HISTORY-STAFF-UX-{DISCOVERY,CLOSURE}.md`.
-- **Shopify Operational Listing SOP — CLOSED** (`1b029fd`).
-- **SCA Staff Operational Dashboard / Worklists — CLOSED** (`0f86b4a`).
-- **SCA Staff Navigation / Discoverability — CLOSED** (`703fbde`).
-- **Production QR/Label Workflow — CLOSED** (`0ca7158`/`4d92ec9`/`30b680f`).
-- **SCA Shopify Activation — CLOSED** (Phases 0–5).
+Smallest safe workflow to onboard real inventory at scale (CSV/bulk) **without bypassing the provenance lifecycle** — each imported frame becomes a normal `INTAKE` SCA item and nothing else.
 
-## Current deployed baseline (unchanged by the zero-code closure)
+## Current stage — DISCOVERY/PLAN (complete; STOP for audit)
 
-- Deployed implementation `main` = **`1b029fd981388da76b66d50c7a851f3254aa1e5d`**
-- Migrations **120**; provenance fingerprint **`62b2e42fe409b4ec91f3381b35da819e`**
-- Public edge LIVE: `https://verify.secondchanceauthenticators.com`; `:8080` loopback-only; `SESSION_SECURE_COOKIE=true`.
+Plan committed at `docs/SCA-INVENTORY-ONBOARDING-BULK-CSV-DISCOVERY.md`. **Do not implement yet.** Verified findings:
 
-## Promotion rule
+- Intake = `ItemService::create($attrs)` (one transaction): mints `public_ref` (`SCA-`+12-hex, system-only) + one `INTAKE/normal` projection row; nothing else. Field contract = `StoreEyewearItemRequest` rules (`intake_type` required `sce_presale|external_intake`; brand/model_name/frame_serial/year/country_of_origin/materials/original_specifications optional). ACL `sca.eyewear.create`.
+- The **only** item uniqueness is the random `public_ref` — `frame_serial` is advisory/non-unique; **two items can share brand/model/serial**, so **re-importing the same CSV would silently duplicate inventory** (the central safety problem).
 
-See `TASK_QUEUE.md` → "RECONCILED REMAINING WORK (easiest → hardest, 2026-10-06)". Remaining candidates (unstarted): #5 inventory onboarding · #6 SMTP + notifications (external/DNS-gated) · #7 off-site backup (external) · #8 post-core expansion. **NOT promoted here.** Until explicit promotion: **ACTIVE = NONE, NEXT_TASK = NONE.**
+## Recommendation — **Option B** (upload → preview/validate → confirm)
+
+Reuse `ItemService::create` per **valid** row (never raw inserts); dry-run preview classifies valid / invalid / duplicate-warning (no mutation); confirm imports valid rows with a rejected-row report; each frame gets its own system `public_ref` + `INTAKE` projection. **One small standalone append-only `sca_inventory_imports` ledger** (content-hash UNIQUE for re-import idempotency + actor/filename/counts/generated-public_refs for audit + reconciliation) — touches **no** existing/provenance table; justified because the item table has no natural key. ACL reuse `sca.eyewear.create`; batch cap ≤500 rows. (Zero-schema fallback documented — weaker re-import protection. Option A only if volume is truly low. Options C and D rejected.)
+
+## Hard constraints
+
+Bulk intake must reuse the domain service; must NOT authenticate/certify/mint-QR/create-ownership/sale-links/set-catalog or skip lifecycle; must never overwrite existing items (insert-only) or make provenance/history editable; partial failure must be explicit + auditable. No Shopify/scope/product-sync; no auth/cert/QR/ownership/service-history/SMTP/dashboard/analytics/infra change. **Prefer zero schema — only the one standalone ledger is proposed, and only if ChatGPT approves it over the zero-schema fallback.**
+
+## Stage gate
+
+**Executable stage is DISCOVERY/PLAN ONLY — complete and committed. STOP for ChatGPT audit.** Implementation is a separate promoted stage. One implementation closes bulk onboarding **to INTAKE** (downstream authenticate/certify/QR stay the normal per-item staff flow); no follow-on onboarding slice.
