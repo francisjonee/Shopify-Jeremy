@@ -4,8 +4,15 @@
 
 ## Candidate identity
 - **Branch:** `origin/feat/sca-inventory-onboarding-bulk-csv`
-- **Base SHA:** `1b029fd981388da76b66d50c7a851f3254aa1e5d` (= deployed `main`; merge-base; clean 1-commit, fast-forwardable)
-- **Head SHA:** `4ad70519a3608478d3340277e5b6952c35679b8f`
+- **Base SHA:** `1b029fd981388da76b66d50c7a851f3254aa1e5d` (= deployed `main`; merge-base)
+- **Head SHA:** `a63008950b644c733a950cde63661e58aa435c35` (remediation; was audited-FAIL `4ad70519…`, now 2 commits)
+
+## Remediation (audit FAIL → fixed; architecture unchanged)
+Changed files vs the audited head `4ad70519`: `InventoryImportService.php`, `InventoryImportController.php`, `eyewear/import/preview.blade.php`, `InventoryImportTest.php` (+ `bi3` rows made 8-field). No schema/route/ACL/lifecycle/retry redesign.
+- **R1 — duplicate CSV headers rejected.** `preview()` detects repeated normalized header names (after BOM/trim/lowercase) via `array_count_values`, returns `duplicate_headers`, sets `headers_ok=false` + `can_confirm=false` (no session confirm token issued), and surfaces them in the preview ("Duplicate columns — import blocked"); `import()` refuses with `error='duplicate_headers'`. Never silently picks first/last. (`bi13`)
+- **R2 — malformed row width rejected.** `preview()` marks any data row whose cell count ≠ header count **INVALID** with "Expected N columns, found M." (attrs `[]`), per source line; it is never normalized and never reaches `ItemService::create` (importable excludes INVALID). Covers extra and missing cells; no shift/truncate/fill. (`bi14` extra, `bi15` missing)
+- **R3 — row-ledger immutability proven.** New `bi16` creates a legitimate `sca_inventory_import_rows` record and asserts UPDATE and DELETE are both blocked (SQLSTATE 45000), complementing `bi10` (batch table).
+- Operator SOP updated to state duplicate headers and malformed-width rows are rejected.
 
 ## Migrations added (2 — additive, new standalone tables only)
 - `2026_10_07_000001_create_sca_inventory_imports` and `2026_10_07_000002_create_sca_inventory_import_rows` → prod migration count 120 → **122 at deploy** (not yet applied to prod; applied only to `sca_domain_test` for the test gate).
@@ -36,7 +43,8 @@ Upload validated server-side (`file`, ≤1 MB, `.csv`/`.txt` extension); content
 
 ## Tests
 - **Focused `InventoryImportTest` 12/12:** `bi1` preview zero-mutation; `bi2` unsupported headers surfaced + block (incl. a `public_ref`/`sku` column, so client-supplied identity can never be imported); `bi3` >500 rejected; `bi4` valid → INTAKE-only + no downstream artifacts + `SCA-<12hex>` refs; `bi5` invalid never reaches `ItemService`; `bi6` duplicate-warning needs ack, then resumes; `bi7` exact re-import no duplication (ledger skip + reclassification); `bi8` partial-batch resume imports only missing rows; `bi9` `UNIQUE(import_id, source_line)` blocks a duplicate source line; `bi10` ledger UPDATE/DELETE blocked (45000); `bi11` ACL (unauth → login, no-`sca.eyewear.create` → 403 on form/preview/confirm, with-perm 200); `bi12` HTTP double-confirm (single-use token) cannot duplicate.
-- **Full governed gate:** `… -e DB_DATABASE=sca_domain_test … php artisan test tests/Feature/Sca` → **867 passed / 4691 assertions**, exit 0 (855 prior + 12 new).
+- **Focused `InventoryImportTest` 16/16** after remediation (adds `bi13` duplicate-header, `bi14` extra-cell, `bi15` missing-cell, `bi16` rows-append-only).
+- **Full governed gate:** `… -e DB_DATABASE=sca_domain_test … php artisan test tests/Feature/Sca` → **871 passed / 4717 assertions**, exit 0 (855 baseline + 16 import). (Pre-remediation was 867/4691 with 12 import tests.)
 
 ## Production-safety verification (post-restore)
 Tree restored to `main` @ `1b029fd`; vendor re-pruned `--no-dev`. Prod DB (`sca_krayin`) **migrations 120** (the 2 new tables are **absent** in prod — applied only to the disposable `sca_domain_test`); `PROD_FP = 62b2e42fe409b4ec91f3381b35da819e` (unchanged); import route absent on main; phpunit pruned; `/collector` 302, smsrocket.io 302, Shopify webhook → **401**. No merge, no deploy, no prod DB mutation, no Shopify action.
