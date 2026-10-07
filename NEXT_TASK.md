@@ -1,14 +1,14 @@
 # NEXT TASK
 
-**STATUS: IN PROGRESS — SCA EXTERNAL PAID AUTHENTICATION INTAKE. Slice 1 DEPLOYED; Slice 2 awaiting promotion.**
+**STATUS: IN PROGRESS — SCA EXTERNAL PAID AUTHENTICATION INTAKE. Slices 1–2 DEPLOYED; Slice 3 awaiting promotion.**
 
-Updated 2026-10-07. **Slice 1 (Submission Domain Foundation) is merged + deployed (`6588054`; prod migrations 122→124).** Two additive tables: `sca_authentication_submissions` (mutable operational: opaque immutable `SUB-` ref, immutable collector FK, status machine `draft/submitted/awaiting_item/received/cancelled`, declared frame info, UPDATE-locked `eyewear_item_id` bridge) + append-only `sca_submission_status_events`. `SubmissionService` is the sole writer; zero provenance created; `eyewear_item_id` first-bind reserved for Slice 2 (UPDATE-locked + model-guarded). Both tables empty in prod. Evidence: `docs/SCA-EXTERNAL-PAID-AUTH-INTAKE-SLICE1-{IMPLEMENTATION,DEPLOY-RESULT}.md`. **Capability NOT closed.**
+Updated 2026-10-07. **Slice 1 (Submission Domain Foundation, `6588054`, migr 122→124) + Slice 2 (Staff Worklist + Custody Bridge, `c72530e`, migr 124→125) are merged + deployed.** Slice 2 added the staff submissions worklist (`admin.sca.submission.*`, ACL `sca.eyewear.submission` + `.accept`, "SCA Submissions" menu) and `CustodyAcceptanceService` — the sole authorized first-bind: atomic lock → eligibility(`awaiting_item`) → `ItemService::create(external_intake)` with staff-confirmed authoritative identity → bind that exact item → `received` → ledger; idempotent; orphan-free rollback. Bridge trigger now permits the controlled `NULL→value` while `value→different`/`value→NULL` stay blocked (collector/public_ref immutable, UNIQUE + model-guard intact). Submission tables empty in prod; provenance byte-identical. Evidence: `docs/SCA-EXTERNAL-PAID-AUTH-INTAKE-SLICE2-{IMPLEMENTATION,DEPLOY-RESULT}.md`. **Capability NOT closed.**
 
-**Next (NOT promoted — awaiting explicit promotion + Jeremy policy where noted):** per the discovery doc §15 slice order —
-- **Slice 2** — staff submissions worklist + the atomic "receive & accept custody → `ItemService::create(external_intake)` → bind that exact item" bridge (owns the single authorized first-bind; relaxes the Slice-1 UPDATE-lock to permit one controlled `NULL→value`).
-- Then Slice 3 (collector submission UX, no payment) · Slice 4 (payment — hardest, sequence last; provider = Jeremy) · Slice 5 (result/ownership wiring via existing grant→claim) · Slice 6 (exceptions/returns).
+**Next (NOT promoted — awaiting explicit promotion + Jeremy policy where noted):** per the discovery doc §15 —
+- **Slice 3** — collector submission UX (landing, login/register, submission form + justified uploads, confirmation, status tracking); payment stubbed/manual (no provider yet).
+- Then Slice 4 (payment — hardest, sequence last; provider = Jeremy) · Slice 5 (result/ownership wiring via existing grant→claim) · Slice 6 (exceptions/returns).
 
-**Promote exactly one slice at a time.** Claude must not start Slice 2 or any slice autonomously.
+**Promote exactly one slice at a time.** Claude must not start Slice 3 or any slice autonomously.
 
 **Objective (reference):** let a collector submit a frame they already own to SCA for **paid authentication**, extending (not duplicating) the existing lifecycle. Design in `docs/SCA-EXTERNAL-PAID-AUTHENTICATION-INTAKE-DISCOVERY.md`.
 
