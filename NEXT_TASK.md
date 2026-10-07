@@ -1,15 +1,18 @@
 # NEXT TASK
 
-**STATUS: IN PROGRESS (OPERATOR-GATED) — SCA TRANSACTIONAL EMAIL / SMTP. Pre-activation hardening DEPLOYED; SMTP activation NOT started (external/DNS-gated).**
+**STATUS: ACTIVE (DISCOVERY/DOMAIN PLAN ONLY) — SCA EXTERNAL PAID AUTHENTICATION INTAKE.**
 
-Updated 2026-10-07. The approved **pre-activation security hardening (Recommendation B)** is **merged + deployed** (`0815ea0`): (1) collector reset-URL origin pinned to `config('app.url')` (host-header-poisoning closed), (2) SMTP `verify_peer => false` removed (secure TLS default restored). Prod `MAIL_MAILER=log` unchanged, migrations 122, no email sent, no credentials. Evidence: `docs/SCA-TRANSACTIONAL-EMAIL-HARDENING-{IMPLEMENTATION,DEPLOY-RESULT}.md`. **The capability is NOT closed.**
+Promoted 2026-10-07. **Stage: discovery + domain/workflow design committed — awaiting ChatGPT audit. NO implementation, no migrations/routes/controllers/UI/payment/Shopify/tables/statuses/emails/config.** Objective: let a collector submit a frame they already own to SCA for **paid authentication**, extending (not duplicating) the existing lifecycle. Design in `docs/SCA-EXTERNAL-PAID-AUTHENTICATION-INTAKE-DISCOVERY.md`.
 
-**Remaining (operator-led, external/DNS-gated — NOT a Claude-autonomous implementation task):** per `docs/SCA-TRANSACTIONAL-EMAIL-SMTP-DISCOVERY.md` §11/§15 —
-1. Operator creates Postmark (Transactional stream) + verifies the `send.secondchanceauthenticators.com` sending subdomain (DKIM/Return-Path/SPF, provider-generated values).
-2. Operator enters SMTP credentials in `app/.env` on the server + switches `MAIL_MAILER=smtp` (Claude may do the non-secret `.env` edits + `config:clear` while the operator supplies secrets).
-3. Run the §12 delivery test matrix (credential-free `Mail::raw` connectivity → SPF/DKIM/DMARC pass → throwaway Forgot-Password), then rollback-to-`log` proven.
+- **Headline:** the entire back half already exists and is origin-neutral — `external_intake` is a first-class `intake_type` **and** `claim_source` wired end-to-end (item→authenticate→certify→QR→staff grant→collector claim→single ownership event→My Collection). Net-new = a **pre-registry front stage**: collector-initiated submission + payment + physical-custody tracking, which on success feeds the existing engine.
+- **Provenance boundary: Option D** — a new **mutable** `sca_authentication_submissions` entity holds the pre-registry submission/payment/custody state; the permanent `eyewear_item` is created (via the existing `ItemService::create(external_intake)`) **only at custody acceptance**, so abandoned/unpaid submissions never pollute the append-only registry.
+- **Ownership** established only AFTER successful authentication+certification, via the existing grant→claim path (`ClaimService::complete`, single-owner-guaranteed); never overwrites history; failed/inconclusive/counterfeit items never become owned/My-Collection.
+- **Payment:** recommend Stripe hosted Checkout (independent of Shopify, serves non-SCE customers, no scope change; webhook mirrors the proven HMAC/idempotent pattern; payment never creates provenance); lean alt = reuse the existing Shopify `orders/paid` webhook with a submission-ref property (zero scope change). **Provider = Jeremy decision.** No Shopify scope/app/webhook change proposed.
+- **Classification: B — Medium extension** (new front stage feeding an untouched provenance core), with explicit upper-end RISK on the payment + public-submission dimensions.
+- **Slices (dep order):** 0 Jeremy policy/provider decisions → 1 submission entity+state machine → 2 staff worklist + receive-&-create-item bridge → 3 collector submission UX (no payment) → 4 payment (hardest; sequence last) → 5 result/ownership wiring → 6 exceptions/returns.
+- **Next gate:** ChatGPT audits this discovery/domain plan. No implementation branch yet; promote individual slices only after audit + Jeremy's §12 policy decisions.
 
-**Do not** create Postmark, change DNS, change production MAIL settings, enter credentials, or send email without explicit operator promotion of the activation step. Until then this task waits on operator provisioning.
+Claude must not start implementation autonomously — this file is at the discovery/plan stage only. (Transactional Email/SMTP remains OPEN but PARKED/operator-gated — see `docs/SCA-TRANSACTIONAL-EMAIL-HARDENING-DEPLOY-RESULT.md`; do not touch it.)
 
 ## Most recently CLOSED (do NOT reopen / do NOT start a follow-on without promotion)
 
