@@ -1,8 +1,16 @@
 # NEXT TASK
 
-**STATUS: ACTIVE (DISCOVERY/DOMAIN PLAN ONLY) — SCA EXTERNAL PAID AUTHENTICATION INTAKE.**
+**STATUS: IN PROGRESS — SCA EXTERNAL PAID AUTHENTICATION INTAKE. Slice 1 DEPLOYED; Slice 2 awaiting promotion.**
 
-Promoted 2026-10-07. **Stage: discovery + domain/workflow design committed — awaiting ChatGPT audit. NO implementation, no migrations/routes/controllers/UI/payment/Shopify/tables/statuses/emails/config.** Objective: let a collector submit a frame they already own to SCA for **paid authentication**, extending (not duplicating) the existing lifecycle. Design in `docs/SCA-EXTERNAL-PAID-AUTHENTICATION-INTAKE-DISCOVERY.md`.
+Updated 2026-10-07. **Slice 1 (Submission Domain Foundation) is merged + deployed (`6588054`; prod migrations 122→124).** Two additive tables: `sca_authentication_submissions` (mutable operational: opaque immutable `SUB-` ref, immutable collector FK, status machine `draft/submitted/awaiting_item/received/cancelled`, declared frame info, UPDATE-locked `eyewear_item_id` bridge) + append-only `sca_submission_status_events`. `SubmissionService` is the sole writer; zero provenance created; `eyewear_item_id` first-bind reserved for Slice 2 (UPDATE-locked + model-guarded). Both tables empty in prod. Evidence: `docs/SCA-EXTERNAL-PAID-AUTH-INTAKE-SLICE1-{IMPLEMENTATION,DEPLOY-RESULT}.md`. **Capability NOT closed.**
+
+**Next (NOT promoted — awaiting explicit promotion + Jeremy policy where noted):** per the discovery doc §15 slice order —
+- **Slice 2** — staff submissions worklist + the atomic "receive & accept custody → `ItemService::create(external_intake)` → bind that exact item" bridge (owns the single authorized first-bind; relaxes the Slice-1 UPDATE-lock to permit one controlled `NULL→value`).
+- Then Slice 3 (collector submission UX, no payment) · Slice 4 (payment — hardest, sequence last; provider = Jeremy) · Slice 5 (result/ownership wiring via existing grant→claim) · Slice 6 (exceptions/returns).
+
+**Promote exactly one slice at a time.** Claude must not start Slice 2 or any slice autonomously.
+
+**Objective (reference):** let a collector submit a frame they already own to SCA for **paid authentication**, extending (not duplicating) the existing lifecycle. Design in `docs/SCA-EXTERNAL-PAID-AUTHENTICATION-INTAKE-DISCOVERY.md`.
 
 - **Headline:** the entire back half already exists and is origin-neutral — `external_intake` is a first-class `intake_type` **and** `claim_source` wired end-to-end (item→authenticate→certify→QR→staff grant→collector claim→single ownership event→My Collection). Net-new = a **pre-registry front stage**: collector-initiated submission + payment + physical-custody tracking, which on success feeds the existing engine.
 - **Provenance boundary: Option D** — a new **mutable** `sca_authentication_submissions` entity holds the pre-registry submission/payment/custody state; the permanent `eyewear_item` is created (via the existing `ItemService::create(external_intake)`) **only at custody acceptance**, so abandoned/unpaid submissions never pollute the append-only registry.
