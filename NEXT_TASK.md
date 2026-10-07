@@ -1,15 +1,34 @@
 # NEXT TASK
 
-**STATUS: ACTIVE (DISCOVERY/PLAN ONLY) — SCA TRANSACTIONAL EMAIL / SMTP.**
+**STATUS: IN PROGRESS (OPERATOR-GATED) — SCA TRANSACTIONAL EMAIL / SMTP. Pre-activation hardening DEPLOYED; SMTP activation NOT started (external/DNS-gated).**
 
-Promoted 2026-10-07. **Stage: discovery + production-readiness plan committed — awaiting ChatGPT audit. NO implementation, NO `.env`/DNS/provider/email/restart change.** Objective: make SCA reliably deliver essential transactional email to collectors; immediate business-critical case = **collector password reset** (built, but undelivered because prod `MAIL_MAILER=log`). Discovery + plan in `docs/SCA-TRANSACTIONAL-EMAIL-SMTP-DISCOVERY.md`.
+Updated 2026-10-07. The approved **pre-activation security hardening (Recommendation B)** is **merged + deployed** (`0815ea0`): (1) collector reset-URL origin pinned to `config('app.url')` (host-header-poisoning closed), (2) SMTP `verify_peer => false` removed (secure TLS default restored). Prod `MAIL_MAILER=log` unchanged, migrations 122, no email sent, no credentials. Evidence: `docs/SCA-TRANSACTIONAL-EMAIL-HARDENING-{IMPLEMENTATION,DEPLOY-RESULT}.md`. **The capability is NOT closed.**
 
-- **Recommendation: B — small code hardening + configuration.** The reset flow is complete, synchronous (no worker), enumeration-safe, transport-hardened; delivery is a pure `.env`/provider/DNS switch with no functional code change — **except** one security item: the emailed reset-link host is request-derived (`url(route(...,false))`, no `URL::forceRootUrl`) with no app-level `TrustHosts` pin → latent host-header-poisoning (mitigated today only by edge topology: `MAIL_MAILER=log` + `TrustProxies` ignores forwarded-host + loopback-only kr-app behind Caddy Host match). Must pin the host to `config('app.url')` before enabling real delivery.
-- **Provider plan:** Postmark over SMTP (no composer change); dedicated sending subdomain `send.secondchanceauthenticators.com` (domain DKIM); DNS = DKIM + Return-Path + subdomain SPF (provider-generated values, none fabricated); DMARC unchanged (relaxed alignment covers subdomain); apex/Shopify/`verify.` untouched (apex has no SPF/MX to break).
-- **Hard constraints (verbatim intent):** no prod config change; no provider provisioned; no DNS change; no email sent; no code yet. Secrets entered only by the operator on the server (SET/UNSET recorded, never values). Claim/transfer send no email today (manual links) — enabling SMTP sends nothing for them; automating those is out of scope.
-- **Next gate:** ChatGPT audits this discovery/plan. On approval, likely first implementation = the §3 host-pin hardening (candidate→audit→merge→deploy), then operator-led provider/DNS setup + `.env` switch + §12 delivery test matrix.
+**Remaining (operator-led, external/DNS-gated — NOT a Claude-autonomous implementation task):** per `docs/SCA-TRANSACTIONAL-EMAIL-SMTP-DISCOVERY.md` §11/§15 —
+1. Operator creates Postmark (Transactional stream) + verifies the `send.secondchanceauthenticators.com` sending subdomain (DKIM/Return-Path/SPF, provider-generated values).
+2. Operator enters SMTP credentials in `app/.env` on the server + switches `MAIL_MAILER=smtp` (Claude may do the non-secret `.env` edits + `config:clear` while the operator supplies secrets).
+3. Run the §12 delivery test matrix (credential-free `Mail::raw` connectivity → SPF/DKIM/DMARC pass → throwaway Forgot-Password), then rollback-to-`log` proven.
 
-Claude must not start implementation autonomously — this file is at the discovery/plan stage only.
+**Do not** create Postmark, change DNS, change production MAIL settings, enter credentials, or send email without explicit operator promotion of the activation step. Until then this task waits on operator provisioning.
+
+## Most recently CLOSED (do NOT reopen / do NOT start a follow-on without promotion)
+
+- **SCA Shopify Sale / Claim Staff Visibility — CLOSED** (`e4306e99`).
+- **SCA Inventory Onboarding / Bulk CSV — CLOSED** (`9760889`).
+- **SCA Service / Repair History Staff UX — CLOSED** (zero-code).
+- **Shopify Operational Listing SOP — CLOSED** (`1b029fd`).
+- **SCA Staff Operational Dashboard / Worklists — CLOSED** (`0f86b4a`).
+- **SCA Staff Navigation / Discoverability — CLOSED** (`703fbde`).
+- **Production QR/Label Workflow — CLOSED** (`0ca7158`/`4d92ec9`/`30b680f`).
+- **SCA Shopify Activation — CLOSED** (Phases 0–5).
+
+## Current deployed baseline
+
+- Deployed implementation `main` = **`0815ea0808b6ceac2bb82d88c891fdedc2b97bda`**
+- Migrations **122** (no change — hardening is code/config only); provenance data byte-identical to the long-standing `62b2e42f` state (items 3 / qr 3 / certs 4 / auth 4 / ownership 5 / status 7 / gallery 3).
+- `MAIL_MAILER=log` (unchanged); `APP_URL=https://verify.secondchanceauthenticators.com`; `:8080` loopback-only; `SESSION_SECURE_COOKIE=true`.
+
+Claude must not start implementation autonomously beyond the operator-gated steps above, and only on explicit promotion.
 
 ## Most recently CLOSED (do NOT reopen / do NOT start a follow-on without promotion)
 
