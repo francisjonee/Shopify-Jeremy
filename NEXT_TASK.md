@@ -1,6 +1,6 @@
 # NEXT TASK
 
-**STATUS: IN PROGRESS — SCA EXTERNAL PAID AUTHENTICATION INTAKE. Slices 1–4 CODE DEPLOYED; Stripe DORMANT; a pre-activation concurrency-hardening CANDIDATE is awaiting ChatGPT audit (not merged).**
+**STATUS: IN PROGRESS — SCA EXTERNAL PAID AUTHENTICATION INTAKE. Slices 1–4 CODE DEPLOYED + payment concurrency hardening DEPLOYED; Stripe DORMANT; capability OPEN; Stripe activation / Slice 5 / Slice 6 remain unpromoted.**
 
 Updated 2026-10-07.
 
