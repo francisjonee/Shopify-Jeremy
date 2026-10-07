@@ -49,6 +49,33 @@ New migrations `…2026_10_08_000001_create_sca_authentication_submissions.php`,
 - **Shopify / MAIL untouched.** No production mutation, no deploy.
 
 ## Candidate gate
-**NOT merged. NOT deployed. No production mutation. No payment/Stripe/Shopify/SMTP. `eyewear_item_id` NULL throughout; `ItemService::create` not called.** Awaiting ChatGPT candidate audit of head `2436c23029204369cbc8617b7cf59ee398202f5a`.
+**NOT merged. NOT deployed. No production mutation. No payment/Stripe/Shopify/SMTP. `eyewear_item_id` NULL throughout; `ItemService::create` not called.**
+
+---
+
+## Remediation R1 (candidate audit FAIL → fixed; architecture/scope unchanged)
+
+**Previous candidate SHA:** `2436c23029204369cbc8617b7cf59ee398202f5a`
+**New candidate head SHA:** `c06c45a91e4a93ae6dc33fdb7b50c31e19959536`
+
+**Blocking issue (audit):** the original `eyewear_item_id` trigger blocked change/removal *after* non-NULL but deliberately permitted arbitrary `NULL → <any item>`, and tests `s14`/`s15` presented a raw `UPDATE` as the future bind path — so ordinary/raw Slice-1 mutation could perform a first-bind. That violates the Slice-1 boundary (first-bind is a controlled Slice-2 custody operation).
+
+**Remediation — exact bridge-protection semantics (3 layers; no session-var/stored-proc over-engineering):**
+1. **DB trigger** `trg_sca_auth_submissions_bu` now rejects **any** change to `eyewear_item_id` under UPDATE in Slice 1 (`IF NOT (NEW.eyewear_item_id <=> OLD.eyewear_item_id) THEN SIGNAL 45000`) — blocks `NULL→value`, `value→NULL`, `value→different`. There is **no first-bind path in Slice 1**; a Slice-1 row's bridge is always NULL. (collector_account_id + public_ref immutability unchanged.)
+2. **Model** `AuthenticationSubmission::$guarded = ['id','eyewear_item_id']` — ordinary mass-assignment (`create()`/`fill()`/`update()`) can never set the bridge (silently ignored).
+3. **Service** `create()` no longer writes `eyewear_item_id` (column defaults NULL); `create()`/`transition()` remain structurally incapable of binding.
+
+**Slice-2 ownership (documented, not implemented):** Slice 2's own migration will relax this trigger to permit exactly **one** controlled `NULL→value` bind performed by its dedicated transactional custody service (`accept custody → ItemService::create(external_intake) → bind that exact item`), immutable thereafter; one registry item backs at most one submission (UNIQUE). Reserving first-bind authority there — not here — is the point.
+
+**Remediation files (4 modified):** the submission migration (trigger), `AuthenticationSubmission.php` (guarded), `SubmissionService.php` (create no longer writes the bridge), `SubmissionDomainTest.php` (tests updated).
+
+**Updated tests:** `s14` now proves a raw `NULL→value` update is **DB-blocked** (was: wrongly treated as the bind mechanism); new `s14b` proves immutability-after-bind using a post-Slice-2 *already-bound* INSERT fixture (not a raw-update bind); `s15` proves the one-submission-per-item UNIQUE at INSERT; new `s3b` proves model mass-assignment cannot bind the bridge on create or update. Collector/public-ref immutability (`s11`) and zero-provenance (`s18`) unchanged.
+
+**Focused totals (remediated):** `SubmissionDomainTest` **21 passed / 49 assertions**.
+**Full regression (remediated):** **913 passed / 4857 assertions**, exit 0 (892 baseline + 21).
+
+**Production-safety re-verified (post-restore):** live tree back at `0815ea0`; candidate code absent on main (`SubmissionService.php` not on disk); prod migrations **122**, `sca_authentication_submissions` **ABSENT** in prod; provenance counts byte-identical (items 3 / certs 4 / ownership 5 …); live invariants `/p/{bogus}` 404 · `/collector` 302 · webhook 401 · `/storage` 404 · smsrocket 302. Shopify/MAIL untouched.
+
+**Candidate gate:** NOT merged, NOT deployed, no production mutation. Awaiting ChatGPT **re-audit** of head `c06c45a91e4a93ae6dc33fdb7b50c31e19959536`.
 
 See `docs/SCA-EXTERNAL-PAID-AUTHENTICATION-INTAKE-DISCOVERY.md`.
