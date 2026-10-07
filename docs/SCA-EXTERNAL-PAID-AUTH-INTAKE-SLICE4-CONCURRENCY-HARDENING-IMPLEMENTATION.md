@@ -39,6 +39,33 @@ Modified: `Provenance/src/Services/StripeCheckoutService.php` (lockForUpdate ser
 - Stripe/MAIL/Shopify/Caddy/DNS untouched; no production mutation, no deploy, Stripe not activated.
 
 ## Candidate gate
-**NOT merged. NOT deployed. Stripe NOT activated. No production mutation.** Also in this commit (governance): `NEXT_TASK.md` cleaned to a single authoritative current-baseline section (stale duplicated baseline/CLOSED blocks removed); the authoritative Slice-4 status is unchanged — **Slices 1–4 CODE DEPLOYED; Stripe DORMANT; capability OPEN.** Awaiting ChatGPT candidate audit of head `83225a6071c0ec512ed3e85d6ab4b64c975178ee`.
+**NOT merged. NOT deployed. Stripe NOT activated. No production mutation.** Also in governance: `NEXT_TASK.md` cleaned to a single authoritative current-baseline section (stale duplicated baseline/CLOSED blocks removed); the authoritative Slice-4 status is unchanged — **Slices 1–4 CODE DEPLOYED; Stripe DORMANT; capability OPEN.**
+
+---
+
+## Remediation R1 (candidate audit FAIL → fixed) — migration backfill + fail-closed
+
+**Previous candidate head:** `83225a6071c0ec512ed3e85d6ab4b64c975178ee`
+**New candidate head:** `8db2e94d2c1b6bce725ce757807b7274071c2b57`
+
+**Blocker (audit):** the guard migration added `active_pending` nullable + `UNIQUE(active_pending)` but did **not** backfill existing `status='pending'` rows. After upgrading a non-empty DB, a pre-existing pending payment would keep `active_pending = NULL`; since multiple NULLs are allowed by the unique index, the "at most one pending payment per submission" invariant would NOT hold for migrated data (a new `/pay` could create a guarded pending alongside an unguarded legacy one). Schema correctness must not depend on today's empty prod table.
+
+**Fix — reworked `up()` (order matters; DDL auto-commits so validation is first):**
+1. **FAIL CLOSED FIRST**, before any DDL: if legacy data has more than one `status='pending'` payment for any submission, `throw \RuntimeException` naming the offending submission id(s) — never silently pick one and leave another unguarded.
+2. Add the nullable `active_pending` column.
+3. **Backfill**: `UPDATE … SET active_pending = submission_id WHERE status='pending'`.
+4. Terminal rows stay `NULL`.
+5. Add `UNIQUE(active_pending)` only **after** the data is valid + backfilled.
+Also: dropped the no-op `use RuntimeException` (the migration is global-namespace → `\RuntimeException`), and corrected the docblock to state accurately that the guard is released on **succeeded/failed/expired** (the only pending→terminal transitions any code performs), that **refunded** is reached only from succeeded (already NULL), and that **cancelled** is a CHECK-allowed status with **no current transition** (verified by grep — no code sets `cancelled`), so it needs no release path.
+
+**Migration-focused test added — `PaymentGuardMigrationTest` (non-transactional, self-restoring; runs the REAL migration `up()` from a simulated pre-129 state, with try/finally that deletes `migtest_` fixtures and restores the 129 schema):**
+- `m1` — a single legacy `pending` payment is **backfilled** to `active_pending = submission_id`, a legacy `succeeded` payment stays **NULL**, the UNIQUE index is established, and it is immediately authoritative (a second pending for that submission is rejected, `23000`).
+- `m2` — a legacy **duplicate-pending** state makes the migration **FAIL CLOSED** (`RuntimeException` "multiple pending payments…") **before any DDL** — the column and unique index are NOT added.
+
+**Test totals (remediated):** focused `StripePaymentTest` **19** + `PaymentGuardMigrationTest` **2** = 21 payment-area tests; **full SCA gate 959 passed / 5089 assertions** (953 Slice-4 baseline + 4 concurrency + 2 migration).
+
+**Production-safety re-verified:** live tree restored to `main` @ `2aedebb`; candidate code absent (`active_pending` column ABSENT in prod, `PaymentGuardMigrationTest` not on disk); prod migrations **128**; provenance counts byte-identical (items 3 / certs 4 / ownership 5 …); `config('sca-stripe.enabled')=false`; Stripe/MAIL/Shopify/Caddy/DNS untouched.
+
+**Candidate gate:** NOT merged, NOT deployed, Stripe NOT activated, no production mutation. Awaiting ChatGPT **re-audit** of head `8db2e94d2c1b6bce725ce757807b7274071c2b57`.
 
 See `docs/SCA-EXTERNAL-PAID-AUTH-INTAKE-SLICE4-{IMPLEMENTATION,DEPLOY-RESULT}.md`.
