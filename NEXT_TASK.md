@@ -1,14 +1,14 @@
 # NEXT TASK
 
-**STATUS: IN PROGRESS — SCA EXTERNAL PAID AUTHENTICATION INTAKE. Slices 1–2 DEPLOYED; Slice 3 awaiting promotion.**
+**STATUS: IN PROGRESS — SCA EXTERNAL PAID AUTHENTICATION INTAKE. Slices 1–3 DEPLOYED; Slice 4 awaiting promotion.**
 
-Updated 2026-10-07. **Slice 1 (Submission Domain Foundation, `6588054`, migr 122→124) + Slice 2 (Staff Worklist + Custody Bridge, `c72530e`, migr 124→125) are merged + deployed.** Slice 2 added the staff submissions worklist (`admin.sca.submission.*`, ACL `sca.eyewear.submission` + `.accept`, "SCA Submissions" menu) and `CustodyAcceptanceService` — the sole authorized first-bind: atomic lock → eligibility(`awaiting_item`) → `ItemService::create(external_intake)` with staff-confirmed authoritative identity → bind that exact item → `received` → ledger; idempotent; orphan-free rollback. Bridge trigger now permits the controlled `NULL→value` while `value→different`/`value→NULL` stay blocked (collector/public_ref immutable, UNIQUE + model-guard intact). Submission tables empty in prod; provenance byte-identical. Evidence: `docs/SCA-EXTERNAL-PAID-AUTH-INTAKE-SLICE2-{IMPLEMENTATION,DEPLOY-RESULT}.md`. **Capability NOT closed.**
+Updated 2026-10-07. Deployed: **Slice 1** (Submission Domain Foundation, `6588054`, migr 122→124) · **Slice 2** (Staff Worklist + Custody Bridge, `c72530e`, migr 124→125) · **Slice 3** (Collector Submission UX + status tracking, `1cf070d`, **no migration**, stays 125). Slice 3 added the collector-facing submission UX (`collector.submission.*` behind `collector.auth`, opaque `SUB-` refs, full isolation, draft-only edit, single `draft→submitted`, status tracking; account nav link) and a smallest honest **staff pilot gate** `admin.sca.submission.advance` (`submitted→awaiting_item`, reuses `sca.eyewear.submission.accept`, **no payment semantics**). Photos DEFERRED (no pre-custody item to bind item-bound media to). End-to-end pilot path now operable: collector submits → staff advances → staff accepts custody (Slice 2) → existing authenticate/certify/QR/grant→claim. Submission tables empty in prod; provenance FP byte-identical. Evidence: `docs/SCA-EXTERNAL-PAID-AUTH-INTAKE-SLICE3-{IMPLEMENTATION,DEPLOY-RESULT}.md`. **Capability NOT closed.**
 
-**Next (NOT promoted — awaiting explicit promotion + Jeremy policy where noted):** per the discovery doc §15 —
-- **Slice 3** — collector submission UX (landing, login/register, submission form + justified uploads, confirmation, status tracking); payment stubbed/manual (no provider yet).
-- Then Slice 4 (payment — hardest, sequence last; provider = Jeremy) · Slice 5 (result/ownership wiring via existing grant→claim) · Slice 6 (exceptions/returns).
+**Next (NOT promoted — awaiting explicit promotion + Jeremy policy):** per the discovery doc §15 —
+- **Slice 4 — Payment (HARDEST; sequence last).** Provider = **Jeremy decision** (Stripe hosted Checkout recommended vs Shopify-product reuse). Replaces the manual pilot gate with a real payment confirmation flipping a payment state; webhook HMAC + idempotency; refunds/cancels; payment never creates provenance; no Shopify scope expansion. **Do not choose/configure a payment provider without explicit promotion + Jeremy's provider decision.**
+- Then Slice 5 (result/ownership wiring via existing grant→claim) · Slice 6 (exceptions/returns).
 
-**Promote exactly one slice at a time.** Claude must not start Slice 3 or any slice autonomously.
+**Promote exactly one slice at a time.** Claude must not start Slice 4, choose/configure a payment provider, or start any slice autonomously.
 
 **Objective (reference):** let a collector submit a frame they already own to SCA for **paid authentication**, extending (not duplicating) the existing lifecycle. Design in `docs/SCA-EXTERNAL-PAID-AUTHENTICATION-INTAKE-DISCOVERY.md`.
 
