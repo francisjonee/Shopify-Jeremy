@@ -1,8 +1,16 @@
 # NEXT TASK
 
-**STATUS: NONE — awaiting promotion.**
+**STATUS: ACTIVE (DISCOVERY/PLAN ONLY) — SCA SHOPIFY SALE / CLAIM STAFF VISIBILITY.**
 
-Reconciled 2026-10-07. No executable task. ChatGPT/operator promotes exactly one item from `TASK_QUEUE.md` ("RECONCILED REMAINING WORK") into this file before any implementation begins. Claude must not start a feature autonomously.
+Promoted 2026-10-07. **Stage: discovery/plan committed — awaiting ChatGPT audit. NO implementation yet.** Give staff clear, **read-only** visibility into the *existing* Shopify sale→claim state of an SCA frame (NOT a Shopify integration expansion). Discovery + plan in `docs/SCA-SHOPIFY-SALE-CLAIM-STAFF-VISIBILITY-DISCOVERY.md`.
+
+- **Recommendation:** Option C (item-detail "Sale / claim status" panel + dashboard "Sold — awaiting claim" tile/worklist + Registry filter) — all read-only, reusing existing data/queries/filters, **no new subsystem**.
+- **Hard constraints (verbatim intent):** read-only; **no schema/migration** (zero-schema preference — discovery proves existing persisted state sufficient); no Shopify API calls to render; no scope/webhook/OAuth change; no sale-link/claim mutation controls (no mark-paid/claimed/revoked); no reconciliation engine; no notification/SMTP; no dashboard redesign; no analytics; no production mutation.
+- **Privacy/Shopify boundary:** must not expose Shopify access token, webhook secret, OAuth data, customer private information, or billing/payment information. `shopify_customer_ref` is always null; `webhook_idempotency_key` internal; owner shown only as opaque `COL-…`.
+- **Un-conflation:** "sold, awaiting claim" = `sca_shopify_sale_links.eligibility_state='eligible'` — distinct from the projection-derived `certified_unclaimed` (never-sold). A new sale-link-derived tile is added; the existing tile's count definition is not changed.
+- **Next gate:** ChatGPT audits this discovery/plan. On approval → implement on a candidate branch from exact deployed baseline `976088944de0fd2883f12a0686fafaa708ce8b9e`; push; restore live tree to `main`; ChatGPT candidate audit; merge `--no-ff` + governed deploy; post-deploy verify; reset NEXT_TASK to NONE.
+
+Claude must not start implementation autonomously — this file is at the discovery/plan stage only.
 
 ## Most recently CLOSED (do NOT reopen / do NOT start a follow-on without promotion)
 
