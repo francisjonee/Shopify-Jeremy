@@ -1,6 +1,6 @@
 # NEXT TASK
 
-**STATUS: CP-5 PHASE-A POST-DEPLOY AUDIT — PASS. Promote Phase B ONLY: minimal /u/* edge admission. Application baseline `0101755b03352305050b7b7290ad917b588112ff`, migrations 134. Do not change application/schema/DNS. Do not start CP-6.**
+**STATUS: CP-5 PHASE B DONE — `/u/*` edge admission LIVE; awaiting ChatGPT FINAL CP-5 audit. App baseline unchanged `0101755b03352305050b7b7290ad917b588112ff` / migration 134. Caddy matcher delta = exactly `/u/*` added to `@public` (verify.secondchanceauthenticators.com → kr-app:80); only the Caddy container recreated (kr-app + MariaDB untouched); backup `Caddyfile.bak.pre-cp5-u-edge.20261008T232601Z`. External `/u/ada`+`/u/ada/avatar`+`/u/ada/items/<bogus>/image` → Apache/Laravel 404 (reaches app, no redirect, no identity leak; 404 body byte-identical to `/c` not_found); unrelated unknown still Caddy 404; `/c`,`/p`,collector,admin,:8080,co-tenant unchanged. Provenance row-data FP `d15a5cbdfb8df52ba65628b276533cfe` + counts `3/3/4/4/5/2/1/1/7` byte-identical; handle/tombstone 0; Stripe DORMANT; mail=log; no app/schema/DNS/Shopify/SMTP change. Evidence: `docs/SCA-COLLECTOR-PROFILE-CP5-PHASE-B-EDGE-ACTIVATION.md`. STOP for ChatGPT final CP-5 audit. Do NOT declare CP-5 closed. Do NOT start CP-6.**
 
 Updated 2026-10-09.
 
