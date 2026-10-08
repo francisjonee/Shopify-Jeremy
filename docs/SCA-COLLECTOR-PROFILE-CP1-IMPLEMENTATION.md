@@ -1,12 +1,27 @@
-# SCA Collector Profile — CP-1 — Private Profile Foundation — CANDIDATE
+# SCA Collector Profile — CP-1 — Private Profile Foundation — CANDIDATE (remediated)
 
-**Date:** 2026-10-08 · **Status: CANDIDATE pushed, NOT merged / NOT deployed / production untouched / Stripe DORMANT. STOP for ChatGPT pre-merge audit.**
+**Date:** 2026-10-08 · **Status: CANDIDATE remediated (audit R1–R4), NOT merged / NOT deployed / production untouched / Stripe DORMANT. STOP for ChatGPT re-audit.**
 
 - **Branch:** `feat/sca-collector-profile-cp1`
 - **Base (exact deployed baseline):** `f461c17b7e0cbd5a5e5f026d5f5000870ef04752`
-- **Candidate head:** `5eddb141d175b5cbfa7e409a46f44fefd8617d98`
+- **Candidate head:** `3c422fe669bc6b14ee8bb476cf6c798cc0a35273` (remediation of prior candidate `5eddb141`)
 - **Impl repo:** `francisjonee/francisjonee-sca-platform-private` · **Governance:** `francisjonee/Shopify-Jeremy`
 - **Migrations:** prod 130 → candidate **131** (one additive table; prod still 130 — candidate NOT deployed)
+
+## Remediation of the pre-merge audit (R1–R4) — head `3c422fe`
+
+Three files changed from `5eddb141`: `CollectorProfileService.php` (R2 race fix) + `CollectorProfileTest.php` (R1/R3/R4) + new `CollectorProfileConcurrencyTest.php` (R2). No schema/Passport/stats/public-surface change; migration stays 130→131.
+
+- **R1 — avatar DB-failure compensation.** New `av8`: with an existing (old) avatar in place, a **real model-save exception** (`CollectorProfile::saving` throwing) is injected so the DB portion of `setAvatar()` fails AFTER the new bytes are written (production code unchanged — the service stores the file then saves). Proven: the exception propagates; the just-written new file is removed (compensation); the profile still points to the OLD path; the old file remains; exactly one avatar file remains; provenance snapshot byte-identical.
+- **R2 — concurrent first-profile creation.** `lockOrNew()` no longer takes a locking read on a MISSING row (that would be an InnoDB gap lock); it reads existence without a lock and locks only an existing row. Concurrent first-creates are made safe by `UNIQUE(collector_account_id)` + a new `withProfile()` wrapper that catches the loser's `1062` and converges it into an update of the now-existing row under a real row lock (UNIQUE + immutability trigger unchanged). New **non-transactional** `CollectorProfileConcurrencyTest`: `cc1` runs a **real two-connection MariaDB race** (a second independent connection inserts+commits the row from inside the `creating` hook of the first request's lock-free create path, `setAvatar`) and proves exactly one correctly-bound row, no surfaced 500, no corruption (racer's bio retained, our avatar applied by the retry); `cc2` proves the sequential replay also yields a single row. **Observed before/after:** without the convergence a lost first-create surfaces a `1062`/HTTP-500; with it the request converges to a single-row update (proven by `cc1`). Note: the ordinary `saveProfile` path additionally serializes two requests on the account `display_name` UPDATE lock, so `1062` there is already avoided — `setAvatar` is the genuine lock-free path the race test exercises.
+- **R3 — genuine disabled-account coverage.** New `pa2b`: a `status='disabled'` collector (distinct from pseudonymized) is rejected on profile GET, avatar GET, and a PATCH mutation route, with zero profile mutation and `display_name` unchanged. The prior `ps3` is renamed to `ps3_pseudonymized_collector_cannot_access_profile_routes` (it covers the pseudonymized case).
+- **R4 — pseudonymization provenance proof.** `ps1` now establishes real provenance owned by ANOTHER collector, snapshots the provenance surfaces before/after a successful pseudonymization of the target collector (profile + avatar), and asserts them byte-identical — in addition to the existing profile-row/avatar/account effects.
+
+Focused: `CollectorProfileTest` **31 passed / 1 skipped** (webp, GD) + `CollectorProfileConcurrencyTest` **2 passed**. Full governed SCA regression: **1054 passed / 5458 assertions, 1 skipped**, exit 0. Production re-verified untouched (prod `sca_krayin` migr **130**, `sca_collector_profiles` absent, provenance items 3 / certs 4 / ownership 5 unchanged, `STRIPE_ENABLED=false` / secret UNSET, `MAIL_MAILER=log`). **STOP for ChatGPT re-audit of head `3c422fe`.**
+
+---
+
+## Original candidate detail (head `5eddb141`) — unchanged except as remediated above
 
 ## Scope delivered
 A private, authenticated collector profile (behind the `collector` guard). NOT a public/social profile: no handle, public flag, per-item visibility, social graph, favorites, marketplace, valuation, or analytics. Existing provenance, Passport, My Collection, Shopify, external-paid-auth, payment, certification, transfer, and staff workflows are unchanged.
