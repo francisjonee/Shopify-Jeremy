@@ -1,14 +1,14 @@
 # NEXT TASK
 
-**STATUS: Slices 1–5 CODE DEPLOYED + payment concurrency hardening DEPLOYED; Stripe DORMANT; capability OPEN; Stripe activation / Slice 6 remain unpromoted.**
+**STATUS: Slices 1–5 CODE DEPLOYED + payment concurrency hardening + Stripe webhook amount/currency hardening (R1) DEPLOYED; Stripe DORMANT; Stripe Test Mode real-provider dry-run pending; Slice 6 unpromoted.**
 
 Updated 2026-10-07.
 
 ## Current deployed baseline (authoritative — single source of truth)
 
-- Deployed implementation `main` = **`8c73e83d971486a541223c817a8c63c1a275f8e0`** (impl repo `francisjonee/francisjonee-sca-platform-private`) — Slice 5 (result + ownership wiring) merged + deployed, deployed tree byte-identical to audited candidate `116054e`.
+- Deployed implementation `main` = **`7ff176c4b36d0eba805e296d83326f6d0f998fc1`** (impl repo `francisjonee/francisjonee-sca-platform-private`) — Stripe webhook amount/currency hardening (R1) merged + deployed, deployed tree file-identical to audited candidate `c0c92816` (prior deployed: Slice 5 `8c73e83`).
 - Governance/evidence repo = `francisjonee/Shopify-Jeremy`.
-- Prod migrations **129** (unchanged — Slice 5 has no migration); provenance DATA byte-identical to the long-standing state (provenance-DATA FP `26852f47…` with migration count excluded, unchanged across the Slice-5 deploy). The payment/settings/submission tables are empty operational tables.
+- Prod migrations **129** (unchanged — R1 is code-only); provenance DATA byte-identical to the long-standing state (provenance-DATA FP `84e6339…` with migration count excluded, unchanged across the R1 deploy). The payment/settings/submission tables are empty operational tables.
 - Public edge LIVE `https://verify.secondchanceauthenticators.com`; `:8080` loopback-only; `SESSION_SECURE_COOKIE=true`; `MAIL_MAILER=log`; `STRIPE_*`/`SHOPIFY_API_SECRET`/provider creds UNSET.
 
 ## External Paid Authentication Intake — slice status
@@ -21,7 +21,7 @@ Deployed: **Slice 1** (`6588054`, migr 122→124 — submission domain) · **Sli
 
 ## Stripe Test Mode — Phase 2 — isolated-runtime DESIGN + R1 hardening CANDIDATE (awaiting audit)
 
-Updated 2026-10-08. **Part 1 (design, not launched):** isolated Test-Mode runtime = a separate PHP process in the `app` container on **`127.0.0.1:8099`** with `DB_DATABASE=sca_domain_test` + ephemeral test Stripe env, fed by the operator's Stripe CLI `stripe listen --forward-to http://127.0.0.1:8099/sca/stripe/webhook`; fail-closed DB preflight (abort unless `DB::connection()->getDatabaseName()==='sca_domain_test'`); never exposed via Caddy; prod `:8080`/`sca_krayin` untouched. **Part 2 (R1 CANDIDATE, NOT merged/deployed):** branch `feat/sca-stripe-webhook-amount-hardening`, base `8c73e83`, head `c0c92816bd5fe376c77ecdc544c88a32a901879a`, **no migration (stays 129)** — webhook verifies Stripe `amount_total`==snapshot `amount_cents` + `currency` (lowercase-normalized) before `succeeded`; missing/mismatch → fail closed (not succeeded, no advance), acknowledged 200 (no retry storm); idempotency/concurrency/refunds unchanged. StripePaymentTest **26**; full SCA gate **985 passed / 5221**. No credentials present/entered; production UNCHANGED + Stripe DORMANT. Evidence: `docs/SCA-STRIPE-TEST-MODE-PHASE2.md`. **STOP for ChatGPT audit** (R1 candidate) + operator provisioning before launching the runtime / real dry-run.
+Updated 2026-10-08. **Part 1 (design, not launched):** isolated Test-Mode runtime = a separate PHP process in the `app` container on **`127.0.0.1:8099`** with `DB_DATABASE=sca_domain_test` + ephemeral test Stripe env, fed by the operator's Stripe CLI `stripe listen --forward-to http://127.0.0.1:8099/sca/stripe/webhook`; fail-closed DB preflight (abort unless `DB::connection()->getDatabaseName()==='sca_domain_test'`); never exposed via Caddy; prod `:8080`/`sca_krayin` untouched. **Part 2 (R1 CANDIDATE, NOT merged/deployed):** branch `feat/sca-stripe-webhook-amount-hardening`, base `8c73e83`, head `c0c92816bd5fe376c77ecdc544c88a32a901879a`, **no migration (stays 129)** — webhook verifies Stripe `amount_total`==snapshot `amount_cents` + `currency` (lowercase-normalized) before `succeeded`; missing/mismatch → fail closed (not succeeded, no advance), acknowledged 200 (no retry storm); idempotency/concurrency/refunds unchanged. StripePaymentTest **26**; full SCA gate **985 passed / 5221**. **R1 DEPLOYED** (`7ff176c`, no migration, file-identical to candidate `c0c92816`; evidence `docs/SCA-STRIPE-TEST-MODE-R1-HARDENING-DEPLOY-RESULT.md`). Part-1 isolated runtime remains DESIGN-only (not launched). **NEXT SEPARATE GATE = the real Stripe Test-Mode dry-run** (operator provisions `sk_test_`/`whsec_`, launch `:8099` test runtime + Stripe CLI forwarder) — unpromoted; do not start without explicit promotion + credentials. No credentials present/entered; production UNCHANGED + Stripe DORMANT.
 
 ## Stripe Test Mode — Phase 1 (PREPARATION) — inspection done; BLOCKED/STOP for provisioning
 
