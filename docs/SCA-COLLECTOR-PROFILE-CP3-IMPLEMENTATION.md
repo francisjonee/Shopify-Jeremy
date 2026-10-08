@@ -1,12 +1,26 @@
-# SCA Collector Profile — CP-3 — Public Profile Foundation — CANDIDATE
+# SCA Collector Profile — CP-3 — Public Profile Foundation — CANDIDATE (remediated R1)
 
-**Date:** 2026-10-09 · **Status: CANDIDATE pushed, NOT merged / NOT deployed / production untouched / Stripe DORMANT / mail=log. STOP for ChatGPT pre-merge audit.**
+**Date:** 2026-10-09 · **Status: CANDIDATE remediated (pre-merge audit R1), NOT merged / NOT deployed / production untouched / Stripe DORMANT / mail=log. STOP for ChatGPT re-audit.**
 
 - **Branch:** `feat/sca-collector-profile-cp3`
 - **Base (exact production baseline):** `a1e1d495d89d82fcfe921789e2b2bc4248874c0d`
-- **Candidate head:** `76057cb388726b139345fe4ff7fbe5aeaf4c4360`
+- **Candidate head:** `8aa8e8014ed2308f362972bb0c445ab1289dfb2f` (R1 remediation of `76057cb`)
 - **Impl repo:** `francisjonee/francisjonee-sca-platform-private` · **Governance:** `francisjonee/Shopify-Jeremy`
-- **Migrations:** candidate **131 → 132** (one additive table `sca_collector_public_profiles`); **prod stays 131** until deployment.
+- **Migrations:** candidate **131 → 132** (one additive table `sca_collector_public_profiles`, unchanged); **prod stays 131** until deployment.
+
+## Pre-merge audit remediation (R1) — head `8aa8e80`
+
+Delta from `76057cb`: 2 files (`CollectorPublicProfileService.php`, `CollectorPublicProfileTest.php`); migration unchanged (still the single CP-3 table, 131→132).
+
+**R1 — public avatar must share the public-page eligibility boundary.** `resolvePublicAvatar()` previously required only published + active + avatar-present; it did NOT require the non-blank canonical `display_name` that `resolvePublic()` requires. Because CP-1 editing can clear `display_name` while published, the page would 404 (resolver returns null on blank name) while the identifying avatar bytes still streamed — an inconsistent privacy boundary. **Fix:** `resolvePublicAvatar()` now also selects `a.display_name` and returns null when it is null/blank (trimmed) — identical eligibility to the page, so the avatar can never outlive the page's resolution. This is **eligibility closure, not auto-unpublish**: the publication row + opaque `public_ref` stay stable, so restoring the display name reopens the SAME ref's page + avatar.
+
+New regression `r1` (uses the real CP-1 `CollectorProfileService::saveProfile` edit path, not a raw write): publish + avatar → `GET /c/{ref}` and `/c/{ref}/avatar` both 200 → clear display_name → both 404 (publication row + ref intact, still `is_published=true`) → restore display_name → SAME ref, both 200 again. Indistinguishable-404 / `no-store` / `nosniff` / zero-provenance behaviour preserved.
+
+Focused: `CollectorPublicProfileTest` **19 passed** (18 + `r1`) + `CollectorPublicProfileConcurrencyTest` **2 passed**. CP-1 privacy/profile + My Collection + Passport regressions retained. Full governed SCA regression: **1106 passed / 5726 assertions, 1 skipped (webp)**, exit 0. No flake. Production re-verified untouched (deployed SHA `a1e1d49`, prod migr **131**, `sca_collector_public_profiles` absent, provenance DATA byte-identical FP `35e06328…`, Stripe DORMANT, mail=log). **STOP for ChatGPT re-audit of head `8aa8e80`.**
+
+---
+
+## Original candidate detail (head `76057cb`) — unchanged except R1 above
 
 ## Invariant honoured
 **Ownership ≠ publicity.** A collector becomes public ONLY by an explicit opt-in recorded in a dedicated publication-state table. No account/profile/avatar/certified-item/ownership/Passport/claim/transfer/collection makes a collector public. CP-3 publishes NO collection or owned items (that is CP-4).

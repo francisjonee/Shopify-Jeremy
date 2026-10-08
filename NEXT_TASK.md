@@ -1,8 +1,21 @@
 # NEXT TASK
 
-**STATUS: CP-3 PRE-MERGE AUDIT — FAIL / one bounded remediation required. Do not merge/deploy or start CP-4.**
+**STATUS: CP-3 R1 REMEDIATED — CANDIDATE awaiting ChatGPT re-audit. NOT merged / NOT deployed. Deployed baseline unchanged (prod main `a1e1d49`, migr 131, Stripe DORMANT, mail=log). Do not start CP-4.**
 
 Updated 2026-10-09.
+
+## Re-audit target
+Branch `feat/sca-collector-profile-cp3`, base `a1e1d495d89d82fcfe921789e2b2bc4248874c0d`, candidate **`8aa8e8014ed2308f362972bb0c445ab1289dfb2f`** (R1 remediation of `76057cb`; delta = 2 files, migration unchanged 131→132). Production untouched.
+
+### R1 remediation summary (bounded; privacy-boundary closure)
+`CollectorPublicProfileService::resolvePublicAvatar()` now enforces the SAME eligibility as `resolvePublic()` — published + active + **non-blank canonical display_name**. If display_name is cleared while published, the public page AND avatar both 404 (identifying asset cannot outlive the page). Eligibility closure, NOT auto-unpublish: publication row + opaque ref stay stable; restoring the display name reopens the SAME ref. New regression `r1` via the real CP-1 `saveProfile` path (publish+avatar available → clear name → both 404, row/ref intact → restore → both available). Indistinguishable-404 / no-store / nosniff / zero provenance preserved.
+
+Focused `CollectorPublicProfileTest` **19** + `CollectorPublicProfileConcurrencyTest` **2**; full SCA gate **1106 passed / 5726** (1 webp skip). Evidence: `docs/SCA-COLLECTOR-PROFILE-CP3-IMPLEMENTATION.md` (R1 section). **STOP for ChatGPT re-audit of `8aa8e80`.**
+
+---
+
+## Prior pre-merge audit (FAIL — R1) — addressed above
+Prior candidate: `76057cb388726b139345fe4ff7fbe5aeaf4c4360`
 
 ## Audited candidate
 Implementation repo: `francisjonee/francisjonee-sca-platform-private`
