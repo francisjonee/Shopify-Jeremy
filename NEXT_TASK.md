@@ -1,80 +1,112 @@
 # NEXT TASK
 
-**STATUS: CP-2 R1–R3 REMEDIATED — CANDIDATE awaiting ChatGPT re-audit. NOT merged / NOT deployed. Deployed baseline unchanged (prod main `8d8c359`, migr 131, Stripe DORMANT, mail=log). Do not start CP-3.**
+**STATUS: CP-2 PRE-MERGE AUDIT PASS — exact candidate approved for merge/deployment. CP-3 remains forbidden.**
 
 Updated 2026-10-09.
 
-## Re-audit target
-Branch `feat/sca-collector-profile-cp2`, base `8d8c35947d7c405124e0df4f09ff3ef4ee9e6bb8`, candidate **`5ebe9591a530874f5376296a2e10f538772834e8`** (R1–R3 remediation of `eddac539`). No migration (stays 131). Production untouched.
+## Exact audited candidate
+Implementation repo: `francisjonee/francisjonee-sca-platform-private`
+Branch: `feat/sca-collector-profile-cp2`
+Audited production base: `8d8c35947d7c405124e0df4f09ff3ef4ee9e6bb8`
+**APPROVED CANDIDATE: `5ebe9591a530874f5376296a2e10f538772834e8`**
 
-### Remediation summary (all three gaps closed; 4 files changed from `eddac539`, no migration)
-- **R1**: new `o4` proves default recent ordering treats a canonical `OwnershipCorrectionService` admin_correction as the acquisition event (B newest-first `[corrected,mid,early]`), A loses membership immediately, no reason/staff/internal leak. Real service used; no tail-query change needed.
-- **R2**: controller derives the authenticated collector's canonical `display_name` server-side (trim; null/blank → neutral "My Collection"), view renders "<name>'s Collection"; never email/public_ref/other-collector; `collector.auth` still gates disabled/pseudonymized. Tests r2a/r2b/r2c.
-- **R3**: `collectionStats()` is now ONE SQL aggregate (COUNT(*) / COUNT(cert) / COUNT(DISTINCT CASE … LOWER(TRIM(brand)))) — exact CP-1 semantics (null/empty/whitespace excluded, case-insensitive, transferred-away/unclaimed excluded), constant-size result. Tests r3a/r3b/r3c/r3d. Shared with CP-1; its stats tests still pass.
+GitHub audit:
+- candidate is 2 commits ahead / 0 behind exact base;
+- candidate contains only the four intended CP-2 files;
+- no migration/schema change;
+- remediation delta from `eddac539` is exactly the same four CP-2 files;
+- R1 admin-correction chronology uses real `OwnershipCorrectionService::correct()`;
+- R2 header name is derived only from authenticated collector canonical `display_name`, trimmed with neutral fallback;
+- R3 `collectionStats()` is one bounded SQL aggregate preserving current-owner/current-cert/distinct-known-brand semantics;
+- original CP-2 current-owner isolation, search/filter/sort, pagination, safe card DTO, authorized image route, Passport privacy and no-N+1 design remain intact.
 
-Focused `RichMyCollectionTest` **27** + `MyCollectionTest` **12** + `CollectorProfileTest` **32 (+1 webp skip)**; full SCA gate **1085 passed / 5608**. Evidence: `docs/SCA-COLLECTOR-PROFILE-CP2-IMPLEMENTATION.md` (R1–R3 section). **STOP for ChatGPT re-audit of `5ebe959`.**
+Reported gates accepted for promotion:
+- RichMyCollectionTest 27 passed;
+- MyCollectionTest 12 passed;
+- CollectorProfileTest 32 passed / 1 WebP environment skip;
+- full SCA 1085 passed / 5608 assertions / 1 WebP skip.
+Production reported untouched at `8d8c359`, migration 131, provenance fingerprint `35e063282e004eaabcc9240360ecc0e3`, Stripe dormant, mail log.
 
----
+## Deployment instructions
+Deploy ONLY the exact audited candidate above.
 
-## Prior pre-merge audit (FAIL — R1–R3) — addressed above
-Prior candidate: `eddac539c8c66f00c07d5adb54ffbc1a9d53e4b6`
+### 1. Preflight — STOP on any drift
+Before merge:
+- fetch origin;
+- verify `origin/main == 8d8c35947d7c405124e0df4f09ff3ef4ee9e6bb8`;
+- verify branch/head == exact approved candidate `5ebe9591a530874f5376296a2e10f538772834e8`;
+- verify candidate is 2 ahead / 0 behind base;
+- verify diff remains exactly the four CP-2 files and NO migration;
+- verify production deployed head is still `8d8c359...`;
+- verify prod migration level 131;
+- capture pre-deploy provenance DATA fingerprint/counts;
+- verify Stripe remains dormant and mail remains log.
 
-## Audit result
-Core CP-2 architecture is accepted:
-- current-owner membership is preserved;
-- filters narrow only inside current ownership;
-- search values are bound and LIKE metacharacters escaped;
-- brand choices are collector-scoped;
-- current-certification and adverse registry filters are canonical;
-- pagination is bounded at 24;
-- card DTO remains owner-safe;
-- existing authorized image route is reused;
-- no per-card history/detail/image DB lookup was introduced;
-- the latest ownership-event subquery matches the canonical `ProjectionService::currentOwner()` ordering rule and is valid for claim / transfer_in / admin_correction terminal ownership events.
+If ANY value differs, STOP without merge/deploy and report drift.
 
-Three bounded gaps remain before merge.
+### 2. Merge exact audited tree
+Merge the exact candidate to main using the established no-ff process.
+After merge:
+- record MERGE_SHA;
+- verify `origin/main == MERGE_SHA`;
+- verify merged tree is file-identical to approved candidate (empty tree diff candidate↔merge);
+- no additional commit/content may enter the deployment.
 
-## R1 — mandatory admin-correction chronology proof is missing
-The promoted task explicitly required default recent ordering proof for claim, transfer-in, **and admin-correction where supported**. Admin correction is supported by `OwnershipCorrectionService` and is canonical ownership.
+### 3. Test gate before production cutover
+On the exact merge tree / disposable test DB:
+- run RichMyCollectionTest;
+- run MyCollectionTest;
+- run CollectorProfileTest;
+- run full `tests/Feature/Sca` gate;
+- report exact pass/assertion/skip counts.
+Only the known environment WebP skip is acceptable. Any real failure => STOP before production deploy.
 
-Add a real test using the established ownership-correction service (not a fabricated projection update):
-- create item owned by A;
-- create other acquisition(s) for B with controlled chronology;
-- perform canonical admin correction assigning the item to B;
-- prove B's default recent ordering treats the correction event as the acquisition event;
-- prove A immediately loses membership;
-- no reason/staff/internal data leaks.
+### 4. Deploy
+Deploy exact MERGE_SHA using the established production deployment procedure.
+There is NO migration in CP-2:
+- production migration level must remain 131;
+- do not create/alter/drop schema.
 
-Do not change the tail-event query merely to satisfy the test unless the real test reveals a defect.
+### 5. Production smoke — read-only / safe
+Verify at minimum:
+- unauthenticated `/collector/collection` redirects to collector login;
+- authenticated collector collection page loads;
+- header shows canonical display name when present or neutral My Collection when absent;
+- summary counts render;
+- search/filter/sort GET controls work;
+- invalid query values fail safely;
+- filtered-no-result state differs from true-empty state where safely testable;
+- card links go to existing owner detail;
+- card images continue through existing authorized route;
+- previous/non-owner refs remain privacy-safe;
+- public Passport remains collector-identity-free;
+- no raw storage path/internal id/token/frame_serial/staff/Shopify data appears;
+- no CP-3/public collector route exists.
 
-## R2 — required collector presentation name omitted from header
-The CP-2 promoted header required the collector display name where appropriate. Current controller/catalog/view never provides or renders it.
+Do not create production provenance merely to manufacture smoke fixtures. Use existing safe records/accounts where available; otherwise prove route/config/render boundaries without mutation.
 
-Add the authenticated collector's canonical `sca_collector_accounts.display_name` to the private collection header:
-- derive it server-side from the authenticated collector only;
-- presentation-only; no new stored state;
-- if null/blank, render a neutral “My Collection” header with no awkward placeholder;
-- never expose email/public_ref or another collector's identity;
-- pseudonymized/disabled accounts remain governed by existing collector auth middleware and must not gain a bypass.
+### 6. Post-deploy invariants
+Verify:
+- DEPLOYED_HEAD == MERGE_SHA == origin/main;
+- migration remains 131;
+- provenance DATA fingerprint/counts are byte-identical to pre-deploy;
+- collector account/profile counts unchanged except ordinary pre-existing production activity not caused by deployment (if any drift exists, investigate and report rather than hand-wave);
+- Stripe remains DORMANT (`STRIPE_ENABLED=false`, secrets unset as expected);
+- mail remains `MAIL_MAILER=log`;
+- no Stripe/SMTP/Shopify/Caddy/DNS changes.
 
-Add focused tests for display name present and absent, and no cross-collector identity leakage.
+### 7. Report and STOP
+Create/update a CP-2 deployment result document in governance and report:
+- approved candidate;
+- base;
+- MERGE_SHA / origin main / deployed head;
+- exact diff/tree identity proof;
+- migration pre/post;
+- focused/full test counts;
+- production smoke;
+- provenance pre/post fingerprint + counts;
+- collector account/profile counts;
+- Stripe/mail state;
+- any flake/skip and rerun evidence.
 
-## R3 — collection summary must be aggregate/bounded for CP-2 scale
-`collectionStats()` currently fetches every currently-owned row into PHP and then counts owned/certified/distinct brands. CP-2's explicit goal is collections larger than today's test data and the promoted task required bounded aggregate/read queries.
-
-Refactor the summary to bounded SQL aggregate reads (or equivalent constant-size result), preserving EXACT semantics:
-- owned = canonical current-owner item count;
-- certified = non-null canonical current certification count;
-- brands = distinct KNOWN brands, trim/case-insensitive semantics consistent with the existing CP-1 contract;
-- null/empty/whitespace-only brand is not counted;
-- transferred-away and unclaimed items excluded.
-Do not add stored counters or schema.
-
-Add focused proof for duplicate brand casing/whitespace, null/empty brand, certified/uncertified, transferred-away/unclaimed membership, and bounded query/result behavior.
-
-## Retain / re-run
-Retain all existing 19 RichMyCollection tests and MyCollection regression coverage. Add the R1–R3 tests, run focused suites and full `tests/Feature/Sca` gate, and report exact pass/assertion/skip counts.
-
-No migration expected; remain 131. No item-detail redesign. No public profile/collection, handle, social, favorites, marketplace, valuation, Stripe, SMTP, Shopify, Caddy/DNS, provenance redesign, deployment, or CP-3.
-
-Push remediation on the SAME CP-2 branch, update CP-2 implementation report, report exact new head and delta from `eddac539`, then STOP for ChatGPT re-audit.
+Then **STOP for ChatGPT post-deployment audit. Do NOT start CP-3.**
