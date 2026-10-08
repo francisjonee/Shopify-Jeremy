@@ -1,19 +1,22 @@
 # NEXT TASK
 
-**STATUS: Slices 1–5 + payment concurrency hardening + Stripe R1 DEPLOYED (prod `7ff176c`, migr 129, Stripe DORMANT). Slice 6 (Exceptions & Returns) = CANDIDATE pushed, awaiting ChatGPT audit — NOT merged / NOT deployed.**
+**STATUS: Slices 1–6 CODE DEPLOYED + payment concurrency hardening + Stripe webhook amount/currency hardening (R1) DEPLOYED; Stripe DORMANT; Stripe Test Mode real-provider dry-run pending. External Paid Authentication Intake product slices are CODE-COMPLETE, pending provider testing/activation and final launch validation. STOP for ChatGPT deployment audit of Slice 6.**
 
 Updated 2026-10-08.
 
-## Slice 6 — Exceptions & Returns — CANDIDATE awaiting ChatGPT audit
-
-Branch `feat/sca-external-paid-auth-slice6`, base `7ff176c4b36d0eba805e296d83326f6d0f998fc1`, head **`5ee1067217a8c2fd8bea96bf3a7062db33856438`**, migrations 129→**130** (one additive table; **prod still 129**). Operational physical-return lifecycle for a frame leaving SCA custody for ANY outcome (failed/inconclusive OR certified): dedicated record `sca_authentication_returns` with its OWN advance-only machine `return_pending → return_in_transit → returned` (submission stays `received`; no registry status overloaded; submission machine + CHECK untouched). `ReturnService` sole writer (prepare/markShipped/markReturned; idempotent; fail-closed); eligibility = custody + canonical safe-return point (finalized failed/inconclusive OR certified), NEVER ownership/claim. Bound item derived server-side; binding + advance-only enforced at DB (UNIQUE + trigger). ZERO new provenance; claim grant never consumed (collector can still claim before/during/after return). New **dedicated** ACL `sca.eyewear.submission.return`; staff Prepare/Ship/Complete on the submission detail; collector safe return card (state/carrier/tracking/dates only — no internal ids/notes); Slice-5 result+claim intact. `SubmissionReturnTest` **36 passed**; full SCA regression **1021 passed / 5306**. Production untouched (prod `sca_krayin` migr 129, no returns table, provenance DATA byte-identical FP `84e6339…`, Stripe DORMANT edge 404 + app unset). Evidence: `docs/SCA-EXTERNAL-PAID-AUTH-INTAKE-SLICE6-IMPLEMENTATION.md`. **STOP — do not merge/deploy/activate Stripe/begin another task until ChatGPT audits head `5ee1067`.**
-
 ## Current deployed baseline (authoritative — single source of truth)
 
-- Deployed implementation `main` = **`7ff176c4b36d0eba805e296d83326f6d0f998fc1`** (impl repo `francisjonee/francisjonee-sca-platform-private`) — Stripe webhook amount/currency hardening (R1) merged + deployed, deployed tree file-identical to audited candidate `c0c92816` (prior deployed: Slice 5 `8c73e83`).
+- Deployed implementation `main` = **`f461c17b7e0cbd5a5e5f026d5f5000870ef04752`** (impl repo `francisjonee/francisjonee-sca-platform-private`) — Slice 6 (Exceptions & Returns) merged `--no-ff` + deployed; deployed tree file-identical to audited candidate `5ee1067217a8c2fd8bea96bf3a7062db33856438` (base `7ff176c`). Prior deployed: Stripe R1 `7ff176c`.
 - Governance/evidence repo = `francisjonee/Shopify-Jeremy`.
-- Prod migrations **129** (unchanged — R1 is code-only); provenance DATA byte-identical to the long-standing state (provenance-DATA FP `84e6339…` with migration count excluded, unchanged across the R1 deploy). The payment/settings/submission tables are empty operational tables.
+- Prod migrations **130** (129→130: one additive operational table `sca_authentication_returns`, **0 rows**). Provenance DATA byte-identical pre/post (self-consistent deploy FP `35e06328…`; items 3/qr 3/certs 4/auth 4/ownership 5/claims 2/grants 1/sale 1/status 7 — unchanged). Submission/payment/return tables are empty operational tables.
 - Public edge LIVE `https://verify.secondchanceauthenticators.com`; `:8080` loopback-only; `SESSION_SECURE_COOKIE=true`; `MAIL_MAILER=log`; `STRIPE_*`/`SHOPIFY_API_SECRET`/provider creds UNSET.
+
+## Slice 6 — Exceptions & Returns — DEPLOYED
+
+`f461c17`, migr 129→130 (table `sca_authentication_returns`). Operational physical-return lifecycle for a frame leaving SCA custody for ANY outcome (failed/inconclusive OR certified): dedicated record with its OWN advance-only machine `return_pending → return_in_transit → returned` (submission stays `received`; submission status machine + CHECK untouched; no registry status overloaded). `ReturnService` sole writer (prepare/markShipped/markReturned; idempotent; fail-closed); eligibility = custody + canonical safe-return point (finalized failed/inconclusive OR certified; passed-not-certified NOT eligible), NEVER ownership/claim. Bound item derived server-side; binding + advance-only enforced at DB (UNIQUE submission_id + eyewear_item_id, immutability + advance-only trigger `trg_sca_auth_returns_bu`). ZERO new provenance; **claim grant never consumed** (collector can still claim before/during/after). Dedicated ACL `sca.eyewear.submission.return`; staff Prepare/Ship/Complete POST on the submission detail; collector safe return card (state/carrier/tracking/dates only — no internal ids/notes); Slice-5 result+claim intact. `SubmissionReturnTest` **36**; full SCA gate **1021 passed / 5306**. Prod data byte-identical, returns table 0 rows, Stripe DORMANT (edge 404 + app unset). Evidence: `docs/SCA-EXTERNAL-PAID-AUTH-INTAKE-SLICE6-{IMPLEMENTATION,DEPLOY-RESULT}.md`. Deploy-gate note: first attempt aborted on the known `QrReissueTest::rg8` timing flake (set -e aborts before migrate → prod untouched); re-run cleared it. **STOP for ChatGPT deployment audit of `f461c17`.**
+
+### Prior deployed baseline (superseded by Slice 6 `f461c17`)
+- `7ff176c4b36d0eba805e296d83326f6d0f998fc1` — Stripe webhook amount/currency hardening (R1), migr 129, provenance-DATA FP `84e6339…`. Prior to that: Slice 5 `8c73e83`.
 
 ## External Paid Authentication Intake — slice status
 
