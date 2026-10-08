@@ -1,14 +1,22 @@
 # NEXT TASK
 
-**STATUS: CP-1 RE-AUDIT — FAIL / FINAL LIFECYCLE CONSISTENCY REMEDIATION. Do not merge/deploy or start CP-2.**
+**STATUS: CP-1 R6 REMEDIATED (removeAvatar lifecycle consistency) — CANDIDATE awaiting ChatGPT final re-audit. Do not merge/deploy or start CP-2.**
 
 Updated 2026-10-09.
 
-## Audit target
+## Re-audit target
 Base: `f461c17b7e0cbd5a5e5f026d5f5000870ef04752`
-Candidate: `bd32988ead30ada09a36726be165c3ef8aebe5d0`
-Branch: `feat/sca-collector-profile-cp1`
-Head 3 ahead / 0 behind base. Migration unchanged 130→131. Production untouched.
+Candidate: **`cc6d0537ecdb8df3ae5a5242298ab9c562d5d40e`** (R6 fix on `bd32988`; branch `feat/sca-collector-profile-cp1`, now 4 commits ahead / 0 behind base). Migration remains 130→131 (one additive table; prod still 130). Production untouched; Stripe DORMANT.
+
+### R6 remediation summary (final lifecycle-consistency blocker addressed; 4 files changed from `bd32988`)
+`removeAvatar()` now goes through the SAME account-first lifecycle gate as the other mutations: the account-lock+`status='active'` check is extracted into one shared primitive `assertActiveAccountLocked()` called first by both `withProfile()` and `removeAvatar()`, giving all profile mutations the identical account→profile lock order as `pseudonymize()`. `removeAvatar` fails closed (`ProfileLifecycleException`) on a disabled/pseudonymized/raced account, preserves pointer-first→post-commit byte deletion, and does NOT create a profile row to clear a nonexistent avatar; the controller catches the exception and fails closed (logout+redirect). Coverage: `av9` (no-op remove on nonexistent profile → no row, zero provenance), `av10` (disabled account remove rejected, profile/avatar intact), `cc4` (two-connection: remove racing a committed pseudonymization fails closed, account→profile ordering, no recreation, zero provenance). R1–R5 retained.
+
+Focused `CollectorProfileTest` **33 passed / 1 skip (webp)** + `CollectorProfileConcurrencyTest` **4 passed**; full SCA gate **1057 passed / 5472** (+ known `QrReissueTest::rg8` timing flake, passes 11/11 on isolated re-run). Evidence: `docs/SCA-COLLECTOR-PROFILE-CP1-IMPLEMENTATION.md` (R6 section). **STOP for ChatGPT final re-audit of `cc6d053`.**
+
+---
+
+## Prior re-audit (FAIL — R6 removeAvatar lifecycle) — addressed above
+Prior candidate: `bd32988ead30ada09a36726be165c3ef8aebe5d0` (R1–R5 remediation)
 
 ## Re-audit
 R1–R5 core fixes are accepted. Account-first locking in `withProfile()` correctly serializes saveProfile/setAvatar against pseudonymization and removes the broad 1062 retry.

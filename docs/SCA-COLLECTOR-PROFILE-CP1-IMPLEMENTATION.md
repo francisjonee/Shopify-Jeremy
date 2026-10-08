@@ -1,12 +1,28 @@
 # SCA Collector Profile — CP-1 — Private Profile Foundation — CANDIDATE (remediated)
 
-**Date:** 2026-10-08 · **Status: CANDIDATE remediated (audit R1–R4 + re-audit R5), NOT merged / NOT deployed / production untouched / Stripe DORMANT. STOP for ChatGPT re-audit.**
+**Date:** 2026-10-09 · **Status: CANDIDATE remediated (audit R1–R4 + re-audit R5 + re-audit R6), NOT merged / NOT deployed / production untouched / Stripe DORMANT. STOP for ChatGPT final re-audit.**
 
 - **Branch:** `feat/sca-collector-profile-cp1`
+- **Candidate head:** `cc6d0537ecdb8df3ae5a5242298ab9c562d5d40e` (R6 fix on `bd32988`; priors `3c422fe` R1–R4, `5eddb141` original)
 - **Base (exact deployed baseline):** `f461c17b7e0cbd5a5e5f026d5f5000870ef04752`
-- **Candidate head:** `bd32988ead30ada09a36726be165c3ef8aebe5d0` (R5 fix on `3c422fe`, which remediated `5eddb141`)
 - **Impl repo:** `francisjonee/francisjonee-sca-platform-private` · **Governance:** `francisjonee/Shopify-Jeremy`
 - **Migrations:** prod 130 → candidate **131** (one additive table; prod still 130 — candidate NOT deployed)
+
+## R6 remediation (re-audit BLOCKER: removeAvatar outside the lifecycle gate) — head `cc6d053`
+
+Four files changed from `bd32988`: `CollectorProfileService.php`, `ProfileController.php`, `CollectorProfileTest.php`, `CollectorProfileConcurrencyTest.php`. No schema/Passport/stats/public-surface change; migration stays 130→131.
+
+**Finding.** After R5, `removeAvatar()` was the one remaining profile mutation that locked only `sca_collector_profiles` — a different lock order than `pseudonymize()` (account → profile) and outside the single account-first serialization rule, so an in-flight remove could run without revalidating the account.
+
+**Fix.** The account-lock+status check is extracted into one shared primitive `assertActiveAccountLocked($collectorId)` (locks `sca_collector_accounts` FOR UPDATE and requires `status='active'`), now called FIRST by both `withProfile()` (create/update) and `removeAvatar()`. So every profile mutation uses the identical account → profile lock order as privacy, and `removeAvatar` fails closed (`ProfileLifecycleException`) on a disabled/pseudonymized/raced account. Pointer-first then post-commit byte deletion is preserved; `removeAvatar` does **not** create a profile row to clear a nonexistent avatar. The controller's `removeAvatar()` now catches the exception and fails closed (logout + redirect), matching `update`/`uploadAvatar`. No duplication of status logic (single primitive).
+
+**Coverage.** `av9` — remove on a collector with no profile is a clean no-op, creates no row, zero provenance. `av10` — a disabled account's remove is rejected before the profile is touched; existing profile/avatar left intact; zero provenance. `cc4` (real two-connection) — a remove racing a committed pseudonymization fails closed; account stays pseudonymized, display_name null, no profile row recreated, zero provenance (proves account-first ordering compatible with privacy). R1–R5 retained.
+
+**Tests.** `CollectorProfileTest` **33 passed / 1 skipped (webp, GD)** + `CollectorProfileConcurrencyTest` **4 passed**. Full governed SCA regression: **1057 passed / 5472 assertions, 1 skipped**, plus the known `QrReissueTest::rg8` `rebuilt_at` timing flake (unrelated to CP-1; passes 11/11 on isolated re-run). Production re-verified untouched (prod migr **130**, `sca_collector_profiles` absent, provenance items 3 / certs 4 / ownership 5 unchanged, `STRIPE_ENABLED=false`/secret UNSET, `MAIL_MAILER=log`). **STOP for ChatGPT final re-audit of head `cc6d053`.**
+
+---
+
+## Prior re-audit remediation (R5, head `bd32988`)
 
 ## R5 remediation (re-audit BLOCKER: profile resurrection after pseudonymization) — head `bd32988`
 
