@@ -1,8 +1,16 @@
 # NEXT TASK
 
-**STATUS: CP-2 PROMOTED — Rich My Collection (collection-level experience). Implement on a new branch from exact production baseline `8d8c35947d7c405124e0df4f09ff3ef4ee9e6bb8`. Do not deploy. STOP for ChatGPT pre-merge audit.**
+**STATUS: CP-2 (Rich My Collection) CANDIDATE pushed, awaiting ChatGPT pre-merge audit — NOT merged / NOT deployed. Deployed baseline unchanged: prod main `8d8c359`, migrations 131, Stripe DORMANT, mail=log. Do not start CP-3.**
 
 Updated 2026-10-09.
+
+## CP-2 — Rich My Collection — CANDIDATE awaiting ChatGPT pre-merge audit
+
+Branch `feat/sca-collector-profile-cp2`, base `8d8c35947d7c405124e0df4f09ff3ef4ee9e6bb8`, head **`eddac539c8c66f00c07d5adb54ffbc1a9d53e4b6`** (4 ahead / 0 behind). **No migration — stays 131** (all display state derived at read time). Collection-level only; item detail untouched. `/collector/collection` is now a responsive private catalog: canonical-ownership summary header; owner-safe responsive cards (image via existing owner-authorized route or placeholder; brand/model/ref/SKU/year/condition/truthful current-certification badge/adverse warning; no internal ids/tokens/frame_serial/staff/Shopify/other-collector data); GET-only allowlisted search (brand/model/ref/SKU, LIKE-escaped+bound) / brand filter (collector-scoped, invalid ignored) / cert filter (canonical `current_certification_id`) / registry filter (`StatusService::ADVERSE_STATUSES`) / sort (recent default, brand A–Z/Z–A, ref); "recently added" from the TAIL ownership event via one windowed sub-join (no per-card N+1; deterministic tie-breaks); fixed page size 24 with filter-preserving pagination; true-empty vs filtered-no-result states. `CollectionService::ownedItems()` preserved. Privacy/authorization invariants unchanged (membership=current ownership; prior owner drops after transfer; guessed refs 404; collector guard; Passport identity-free). 4 files changed (3 modified + new `RichMyCollectionTest`). `RichMyCollectionTest` **19 passed** + `MyCollectionTest` regression **12**; full SCA gate **1077 passed / 5573** (1 webp skip). Production untouched (deployed SHA still `8d8c359`, migr 131, provenance byte-identical FP `35e06328…`, collectors 3/profiles 0, Stripe DORMANT, mail=log). Evidence: `docs/SCA-COLLECTOR-PROFILE-CP2-IMPLEMENTATION.md`. **STOP — do not merge/deploy/start CP-3 until ChatGPT audits head `eddac53`.**
+
+---
+
+## CP-1 (closed) — promotion brief retained below
 
 ## Baseline / audit finding
 Implementation: `francisjonee/francisjonee-sca-platform-private`
