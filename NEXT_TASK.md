@@ -1,6 +1,6 @@
 # NEXT TASK
 
-**STATUS: CP-5 PRE-MERGE AUDIT — FAIL. R1 collision/error-contract remediation + clean gate required. Do not merge/deploy or start CP-6.**
+**STATUS: CP-5 R1 REMEDIATED — re-pushed, awaiting ChatGPT RE-AUDIT. Branch `feat/sca-collector-profile-cp5` head `2d87c38dadb5af61a630805dc2da3a6e11eb2f02` (R1 of `681bc45`, base `7409a33`, migration 133→134). Collision/error contract fixed (bounded retry + 1062/1205/1213 → generic UNAVAILABLE, no raw 500, no partial state; concurrency test asserts clean UNAVAILABLE, not raw SQL). Clean full gate: `tests/Feature/Sca` exit 0 · 1188 passed · 1 skipped (webp) · 0 failed · 6033 assertions. Provenance reconciled: canonical counts 3/3/4/4/5/2/1/1/7 byte-identical to CP-4 baseline; prior `532ea48d` was a reduced 7-count formula (reporting mismatch, documented) — established `35e06328` is a composite row-DATA FP. Production untouched (migration 133), `/u/*` edge-blocked, Caddy+DNS+Stripe+SMTP+Shopify unchanged. Full write-up: `docs/SCA-COLLECTOR-PROFILE-CP5-IMPLEMENTATION.md` §0/§8/§9. STOP for ChatGPT re-audit of `2d87c38`; do not merge/deploy/activate the `/u/*` edge or start CP-6.**
 
 Updated 2026-10-09.
 

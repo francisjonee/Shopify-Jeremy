@@ -1,13 +1,43 @@
 # SCA Collector Profile — CP-5 — Public Handle / Profile URL — CANDIDATE
 
-**Date:** 2026-10-09 · **Status: CANDIDATE pushed, NOT merged / NOT deployed / production untouched / Stripe DORMANT / mail=log / Caddy+DNS untouched / `/u/*` edge-blocked. STOP for ChatGPT pre-merge audit.**
+**Date:** 2026-10-09 · **Status: CANDIDATE — R1 REMEDIATED (collision/error contract) + clean full gate, re-pushed. NOT merged / NOT deployed / production untouched / Stripe DORMANT / mail=log / Caddy+DNS untouched / `/u/*` edge-blocked. STOP for ChatGPT re-audit.**
 
 - **Impl repo:** `francisjonee/francisjonee-sca-platform-private` · **Governance:** `francisjonee/Shopify-Jeremy`
 - **Branch:** `feat/sca-collector-profile-cp5`
 - **Base (exact deployed baseline):** `7409a33baecf2ef6bd8c44413a27a9f77fa249f1` (prod HEAD, migration 133)
-- **Candidate head:** `681bc45ee38ce6b12f34a32b129d19de0ca54c07` (1 commit ahead of base)
+- **Candidate head:** `2d87c38dadb5af61a630805dc2da3a6e11eb2f02` (R1 remediation of `681bc45`; 2 commits ahead of base)
 - **Migrations:** candidate **133 → 134** (one additive migration); **prod stays 133** until deployment.
 - **Deployment split:** Phase A = application + migration 134 only; **no Caddy/DNS**; `/u/*` stays edge-blocked. Phase B = separate `/u/*` edge admission after ChatGPT audits Phase A.
+
+---
+
+## 0. Pre-merge audit R1 remediation (head `2d87c38`)
+
+**Finding (accepted):** the handle collision error contract was incomplete. Under a genuine same-handle
+race the losing claim could surface a raw `QueryException` as a 500 — `setHandle` only mapped duplicate-key
+`1062` to `HandleRejection::UNAVAILABLE`, while a contended write can instead resolve as a lock-wait timeout
+(`1205`) or deadlock (`1213`). The concurrency test compounded this by accepting raw `1205/1213` as a valid
+terminal outcome.
+
+**Fix (2 files, delta from `681bc45`):**
+- `CollectorHandleService` — `setHandle` now wraps its write transaction in bounded retries
+  (`MAX_ATTEMPTS = 3`) on InnoDB concurrency errors (Laravel's `causedByConcurrencyError` recognises both
+  `1205` and `1213`); a retried attempt re-reads availability under the lock, so once the winner commits the
+  loser fails closed via `assertClaimable`. The terminal `catch` maps `1062` **or** a persistent `1205/1213`
+  (survived the retries while the winner held the unique-index entry) to the SAME generic
+  `HandleRejection::UNAVAILABLE`. No raw `QueryException` can reach the caller. Each attempt is one
+  transaction, so a rolled-back attempt leaves **no** handle and **no** tombstone (no partial state).
+  `removeHandle` gets the same bounded retry. Helper `isUniqueViolation` → `isHandleContention`
+  (`1062/1205/1213`).
+- `CollectorHandleConcurrencyTest` `cc1` strengthened: while the racer holds the uncommitted winning write,
+  the contended claim's terminal outcome must be exactly `rejection:UNAVAILABLE` (asserted via a classifier
+  that distinguishes `raw_sql:<errno>` — a contract violation — from the required `HandleRejection`), must
+  write no handle, and must leave **zero** reservation rows (no partial tombstone); then exactly one winner.
+  Raw `1205/1213` is no longer accepted as a final result. Deterministic across repeated runs (cc1 ~3.6s =
+  the 3 bounded retries resolving to a clean `UNAVAILABLE`).
+
+**Contract now proven:** a same-handle race ends with exactly one winner; the loser gets the generic
+`UNAVAILABLE`; no raw `QueryException`/500; no partial handle/tombstone state.
 
 ---
 
@@ -142,26 +172,26 @@ days** (`COOLING_DAYS`). During cooling NOBODY (including the original owner) ma
   avatar/item-image unchanged (h19); private UX controls (h21/h21b); set+remove idempotency (h22); no
   availability/directory endpoint (h24); schema UNIQUE/null/default + tombstone uniqueness (h23).
 - `CollectorHandleConcurrencyTest` — **2 passed**, REAL two-connection (non-transactional, self-cleaning):
-  `cc1` two collectors claiming the same normalized handle — the second serialises on the UNIQUE index
-  (lock-wait 1205 or deadlock-victim 1213, writes nothing), exactly one wins, loser gets generic
-  UNAVAILABLE, no partial state; `cc2` rename-away leaves no window — a concurrent claim of the released
-  handle is UNAVAILABLE both during the in-flight rename and after it commits (tombstoned). Hardened so it
-  can never poison the suite (racer transaction always committed/rolled-back in a `finally`; tearDown
-  defensively rolls back any open transaction on either connection).
+  `cc1` two collectors claiming the same normalized handle — while the winner holds the UNIQUE-index entry,
+  the loser's claim TERMINATES in the generic `UNAVAILABLE` (R1: never a raw `1205/1213`/500), writes no
+  handle, leaves no partial tombstone; exactly one winner; `cc2` rename-away leaves no window — a concurrent
+  claim of the released handle is UNAVAILABLE both during the in-flight rename and after it commits
+  (tombstoned). Hardened so it can never poison the suite (racer transaction always committed/rolled-back in
+  a `finally`; tearDown defensively rolls back any open transaction on either connection).
 
-CP-5 focused suite = **51 passed**, stable across repeated isolated runs.
+CP-5 focused suite = **51 passed**, stable across repeated isolated runs (cc1 ~3.6s = bounded retries
+resolving to a clean `UNAVAILABLE`).
 
-**Full governed regression (`tests/Feature/Sca`):** all CP-1/CP-2/CP-3/CP-4/Passport regressions pass. The
-full run exhibits the **known environmental deadlock flakiness** of this shared swapless host (documented
-previously for `QrReissueTest::rg8` / `QrArtifactTest::rg2`): across repeated back-to-back full runs the
-failing set is random (3–23), is always InnoDB lock-wait/deadlock (1205/1213) on PRE-EXISTING provenance
-paths unchanged by CP-5 (e.g. `ExternalClaimGrantService` insert), escalates with host load + InnoDB
-undo-history bloat from repeated runs, and **every such failing class passes cleanly in isolation**
-(verified: the 5 failing classes from one run → 55/55 green re-run isolated; CP-5 tests themselves 51/51
-green). The authoritative deploy gate (`scripts/deploy-preview.sh`, run once on a disposable DB at merge)
-re-runs on flake per established practice. One full run on a freshly-reset DB at eased load reached the end
-of the suite with ZERO failures before an unrelated OOM SIGKILL on the swapless host (co-tenant pressure);
-repeated full-suite hammering was stopped to protect the live co-tenant.
+**Full governed regression (`tests/Feature/Sca`) — ONE CLEAN RUN:** `php artisan test tests/Feature/Sca`
+→ **exit 0 · 1188 passed · 1 skipped · 0 failed · 6033 assertions · 320.9s** (the 1 skip = the known WebP GD
+environment skip). This clean run was obtained once the competing Claude/test-runner session stood down —
+the earlier 1205/1213 "deadlock storm" (variable 3–23 failures, all on pre-existing provenance paths
+unchanged by CP-5, all passing in isolation) was caused by TWO sessions running the full suite concurrently
+against the same `sca_domain_test` (genuine two-connection contention), not by CP-5. A preceding run after a
+`migrate:fresh` showed a single unrelated failure (`CertificateDocumentClassificationTest::d9`) caused by
+the reset auto-increment making a media PK the tiny value `10`, which `assertDontSee('10')` matched
+incidentally in page markup; it passes in isolation and on any non-reset DB (the established gate never
+resets), and recurred zero times once IDs advanced — a pre-existing test fragility unrelated to CP-5.
 
 ## 9. Production state (verified at restored baseline)
 
@@ -169,12 +199,32 @@ Live tree restored to `main` = `7409a33` (deployed SHA unchanged), `--no-dev` re
 - Prod `sca_krayin` migrations **133**; `handle`/`handle_normalized`/`handle_changed_at` columns **absent**;
   `sca_collector_handle_reservations` table **absent** (CP-5 migration applied only to the disposable
   `sca_domain_test`).
-- Provenance counts `3/3/4/4/5/2/7` (items/qr/certs/auth/ownership/claims/status), FP
-  `532ea48d9c2b93725fb78d99f5d7b0a8` — unchanged.
+- **Provenance reconciliation (established procedure, re-run read-only on prod):** canonical counts
+  `items/qr/certs/auth/ownership/claims/grants/sale/status = 3/3/4/4/5/2/1/1/7` — **byte-identical to the
+  established CP-4 baseline**; zero writes performed against production.
+  - **Reporting mismatch documented:** the `532ea48d9c2b93725fb78d99f5d7b0a8` value in the prior candidate
+    report was computed with a REDUCED, count-only formula — `MD5(CONCAT_WS('|', <7 counts>))` omitting
+    `grants` and `sale` — a different calculation, not the established fingerprint. The established CP-4
+    baseline FP `35e063282e004eaabcc9240360ecc0e3` is a composite ROW-DATA fingerprint (per-table
+    `GROUP_CONCAT` of row contents across the provenance tables, migration excluded), NOT a count hash: for
+    confirmation, `MD5(CONCAT_WS('|', <all 9 counts>))` = `5d37b79bcfad7f3dc2431872ac9ae99d`, which also is
+    not `35e06328…`, proving the established FP is row-content-based. The exact composite SQL was produced
+    in an earlier (CP-2/CP-3/CP-4) session whose transcript is not retained here, so it could not be
+    reproduced byte-for-byte in this session; the authoritative, reproducible data-unchanged invariant is
+    the canonical count tuple above, which matches exactly. No data mismatch — a reporting/formula mismatch
+    only, now corrected to the established 9-count procedure.
 - Collector accounts **3** / public profiles **0** / public items **0**.
 - `STRIPE_ENABLED=false`; `MAIL_MAILER=log`.
 - Edge: `GET /u/ada` → **404 `server: Caddy`** (edge-blocked — never reaches the app); `/c/*`, `/p/*`,
   `/collector/*` reachable; `/admin/login` loopback → 200. **No Caddy/DNS/Stripe/SMTP/Shopify change.**
 
-**STOP for ChatGPT pre-merge audit of head `681bc45`.** Do not merge/deploy/activate the `/u/*` edge, and
-do not start CP-6.
+## 10. Coordination note
+
+A second Claude session (`sca-cc`) was concurrently assigned the same CP-5 task on the same bind-mounted
+working tree and the same `sca_domain_test`; its parallel full-suite runs were the real cause of the
+transient 1205/1213 failures observed during the first candidate. It has fully stood down and confirmed
+`2d87c38`/`681bc45` are authoritative with nothing of its own to preserve. All further CP-5 work is owned by
+this session.
+
+**STOP for ChatGPT re-audit of head `2d87c38`.** Do not merge/deploy/activate the `/u/*` edge, and do not
+start CP-6.
