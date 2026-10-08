@@ -1,8 +1,16 @@
 # NEXT TASK
 
-**STATUS: CP-3 PROMOTED — Public Profile Foundation. Implement on a NEW branch from exact production baseline `a1e1d495d89d82fcfe921789e2b2bc4248874c0d`. Do not merge/deploy. STOP for ChatGPT pre-merge audit.**
+**STATUS: CP-3 (Public Profile Foundation) CANDIDATE pushed, awaiting ChatGPT pre-merge audit — NOT merged / NOT deployed. Deployed baseline unchanged: prod main `a1e1d49`, migrations 131, Stripe DORMANT, mail=log. Do not start CP-4.**
 
 Updated 2026-10-09.
+
+## CP-3 — Public Profile Foundation — CANDIDATE awaiting ChatGPT pre-merge audit
+
+Branch `feat/sca-collector-profile-cp3`, base `a1e1d495d89d82fcfe921789e2b2bc4248874c0d`, head **`76057cb388726b139345fe4ff7fbe5aeaf4c4360`**. Migration candidate **131 → 132** (one additive table `sca_collector_public_profiles`; **prod stays 131**). Ownership ≠ publicity: explicit opt-in publication only. New dedicated publication-state table (collector_account_id UNIQUE FK RESTRICT; `public_ref` UNIQUE high-entropy `PUB-`+32hex, NOT the COL- account ref; is_published default false; immutability trigger). `CollectorPublicProfileService` sole writer/resolver — publish/unpublish serialize account-first (sca_collector_accounts FOR UPDATE + status=active → publication row), same order as CP-1 writes + pseudonymize (no inversion); publish requires non-blank display_name + allocates the stable opaque ref once (idempotent, no rotation); resolvePublic/resolvePublicAvatar are one fail-closed read (published + active). Public UNAUTHENTICATED `/c/{publicRef}` + `/c/{publicRef}/avatar` (share-by-link, noindex, no directory); minimal card = display name + optional avatar/bio/coarse-location + "Collector since M YYYY" + no-endorsement note; NEVER collection items/counts, ownership, certs, brands, Passport links, email, account ref, ids, or avatar path; all fail-closed cases return the SAME 404; avatar nosniff + no-store (immediate unpublish). Private profile page gains an opt-in "Public profile" section (URL shown only while published). Pseudonymization now deletes the publication row atomically in the SAME privacy transaction before status=pseudonymized → public profile+avatar 404 instantly, no resurrection; still fails closed while owning items. Public reads live private presentation (no snapshot). 14 files changed (9 new + 5 modified). Tests: `CollectorPublicProfileTest` 18 + `CollectorPublicProfileConcurrencyTest` 2 (real two-connection: account-first serialization + privacy-wins); CP-1 privacy/profile + My Collection + Passport regressions retained; full SCA gate **1105 passed / 5714** (1 webp skip). Production untouched (deployed SHA `a1e1d49`, prod migr 131, no public_profiles table in prod, provenance byte-identical FP `35e06328…`, Stripe DORMANT, mail=log). **Edge note:** admitting `/c/*` at the production edge is a separate future deployment (Caddy) step, out of CP-3 scope. Evidence: `docs/SCA-COLLECTOR-PROFILE-CP3-IMPLEMENTATION.md`. **STOP — do not merge/deploy/start CP-4 until ChatGPT audits head `76057cb`.**
+
+---
+
+## CP-2 (closed / deployed) — baseline retained below
 
 ## Architecture audit / invariant
 ChatGPT audited the deployed CP-1/CP-2 profile/privacy boundary before promotion.
