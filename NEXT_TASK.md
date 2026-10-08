@@ -1,114 +1,172 @@
 # NEXT TASK
 
-**STATUS: CP-5 R1 REMEDIATED — re-pushed, awaiting ChatGPT RE-AUDIT. Branch `feat/sca-collector-profile-cp5` head `2d87c38dadb5af61a630805dc2da3a6e11eb2f02` (R1 of `681bc45`, base `7409a33`, migration 133→134). Collision/error contract fixed (bounded retry + 1062/1205/1213 → generic UNAVAILABLE, no raw 500, no partial state; concurrency test asserts clean UNAVAILABLE, not raw SQL). Clean full gate: `tests/Feature/Sca` exit 0 · 1188 passed · 1 skipped (webp) · 0 failed · 6033 assertions. Provenance reconciled: canonical counts 3/3/4/4/5/2/1/1/7 byte-identical to CP-4 baseline; prior `532ea48d` was a reduced 7-count formula (reporting mismatch, documented) — established `35e06328` is a composite row-DATA FP. Production untouched (migration 133), `/u/*` edge-blocked, Caddy+DNS+Stripe+SMTP+Shopify unchanged. Full write-up: `docs/SCA-COLLECTOR-PROFILE-CP5-IMPLEMENTATION.md` §0/§8/§9. STOP for ChatGPT re-audit of `2d87c38`; do not merge/deploy/activate the `/u/*` edge or start CP-6.**
+**STATUS: CP-5 R1 PRE-MERGE RE-AUDIT — PASS. Exact candidate `2d87c38dadb5af61a630805dc2da3a6e11eb2f02` approved for Phase-A merge/deployment. Do NOT activate /u/* edge yet. Do NOT start CP-6.**
 
 Updated 2026-10-09.
 
-## Audited candidate
-Implementation repo: `francisjonee/francisjonee-sca-platform-private`
+## Exact audited candidate
+Implementation: `francisjonee/francisjonee-sca-platform-private`
 Branch: `feat/sca-collector-profile-cp5`
 Base: `7409a33baecf2ef6bd8c44413a27a9f77fa249f1`
-Candidate: `681bc45`
-GitHub compare: 1 ahead / 0 behind, exactly 14 intended CP-5 files, one migration 133→134.
+Approved candidate: `2d87c38dadb5af61a630805dc2da3a6e11eb2f02`
+Migration: 133→134.
 
-## Accepted architecture
-The following is accepted:
-- handle remains mutable alias; immutable PUB ref unchanged;
-- separate /u namespace;
-- centralized normalizer/reserved policy;
-- handle state on publication identity;
-- PII-free 90-day tombstones;
-- no old-handle redirect;
-- unpublish preserves handle;
-- privacy tombstones handle in same privacy transaction;
-- handle routes resolve to public_ref then reuse CP-3/CP-4 eligibility;
-- no directory/search/availability endpoint;
-- /u remains edge-blocked in Phase A;
-- migration remains presentation-only.
+GitHub audit:
+- candidate is 2 commits ahead / 0 behind exact base;
+- original bounded CP-5 change remains 14 files;
+- R1 delta `681bc45 → 2d87c38` is exactly 2 files: CollectorHandleService + CollectorHandleConcurrencyTest.
 
-## R1 BLOCKER — concurrency test accepts raw DB errors instead of required generic unavailable contract
+## R1 closure — PASS
+The collision/error contract is now accepted.
 
-The promoted CP-5 requirement was:
-**real two-connection simultaneous same-handle claim: exactly one wins, loser receives the same generic handle-unavailable domain result, no SQL/owner details leak, no partial state.**
+`setHandle()`:
+- runs each write attempt as one transaction;
+- bounded `MAX_ATTEMPTS=3`;
+- Laravel transaction retry is confirmed against the exact locked framework dependency, Laravel v12.66.0 / framework ref `82a53323c701a668f9054cbeb1d6b6cdbb6a5e10`;
+- that framework's ConcurrencyErrorDetector explicitly recognizes MariaDB deadlock text and `Lock wait timeout exceeded; try restarting transaction`;
+- after retries, 1062/1205/1213 map to the same domain-safe `HandleRejection::UNAVAILABLE`;
+- other DB errors are not broadly swallowed;
+- rollback prevents partial handle/tombstone state.
 
-Current `CollectorHandleConcurrencyTest::claimIsBlocked()` explicitly treats raw MariaDB lock-wait/deadlock exceptions 1205/1213 as the PASS outcome.
+The strengthened cc1 no longer accepts raw SQL as PASS:
+- terminal result must be exactly generic UNAVAILABLE;
+- raw QueryException is classified as failure;
+- losing handle remains unset;
+- no partial tombstone;
+- exactly one winner.
+cc2 retains rename/tombstone no-window proof.
 
-But `CollectorHandleService::setHandle()` catches only duplicate-key 1062 and maps that to `HandleRejection::UNAVAILABLE`. It rethrows 1205/1213.
+Accepted clean gate evidence:
+**1188 passed / 6033 assertions / 1 known WebP environment skip / 0 failed / exit 0** after competing runner stood down.
 
-Therefore the current test proves that under its contention schedule the loser can receive a raw QueryException rather than the required domain-safe unavailable result. Through the controller this can become a 500 instead of the generic handle-unavailable flash response.
+## Provenance reconciliation
+Canonical production counts match the independently closed CP-4 baseline exactly:
+`items/qr/certs/auth/ownership/claims/grants/sale/status = 3/3/4/4/5/2/1/1/7`.
 
-This is not merely test wording: the test's accepted outcome contradicts the CP-5 external error contract.
+The earlier `532ea48d...` was a different reduced count-hash and is rejected as a provenance fingerprint.
 
-### Required remediation
-Implement and prove a bounded contention policy.
+Historical `35e063282e004eaabcc9240360ecc0e3` was a composite row-DATA fingerprint, but its exact SQL was not preserved in current governance evidence and was not independently reproducible in this audit. Do not claim it was reverified.
 
-Preferred:
-- use a small bounded transaction retry for deadlock/serialization failures if Laravel/MariaDB semantics permit safely, then let the committed winner be observed and map the losing claim to generic UNAVAILABLE;
-- OR safely map only contention outcomes that can occur during handle-claim arbitration to generic UNAVAILABLE, with no SQL details exposed;
-- preserve atomic rollback: no partial tombstone/current-handle state;
-- do not hide unrelated DB/infrastructure errors broadly.
+### Restore stronger reproducible fingerprinting now
+Before Phase-A deployment, create and document a deterministic READ-ONLY provenance row-data fingerprint procedure:
+- include the canonical provenance tables used by the prior invariant;
+- deterministic column selection and row ordering;
+- exclude migrations/presentation tables;
+- record the SQL/script itself in deployment evidence;
+- capture PRE_DEPLOY fingerprint and canonical counts.
+Run the exact same documented procedure POST_DEPLOY and require byte-identical fingerprint + counts.
+This becomes the reproducible baseline for future slices.
+Do not mutate provenance to manufacture a match with the historical hash.
 
-The exact implementation may differ, but the externally observable result for a genuine same-handle race must be:
-- one claimant succeeds;
-- the other gets `HandleRejection::UNAVAILABLE` (or controller-equivalent generic unavailable), NOT QueryException/500;
-- one active handle owner;
-- no partial rows/tombstones.
+## CP-5 Phase A deployment gate
 
-## Mandatory concurrency remediation test
-Replace/strengthen cc1 so BOTH contenders execute the real handle-claim service path as far as technically possible.
+### 1. Preflight — STOP on drift
+Verify:
+- origin/main == deployed head == exact base `7409a33baecf2ef6bd8c44413a27a9f77fa249f1`;
+- branch/head == exact approved `2d87c38dadb5af61a630805dc2da3a6e11eb2f02`;
+- candidate remains 2 ahead / 0 behind;
+- full candidate remains exactly the audited 14 CP-5 files;
+- exactly one migration 133→134;
+- production migration 133;
+- handle columns + reservation table absent;
+- canonical provenance counts exact baseline above;
+- capture NEW documented reproducible row-DATA fingerprint;
+- collector/private-profile/public-profile/public-item counts;
+- Stripe dormant; mail log;
+- /u/* externally edge-blocked by Caddy;
+- /c/*, /p/*, /collector/* current behavior intact.
 
-The assertion must NOT accept 1205/1213 as final success criteria.
+Any drift => STOP.
 
-After contention settles:
-- exactly one service claim succeeds;
-- loser resolves to generic UNAVAILABLE;
-- exactly one publication row owns normalized handle;
-- losing collector handle remains null/unchanged;
-- no unintended tombstone;
-- no raw SQL exception escapes.
+### 2. Merge exact candidate
+Merge using established no-ff process.
+Record MERGE_SHA.
+Require:
+- origin/main == MERGE_SHA;
+- candidate↔merge tree diff empty;
+- no extra content.
 
-If a deterministic harness must hold the unique key with a second connection, after releasing/committing the racer the service-side contender must complete/retry into the domain-safe unavailable result; a raw lock timeout is only an intermediate observation, never the final asserted API outcome.
+### 3. Test exact merge tree
+Use isolated disposable DB through migration 134, with no competing test runner.
 
-Retain cc2 rename/tombstone no-window proof, but ensure any service-side contention also has domain-safe behavior.
+Run:
+- CollectorHandleTest;
+- CollectorHandleConcurrencyTest;
+- CP-3 public profile + concurrency;
+- CP-4 public item + concurrency;
+- CP-1 privacy/profile;
+- Passport regressions;
+- full `tests/Feature/Sca`.
 
-## R2 RELEASE-GATE EVIDENCE — clean full suite required after peer process stopped
-The report explains that a second Claude session was concurrently using the SAME bind-mounted tree and disposable DB, causing random deadlocks. That explanation is plausible, but the candidate report does not provide one authoritative clean full-suite pass/count after the peer stood down.
+Report exact pass/assertion/skip/exit counts.
+A raw 1205/1213 escaping CP-5 collision tests is STOP.
 
-After remediation and with no competing process:
-- reset/recreate disposable test DB as established;
-- verify only one test runner owns it;
-- run focused CP-5 tests;
-- CP-3/CP-4/public-profile/concurrency/privacy/Passport regressions;
-- run ONE clean full `tests/Feature/Sca` gate to completion;
-- report exact passed/assertion/skipped counts and exit code.
-Do not aggregate isolated reruns into the release gate.
+### 4. Deploy Phase A application + schema only
+Deploy exact MERGE_SHA.
+Run migration 133→134.
 
-## R3 EVIDENCE RECONCILIATION — production provenance baseline
-The candidate report states production provenance FP `532ea48d…` and shorthand counts `3/3/4/4/5/2/7`, while the independently closed CP-4 production baseline was:
-- DATA fingerprint `35e063282e004eaabcc9240360ecc0e3`
-- items/qr/certs/auth/ownership/claims/grants/sale/status = `3/3/4/4/5/2/1/1/7`.
+Verify schema:
+- handle, handle_normalized, handle_changed_at present on publication table;
+- unique `uniq_public_profile_handle`;
+- CP-3 public_ref/account immutability trigger unchanged;
+- `sca_collector_handle_reservations` present;
+- unique normalized tombstone;
+- reusable_after index;
+- no collector/public_ref/PII linkage in tombstone;
+- existing public-profile/public-item rows unaffected;
+- no handle/tombstone rows unexpectedly created by migration.
 
-Do NOT mutate production.
-Re-run the exact established CP-4 provenance fingerprint/count command against production and reconcile whether the CP-5 report used a different fingerprint algorithm/column set or whether actual drift exists.
-- If same established command returns `35e063...` and canonical counts, document the earlier CP-5 shorthand as reporting-method mismatch.
-- If canonical production data actually changed, STOP and report the exact drift before any merge.
+### 5. Phase-A production smoke — NO edge activation
+Do NOT edit/reload/recreate Caddy.
 
-Also reconfirm production is restored to `main@7409a33...`, migration 133, CP-5 schema absent, Stripe dormant, mail log, /u edge-blocked.
+Verify app internally/loopback:
+- /u/{handle}, /u/{handle}/avatar, /u/{handle}/items/{itemRef}/image routes registered;
+- malformed/unknown app-level requests fail closed;
+- private POST/DELETE handle routes collector-authenticated + throttle 10/min;
+- no availability/search/directory route;
+- /c opaque routes unchanged;
+- CP-4 opaque image route unchanged;
+- Passport identity-free;
+- collector auth unchanged.
 
-## Re-run
-Migration may remain 133→134.
-Push remediation on SAME CP-5 branch.
-Report:
-- new head;
-- exact delta from 681bc45;
-- collision/error-handling design;
-- concurrency outcomes;
-- focused counts;
-- ONE clean full-suite count/assertions/skips/exit;
-- reconciled canonical production provenance baseline;
-- production untouched;
-- no Caddy/DNS/Stripe/SMTP/Shopify changes.
+Verify externally:
+- /u/ada remains **Caddy 404** (not Apache/Laravel) — expected Phase-A state;
+- /c/* and /p/* remain routed as before;
+- collector auth behavior unchanged;
+- admin restriction unchanged;
+- unrelated edge catch-all unchanged;
+- external :8080 closed;
+- co-tenant health unchanged.
 
-Then STOP for ChatGPT re-audit.
-Do not merge/deploy.
-Do not start CP-6.
+Do not create production collector/public fixtures solely for smoke.
+
+### 6. Invariants
+POST_DEPLOY run the exact same newly documented row-DATA fingerprint procedure and canonical count query.
+Require:
+- PRE == POST fingerprint byte-for-byte;
+- canonical provenance counts unchanged `3/3/4/4/5/2/1/1/7`;
+- report collector/private-profile/public-profile/public-item counts;
+- report handle-bearing publication count + tombstone count;
+- Stripe dormant;
+- mail log;
+- no Shopify/SMTP/DNS/Caddy changes.
+
+### 7. Evidence + STOP
+Write CP-5 Phase-A deployment evidence containing:
+- base/candidate/MERGE_SHA/origin-main/deployed-head;
+- candidate↔merge tree identity;
+- migration/schema;
+- exact reproducible provenance fingerprint SQL/script + PRE/POST values;
+- canonical counts PRE/POST;
+- focused/full tests;
+- route/middleware smoke;
+- proof external /u remains Caddy-blocked;
+- /c, /p, collector/admin/edge/co-tenant regressions;
+- Stripe/mail state;
+- confirmation no Caddy/DNS/Shopify/SMTP change.
+
+Then STOP for ChatGPT Phase-A post-deployment audit.
+
+Do NOT activate /u/*.
+Do NOT declare CP-5 closed.
+Do NOT start CP-6.
