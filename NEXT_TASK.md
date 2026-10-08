@@ -1,8 +1,20 @@
 # NEXT TASK
 
-**STATUS: CP-4 R1 PRE-MERGE RE-AUDIT — PASS. Exact candidate `2836114ef5dd7b48e16f696c9195d52125725e11` approved for merge/deployment. Do not start CP-5.**
+**STATUS: CP-4 (Public Collection Controls) MERGED + DEPLOYED (prod main `7409a33`, migrations 133). Provenance byte-identical; Stripe DORMANT; mail=log; no Caddy/DNS change. STOP for ChatGPT CP-4 post-deployment audit. CP-4 NOT declared closed. Do not start CP-5.**
 
 Updated 2026-10-09.
+
+## Current deployed baseline (authoritative — single source of truth)
+- Deployed implementation `main` = **`7409a33baecf2ef6bd8c44413a27a9f77fa249f1`** — CP-4 merged `--no-ff` + deployed; tree file-identical to audited candidate `2836114ef5dd7b48e16f696c9195d52125725e11` (base `3e70758`). Prior deployed: CP-3 Phase A+B `3e70758`.
+- Governance/evidence repo = `francisjonee/Shopify-Jeremy`.
+- Prod migrations **133** (132→133: additive `sca_collector_public_items`, **0 rows**; UNIQUE(collector,item) + 2 indexes + both FKs RESTRICT + is_visible default 0 + immutability trigger). Provenance DATA byte-identical pre/post (FP `35e063282e004eaabcc9240360ecc0e3`; items 3/qr 3/certs 4/auth 4/ownership 5/claims 2/grants 1/sale 1/status 7). Collector accounts 3 / private profiles 0 / public profiles 0 / public items 0.
+- Public edge LIVE; admits `/p/*` + `/collector/*` + `/c/*` (CP-3 Phase B); `:8080` loopback-only; `MAIL_MAILER=log`; `STRIPE_*` UNSET.
+
+## CP-4 — Public Collection Controls — DEPLOYED
+`7409a33`, migr 132→133. Explicit per-item opt-in public visibility (ownership≠publicity; profile-publication≠item-publication). `CollectorPublicItemService` sole writer/resolver; ONE centralized eligibility predicate (CP-3 published + active + non-blank name + preference visible + current owner + non-adverse) backs the public collection list + image; `setVisible` serializes on the shared `sca_item_current_state` FOR UPDATE boundary and re-reads owner/registry under it (TOCTOU closed, R1); transactional reset at `ProjectionService::rebuild` covers all ownership+status writers; read predicate is defense-in-depth. Public `/c/{ref}` Collection section (allowlisted cards, no Passport link, empty hides totals) + `GET /c/{ref}/items/{itemRef}/image` (nosniff/no-store; within existing `/c/*` edge). Private toggle `POST`/`DELETE /collector/collection/{ref}/public`. Pseudonymization deletes CP-4 rows; CP-3 unpublish closes the surface, republish restores still-safe items. Deploy gate **1137 passed / 5864** (1 webp skip, no rg8 flake). Prod data byte-identical, public_items 0; Stripe DORMANT; mail=log. Evidence: `docs/SCA-COLLECTOR-PROFILE-CP4-{IMPLEMENTATION,DEPLOY-RESULT}.md`. **STOP for ChatGPT CP-4 post-deployment audit of `7409a33`. CP-4 NOT closed; CP-5 NOT started.**
+
+### Prior deployed baseline (superseded by CP-4 `7409a33`)
+- `3e707582c21e40b97e909c8593987787fd4c33c4` — CP-3 Public Profile Foundation (app + edge), migr 132. Prior: CP-2 `a1e1d49` (131), CP-1 `8d8c359` (131).
 
 ## Exact audited candidate
 Implementation repo: `francisjonee/francisjonee-sca-platform-private`
