@@ -1,8 +1,20 @@
 # NEXT TASK
 
-**STATUS: CP-2 PRE-MERGE AUDIT PASS — exact candidate approved for merge/deployment. CP-3 remains forbidden.**
+**STATUS: CP-2 (Rich My Collection) MERGED + DEPLOYED (prod main `a1e1d49`, migrations 131). Provenance byte-identical; Stripe DORMANT; MAIL_MAILER=log. STOP for ChatGPT post-deployment audit. CP-3 remains forbidden / NOT started.**
 
 Updated 2026-10-09.
+
+## Current deployed baseline (authoritative — single source of truth)
+- Deployed implementation `main` = **`a1e1d495d89d82fcfe921789e2b2bc4248874c0d`** (impl repo `francisjonee/francisjonee-sca-platform-private`) — CP-2 merged `--no-ff` + deployed; deployed tree file-identical to audited candidate `5ebe9591a530874f5376296a2e10f538772834e8` (base `8d8c359`). Prior deployed: CP-1 `8d8c359`.
+- Governance/evidence repo = `francisjonee/Shopify-Jeremy`.
+- Prod migrations **131** (CP-2 is read-only — NO migration). Provenance DATA byte-identical pre/post (FP `35e063282e004eaabcc9240360ecc0e3`; items 3/qr 3/certs 4/auth 4/ownership 5/claims 2/grants 1/sale 1/status 7). Collector accounts 3 / profiles 0 (unchanged).
+- Public edge LIVE `https://verify.secondchanceauthenticators.com`; `:8080` loopback-only; `SESSION_SECURE_COOKIE=true`; `MAIL_MAILER=log`; `STRIPE_*`/provider creds UNSET.
+
+## CP-2 — Rich My Collection — DEPLOYED
+`a1e1d49`, NO migration (stays 131). Responsive private collection catalog at `/collector/collection`: canonical-ownership summary header (bounded SQL aggregate) with collector display-name; owner-safe responsive cards (image via existing authorized route or placeholder; brand/model/ref/SKU/year/condition/truthful current-certification badge/adverse warning; no internal ids/tokens/frame_serial/staff/Shopify/other-collector data); GET-only allowlisted search (brand/model/ref/SKU, LIKE-escaped+bound) / brand filter (collector-scoped) / cert filter (canonical current_certification_id) / registry filter (ADVERSE_STATUSES) / sort (recent default via tail ownership event, brand A–Z/Z–A, ref; deterministic tie-breaks); page size 24 filter-preserving pagination; true-empty vs filtered-no-result states; bounded no-N+1 queries. Item detail + `ownedItems()` untouched; privacy invariants intact (membership=current ownership; prior owner drops after transfer; guessed refs 404; collector guard; Passport identity-free). R1–R3 remediation closed. Deploy gate **1085 passed / 5608** (1 WebP skip); prod provenance byte-identical, Stripe DORMANT, mail=log. Evidence: `docs/SCA-COLLECTOR-PROFILE-CP2-{IMPLEMENTATION,DEPLOY-RESULT}.md`. **STOP for ChatGPT post-deployment audit of `a1e1d49`. CP-3 NOT started.**
+
+### Prior deployed baseline (superseded by CP-2 `a1e1d49`)
+- `8d8c35947d7c405124e0df4f09ff3ef4ee9e6bb8` — CP-1 Collector Profile (Private Profile Foundation), migr 131. Prior: External Paid Auth Intake Slice 6 `f461c17` (migr 130).
 
 ## Exact audited candidate
 Implementation repo: `francisjonee/francisjonee-sca-platform-private`
