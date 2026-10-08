@@ -1,155 +1,147 @@
 # NEXT TASK
 
-**STATUS: CP-4 R1 REMEDIATED (concurrency/TOCTOU) — CANDIDATE awaiting ChatGPT re-audit. NOT merged / NOT deployed. Deployed baseline unchanged (prod main `3e70758`, migr 132, Stripe DORMANT, mail=log). Do not start CP-5.**
+**STATUS: CP-4 R1 PRE-MERGE RE-AUDIT — PASS. Exact candidate `2836114ef5dd7b48e16f696c9195d52125725e11` approved for merge/deployment. Do not start CP-5.**
 
 Updated 2026-10-09.
 
-## Re-audit target
-Branch `feat/sca-collector-profile-cp4`, base `3e707582c21e40b97e909c8593987787fd4c33c4`, candidate **`2836114ef5dd7b48e16f696c9195d52125725e11`** (R1 remediation of `e041eea`). Migration unchanged 132→133. Production untouched.
-
-### R1 remediation summary (concurrency blocker closed)
-`CollectorPublicItemService::setVisible()` now acquires `FOR UPDATE` on the SAME `sca_item_current_state` row that every ownership writer (Claim/Transfer/OwnershipCorrection) and status writer (StatusService/Commerce) locks + updates via `ProjectionService::rebuild`, and re-reads canonical current owner + registry UNDER that lock before writing `is_visible=true`. So a transfer/adverse transaction can no longer reset-and-commit between the eligibility read and the write (the TOCTOU): either setVisible holds the row (writer's rebuild then resets the pref) or the writer committed first (setVisible's re-read fails closed). No stale `true` survives → no auto-resurrection on reacquisition/recovery. Lock order account→item-state matches every writer that locks both (claim L74→L118, transfer L61→L113, pseudonymize L54→L67); no writer locks account after item-state → no inversion (deadlock-safe; proven by writer audit). CP-3 publication/active still authoritative; UNIQUE idempotency preserved; zero provenance.
-
-Real overlapping **two-connection** `CollectorPublicItemConcurrencyTest` (non-transactional; deletable fixtures via ItemService + seeded current_state): `cc1` visibility-publish racing a real transfer and `cc2` racing a real adverse transition — a racer connection holds the item-state row FOR UPDATE and commits the ownership/status change + CP-4 reset, the main setVisible BLOCKS on that lock (observed 1205) and writes nothing, then after commit re-reads and fails closed; `cc1` proves B inherits no preference + B→A reacquisition stays private; `cc2` proves recovery stays private — both until explicit re-opt-in. Sequential `pi18`/`pi19` retained. Delta from `e041eea` = 3 files (`CollectorPublicItemService.php` + new `CollectorPublicItemConcurrencyTest.php`, strengthened at `2836114`).
-
-Focused `CollectorPublicItemTest` **29** + `CollectorPublicItemConcurrencyTest` **2**; full SCA gate **1137 passing** (1 webp skip; one run hit the known unrelated `QrReissueTest::rg8` timing flake → 11/11 on isolated re-run). Production untouched (deployed `3e70758`, prod migr 132, no public_items table in prod, provenance byte-identical FP `35e06328…`, Stripe DORMANT, mail=log). Evidence: `docs/SCA-COLLECTOR-PROFILE-CP4-IMPLEMENTATION.md` (R1 section). **STOP for ChatGPT re-audit of `2836114`.**
-
----
-
-## Prior pre-merge audit (FAIL — R1 concurrency) — addressed above
-Prior candidate: `e041eea7b9ee67bba21914ad4777d42f0a4f0e0a`
-
-## Audited candidate
-Repo: `francisjonee/francisjonee-sca-platform-private`
+## Exact audited candidate
+Implementation repo: `francisjonee/francisjonee-sca-platform-private`
 Branch: `feat/sca-collector-profile-cp4`
-Base: `3e707582c21e40b97e909c8593987787fd4c33c4`
-Candidate: `e041eea7b9ee67bba21914ad4777d42f0a4f0e0a`
-GitHub compare: 1 ahead / 0 behind, exactly 13 intended CP-4 files, one migration 132→133.
+Production base: `3e707582c21e40b97e909c8593987787fd4c33c4`
+**APPROVED CANDIDATE: `2836114ef5dd7b48e16f696c9195d52125725e11`**
 
-## Accepted portions
-The core read architecture is accepted:
-- dedicated collector+item presentation state;
-- default private;
-- centralized public read predicate intersects CP-3 publication + active/nonblank profile + explicit visibility + canonical current ownership + non-adverse status;
-- conservative public DTO;
-- no public item detail/Passport link;
-- public image shares eligibility predicate;
-- projection-boundary reset covers canonical ownership/status rebuilds;
-- privacy cleanup present;
-- transfer/correction/adverse/recovery sequential behavior is well covered;
-- migration shape is appropriate.
+GitHub audit:
+- full candidate: 3 commits ahead / 0 behind exact base;
+- 14 files total: original 13 CP-4 files plus the dedicated concurrency test;
+- R1 delta from `e041eea...`: exactly CollectorPublicItemService + CollectorPublicItemConcurrencyTest;
+- migration unchanged, single additive 132→133.
 
-## R1 BLOCKER — real stale-visible race remains; deterministic ordering tests do not prove the required invariant
+## R1 closure
+PASS.
 
-The promoted task explicitly required real concurrency proof for:
-- visibility publish racing ownership transfer;
-- visibility publish racing adverse status.
+`CollectorPublicItemService::setVisible()` now:
+1. locks active collector account;
+2. requires CP-3 publication;
+3. resolves item ref;
+4. locks the canonical `sca_item_current_state` row FOR UPDATE;
+5. re-reads current owner + registry status under that lock;
+6. only then writes visibility=true.
 
-Candidate substitutes sequential “both orderings” tests and claims literal concurrency is infeasible. That claim is not accepted.
+This closes the stale-eligibility TOCTOU:
+- if visibility holds item-state first, ownership/status rebuild must wait and then resets visibility in its transaction;
+- if ownership/status mutation commits first, visibility's locked re-read sees new owner/adverse state and fails closed.
 
-### Why the race exists
-`CollectorPublicItemService::setVisible()`:
-1. locks only the collector account;
-2. checks CP-3 publication;
-3. reads `sca_item_current_state` for current ownership + non-adverse WITHOUT locking the item/current-state row;
-4. later inserts/updates `sca_collector_public_items.is_visible=true`.
+Public reads independently retain current-owner/non-adverse checks.
 
-Ownership/status writers rebuild/reset visibility in their own transaction through `ProjectionService::rebuild()`.
+### Lock-order audit
+Accepted:
+- Claim and Transfer take collector account before their item-state synchronization boundary;
+- CP-3 publish/unpublish and privacy use account-first lifecycle serialization;
+- OwnershipCorrection/Commerce/status paths do not acquire a collector account lock after item-state, so no account↔item inversion is introduced;
+- setPrivate only makes state more private and does not participate in eligibility publication.
 
-A valid interleaving can therefore be:
+Note: do not describe every writer as universally account→item-state; some item-only writers exist. The accepted property is **no writer acquires account after item-state**.
 
-#### Transfer race
-T1 visibility:
-- locks collector A account;
-- reads projection: A still owner, normal → eligible;
-- pauses before visibility insert/update.
+### Concurrency proof
+Accepted:
+- dedicated second MariaDB connection;
+- racer holds the exact `sca_item_current_state` FOR UPDATE boundary;
+- main `setVisible()` demonstrably blocks with lock-wait timeout and writes no preference;
+- after racer commits ownership/status state + visibility reset, retry re-reads under lock and fails closed;
+- transfer case proves recipient inherits no preference and reacquisition stays private until explicit opt-in;
+- adverse case proves recovery stays private until explicit opt-in;
+- original sequential pi18/pi19 real-writer tests remain.
 
-T2 transfer/correction:
-- changes canonical ownership to B;
-- rebuilds projection;
-- resets currently-existing stale visibility rows;
-- commits.
+The concurrency harness directly exercises the synchronization boundary rather than invoking full TransferService/StatusService on the racer connection. This is accepted because inspected production writers converge on that same locked projection row/rebuild boundary, while sequential integration tests exercise the real writers end-to-end.
 
-T1:
-- resumes and writes/commits A's visibility=true based on the stale eligibility read.
+## Reported test gate
+- CollectorPublicItemTest: 29 passed;
+- CollectorPublicItemConcurrencyTest: 2 passed;
+- focused total: 31 passed;
+- full SCA: 1137 passing, 1 accepted WebP environment skip;
+- one run hit known unrelated QrReissueTest::rg8 rebuilt_at timing flake; isolated rerun 11/11. Treat any materially different/repeated failure as STOP, not automatically accepted.
 
-Immediate public read is still safe because centralized predicate sees B as current owner. BUT A now retains a stale visible=true preference.
+## Deployment gate
 
-Later B→A reacquisition rebuild sees A as current owner and, by current reset logic, preserves A's visible row. The item can therefore automatically reappear without a new explicit opt-in, violating:
-- old-owner preference must reset private;
-- reacquisition remains private until explicit re-opt-in.
+### 1. Preflight — STOP on drift
+Verify:
+- origin/main == deployed head == `3e707582c21e40b97e909c8593987787fd4c33c4`;
+- branch/head == exact approved `2836114ef5dd7b48e16f696c9195d52125725e11`;
+- candidate remains 3 ahead / 0 behind;
+- diff remains exactly the audited 14 files;
+- exactly one new migration, expected 132→133;
+- production migration 132;
+- `sca_collector_public_items` absent pre-deploy;
+- capture provenance fingerprint/counts;
+- capture collector/private-profile/public-profile counts;
+- Stripe dormant; mail log;
+- active Caddy still admits /c/* from CP-3.
 
-#### Adverse race
-Same pattern:
-T1 reads normal/non-adverse and pauses.
-T2 commits adverse status + reset.
-T1 then writes visible=true.
+Any drift => STOP.
 
-Immediate public read is suppressed by adverse predicate, but stale true survives. On later recovery, rebuild sees same owner + non-adverse and preserves the row, so the item can auto-republish after recovery, violating CP-4.
+### 2. Merge exact audited tree
+Merge using established no-ff process.
+Record MERGE_SHA.
+Require:
+- origin/main == MERGE_SHA;
+- candidate↔merge tree diff empty;
+- no extra implementation content.
 
-Defense-in-depth public reads prevent an immediate disclosure, but they do NOT satisfy the persistent privacy-state invariant.
-
-## Required remediation
-Make visibility publication serialize with canonical ownership/status eligibility so a stale eligibility read cannot write visible=true after an ownership/adverse commit.
-
-Choose the smallest safe lock design after auditing existing lock order. Requirements:
-- `setVisible()` must acquire an item/current-state lock that is also mutually exclusive with ownership/status writers BEFORE relying on eligibility;
-- re-read canonical current ownership + registry status under that lock;
-- preserve consistent global lock ordering and avoid account↔item deadlock with existing workflows;
-- if account-first is incompatible with canonical item writers, redesign the CP-4 mutation lock order safely rather than layering an inversion;
-- CP-3 publication/account active eligibility must still be authoritative at commit;
-- UNIQUE replay/idempotency behavior preserved;
-- no provenance mutation by visibility action.
-
-A robust alternative is an ownership/status **epoch binding** stored with the preference (e.g. bind to canonical last ownership/status event identity) and require exact epoch equality at public read, but this is a larger schema/read design. Prefer serialization if it can be proven deadlock-safe.
-
-Do NOT merely add another post-write read/check without locking; that remains TOCTOU.
-Do NOT rely only on the public read predicate; reacquisition/recovery resurrection remains the issue.
-Do NOT delete the sequential tests; retain them in addition to real race tests.
-
-## Mandatory real concurrency regressions
-Use two real DB connections/processes or the established deterministic concurrency harness used elsewhere in SCA. Prove actual overlap, not sequential calls.
-
-### Transfer race
-Force visibility transaction to pause after acquiring the chosen synchronization boundary / during eligibility evaluation, then race a real transfer (or vice versa as appropriate to lock design). Prove after both commits:
-- canonical owner is B;
-- A preference is false/absent;
-- A public collection/image cannot resolve item;
-- B has no inherited visible preference;
-- after B→A reacquisition, A is STILL private until explicit re-opt-in.
-
-Also exercise the inverse start order if the lock design makes it materially distinct.
-
-### Adverse race
-Race visibility publication with a real adverse status writer. After both commits:
-- canonical status adverse;
-- preference false/absent;
-- public collection/image cannot resolve;
-- after recovery/normalization, item remains private until explicit re-opt-in.
-
-### Deadlock/lock-order proof
-Add/document a test or precise code audit demonstrating the chosen lock order is compatible with:
-- TransferService;
-- OwnershipCorrectionService;
-- StatusService writers;
-- CP-3 publish/unpublish;
-- CollectorPrivacyService;
-- CP-4 setPrivate/setVisible.
-
-No unresolved deadlock retry should be considered a PASS.
-
-## Re-run gates
+### 3. Test exact merge tree
+Disposable DB migrated through 133.
+Run:
 - CollectorPublicItemTest;
-- new real concurrency test class if separated;
+- CollectorPublicItemConcurrencyTest;
 - CP-3 public profile + concurrency;
 - CP-2 My Collection;
 - transfer/status/privacy/Passport regressions;
-- full `tests/Feature/Sca`.
+- full tests/Feature/Sca.
 Report exact pass/assertion/skip counts.
+Known WebP environment skip accepted.
+QrReissue rg8 may only be classified as known timing flake if isolated rerun is clean and there is no CP-4 causal signal; otherwise STOP.
 
-Migration may remain 132→133 if no schema change is required.
-Production stays untouched at `3e707582...`, migration 132.
-No Caddy/DNS/Stripe/SMTP/Shopify changes.
-No CP-5.
+### 4. Deploy app + migration
+Deploy exact MERGE_SHA using established procedure.
+Run migration 132→133.
+Verify:
+- `sca_collector_public_items` exists;
+- FK/unique/index/default-private/immutability trigger present;
+- row count initially 0 unless legitimate production activity occurred after deploy; investigate/report nonzero;
+- no Caddy/DNS change required.
 
-Push remediation on SAME CP-4 branch, update implementation evidence, report exact new head + delta from `e041eea...`, and STOP for ChatGPT re-audit.
+### 5. Production smoke without creating public fixtures
+Because production currently has 0 CP-3 public-profile rows, do not create collector/item publication solely for smoke.
+
+Verify:
+- deployed head == origin/main == MERGE_SHA;
+- migration 133;
+- CP-4 private POST/DELETE routes registered behind collector auth;
+- nested public image route under /c/* registered unauthenticated at app layer;
+- external syntactically valid bogus nested CP-4 image URL reaches kr-app/Laravel ordinary 404 through existing /c/* edge admission;
+- bogus CP-3 profile behavior remains app-level 404;
+- /collector collection/profile remain auth gated;
+- Passport remains identity-free/reachable;
+- /admin restriction unchanged;
+- unrelated edge catch-all unchanged;
+- direct :8080 remains unavailable externally;
+- no CP-5 routes;
+- provenance fingerprint/counts unchanged;
+- collector/private-profile/public-profile/public-item counts reported;
+- Stripe dormant; mail log;
+- no Caddy/DNS/Shopify/SMTP changes.
+
+### 6. Evidence + STOP
+Create/update CP-4 deployment result documentation with:
+- base/candidate/MERGE_SHA/origin-main/deployed-head;
+- candidate↔merge tree identity;
+- migration/schema;
+- focused/full tests;
+- route/middleware and external nested-image 404 origin evidence;
+- CP-3/Passport/collector/admin/edge regression smoke;
+- provenance/counts;
+- Stripe/mail state;
+- confirmation no Caddy/DNS/Shopify/SMTP change.
+
+Then STOP for ChatGPT CP-4 post-deployment audit.
+Do NOT declare CP-4 closed yourself.
+Do NOT start CP-5.
