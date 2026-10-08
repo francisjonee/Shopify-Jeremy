@@ -1,8 +1,12 @@
 # NEXT TASK
 
-**STATUS: Slices 1–5 CODE DEPLOYED + payment concurrency hardening + Stripe webhook amount/currency hardening (R1) DEPLOYED; Stripe DORMANT; Stripe Test Mode real-provider dry-run pending; Slice 6 unpromoted.**
+**STATUS: Slices 1–5 + payment concurrency hardening + Stripe R1 DEPLOYED (prod `7ff176c`, migr 129, Stripe DORMANT). Slice 6 (Exceptions & Returns) = CANDIDATE pushed, awaiting ChatGPT audit — NOT merged / NOT deployed.**
 
-Updated 2026-10-07.
+Updated 2026-10-08.
+
+## Slice 6 — Exceptions & Returns — CANDIDATE awaiting ChatGPT audit
+
+Branch `feat/sca-external-paid-auth-slice6`, base `7ff176c4b36d0eba805e296d83326f6d0f998fc1`, head **`5ee1067217a8c2fd8bea96bf3a7062db33856438`**, migrations 129→**130** (one additive table; **prod still 129**). Operational physical-return lifecycle for a frame leaving SCA custody for ANY outcome (failed/inconclusive OR certified): dedicated record `sca_authentication_returns` with its OWN advance-only machine `return_pending → return_in_transit → returned` (submission stays `received`; no registry status overloaded; submission machine + CHECK untouched). `ReturnService` sole writer (prepare/markShipped/markReturned; idempotent; fail-closed); eligibility = custody + canonical safe-return point (finalized failed/inconclusive OR certified), NEVER ownership/claim. Bound item derived server-side; binding + advance-only enforced at DB (UNIQUE + trigger). ZERO new provenance; claim grant never consumed (collector can still claim before/during/after return). New **dedicated** ACL `sca.eyewear.submission.return`; staff Prepare/Ship/Complete on the submission detail; collector safe return card (state/carrier/tracking/dates only — no internal ids/notes); Slice-5 result+claim intact. `SubmissionReturnTest` **36 passed**; full SCA regression **1021 passed / 5306**. Production untouched (prod `sca_krayin` migr 129, no returns table, provenance DATA byte-identical FP `84e6339…`, Stripe DORMANT edge 404 + app unset). Evidence: `docs/SCA-EXTERNAL-PAID-AUTH-INTAKE-SLICE6-IMPLEMENTATION.md`. **STOP — do not merge/deploy/activate Stripe/begin another task until ChatGPT audits head `5ee1067`.**
 
 ## Current deployed baseline (authoritative — single source of truth)
 
