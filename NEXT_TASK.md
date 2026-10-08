@@ -1,8 +1,24 @@
 # NEXT TASK
 
-**STATUS: CP-4 PROMOTED — Public Collection Controls. Implement on a NEW branch from exact deployed baseline `3e707582c21e40b97e909c8593987787fd4c33c4`. Do not merge/deploy. STOP for ChatGPT pre-merge audit.**
+**STATUS: CP-4 (Public Collection Controls) CANDIDATE pushed, awaiting ChatGPT pre-merge audit — NOT merged / NOT deployed. Deployed baseline unchanged: prod main `3e70758`, migrations 132, Stripe DORMANT, mail=log. Do not start CP-5.**
 
 Updated 2026-10-09.
+
+## CP-4 — Public Collection Controls — CANDIDATE awaiting ChatGPT pre-merge audit
+
+Branch `feat/sca-collector-profile-cp4`, base `3e707582c21e40b97e909c8593987787fd4c33c4`, head **`e041eea7b9ee67bba21914ad4777d42f0a4f0e0a`**. Migration candidate **132 → 133** (one additive table `sca_collector_public_items`; **prod stays 132**). Explicit per-item opt-in public visibility; ownership≠publicity, profile-publication≠item-publication.
+
+New `sca_collector_public_items` (collector+item UNIQUE, FKs RESTRICT, is_visible default false, visible_since, binding immutability trigger; presentation-only, zero provenance). `CollectorPublicItemService` sole writer/resolver — ONE centralized eligibility predicate (CP-3 published + account active + non-blank display_name + preference visible + canonical current owner==collector + non-adverse) backs both the public collection list and the public image; setVisible/setPrivate are session-collector-only, account-first locked, idempotent, no-row-on-failed-eligibility, non-disclosing make-private.
+
+**Ownership/status integration = SINGLE shared boundary `ProjectionService::rebuild`** (audited: ALL writers rebuild there — ClaimService, TransferService, OwnershipCorrectionService, StatusService collector/staff/admin, CommerceService refund). A conditional reset keyed on POST-rebuild state flips CP-4 preferences private when adverse / no owner / collector≠current-owner — atomic with the ownership/status change, never makes anything visible, no account lock (no inversion). Transfer/correction reset OLD owner (recipient inherits nothing); adverse resets; recovery never auto-restores. Read predicate independently intersects current ownership + non-adverse (defense in depth).
+
+Public (within already-admitted `/c/*`): `/c/{publicRef}` opt-in Collection section (bounded, allowlisted: ref+brand+model+year+cert-label+image; omits SKU/condition/dates/history/ids/paths/tokens; empty hides totals; NO Passport link) + `GET /c/{publicRef}/items/{itemRef}/image` (nosniff/no-store; indistinguishable 404). Private toggle on My Collection item detail (`POST`/`DELETE /collector/collection/{ref}/public`). Pseudonymization deletes CP-4 rows in the privacy txn; CP-3 unpublish closes collection/images, republish restores still-safe items.
+
+13 files (5 new + 8 modified). `CollectorPublicItemTest` **29 passed / 118** (incl. pi18/pi19 both race orderings for transfer + adverse; literal 2nd-connection race infeasible — append-only provenance can't be torn down non-transactionally + invariant is read-predicate/rebuild-reset based not lock-timing). Full SCA gate **1135 passed / 5850** (1 webp skip). Production untouched (deployed `3e70758`, prod migr 132, no public_items table in prod, provenance byte-identical FP `35e06328…`, Stripe DORMANT, mail=log). No Caddy/DNS/Stripe/SMTP/Shopify change; no CP-5. Evidence: `docs/SCA-COLLECTOR-PROFILE-CP4-IMPLEMENTATION.md`. **STOP — do not merge/deploy/start CP-5 until ChatGPT audits head `e041eea`.**
+
+---
+
+## CP-3 (closed / deployed app+edge) — baseline retained below
 
 ## Architecture audit
 ChatGPT audited deployed CP-2 current-owner collection semantics and CP-3 publication/privacy lifecycle before promotion.
