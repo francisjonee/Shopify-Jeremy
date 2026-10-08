@@ -1,8 +1,16 @@
 # NEXT TASK
 
-**STATUS: PROMOTED — SCA Collector Profile & Rich Collection Experience, CP-1 Private Profile Foundation. ONE task only. Implementation repo baseline is deployed main `f461c17b7e0cbd5a5e5f026d5f5000870ef04752`, prod migrations 130. Stripe remains DORMANT.**
+**STATUS: CP-1 (Collector Profile — Private Profile Foundation) CANDIDATE pushed, awaiting ChatGPT pre-merge audit — NOT merged / NOT deployed. Deployed baseline unchanged: prod main `f461c17`, migrations 130, Stripe DORMANT.**
 
 Updated 2026-10-08.
+
+## CP-1 — Private Profile Foundation — CANDIDATE awaiting ChatGPT pre-merge audit
+
+Branch `feat/sca-collector-profile-cp1`, base `f461c17b7e0cbd5a5e5f026d5f5000870ef04752`, head **`5eddb141d175b5cbfa7e409a46f44fefd8617d98`**, migrations prod 130 → candidate **131** (one additive table; **prod still 130**). Private authenticated collector profile (behind `collector.auth`; NO public/social surface). New one-to-one SCA-owned table `sca_collector_profiles` (bio≤500 / location≤120 / private avatar_path+avatar_mime server-side-only); `display_name` stays canonical on `sca_collector_accounts` (self-edited, not duplicated); UNIQUE(collector_account_id) + immutability trigger `trg_sca_collector_profiles_bu`; FK RESTRICT. Avatar: narrow server-side allowlist (JPEG/PNG/WebP ≤5MB), server-generated filename, **private `local` disk** (never public/ or /storage), streamed ONLY via an authenticated self-resolving route (nosniff, private/no-store); replace bounds the trail + compensates on failure; remove deletes bytes. Pseudonymization extended: profile row removed ATOMICALLY in the privacy transaction (reachability dies at commit) + avatar bytes deleted post-commit; still fails closed while owning items; idempotent; provenance preserved. Derived stats (owned/certified/distinct-brands) from canonical current ownership, never stored counters; "Collector since" = account created_at. ZERO provenance from any profile/avatar action; public Passport collector-identity contract unchanged. 8 new + 4 modified files. `CollectorProfileTest` **29 passed / 116 assertions (1 skipped: GD-webp)**; full SCA gate **1050 passed / 5432**. Production untouched (prod migr 130, no `sca_collector_profiles`, provenance unchanged, Stripe DORMANT, mail=log). Evidence: `docs/SCA-COLLECTOR-PROFILE-CP1-IMPLEMENTATION.md`. **STOP — do not merge/deploy/activate Stripe/start CP-2 until ChatGPT audits head `5eddb141`.**
+
+---
+
+## Promotion brief (CP-1) — as issued
 
 ## Objective
 
