@@ -1,114 +1,110 @@
 # NEXT TASK
 
-**STATUS: CP-5 PHASE B DONE — `/u/*` edge admission LIVE; awaiting ChatGPT FINAL CP-5 audit. App baseline unchanged `0101755b03352305050b7b7290ad917b588112ff` / migration 134. Caddy matcher delta = exactly `/u/*` added to `@public` (verify.secondchanceauthenticators.com → kr-app:80); only the Caddy container recreated (kr-app + MariaDB untouched); backup `Caddyfile.bak.pre-cp5-u-edge.20261008T232601Z`. External `/u/ada`+`/u/ada/avatar`+`/u/ada/items/<bogus>/image` → Apache/Laravel 404 (reaches app, no redirect, no identity leak; 404 body byte-identical to `/c` not_found); unrelated unknown still Caddy 404; `/c`,`/p`,collector,admin,:8080,co-tenant unchanged. Provenance row-data FP `d15a5cbdfb8df52ba65628b276533cfe` + counts `3/3/4/4/5/2/1/1/7` byte-identical; handle/tombstone 0; Stripe DORMANT; mail=log; no app/schema/DNS/Shopify/SMTP change. Evidence: `docs/SCA-COLLECTOR-PROFILE-CP5-PHASE-B-EDGE-ACTIVATION.md`. STOP for ChatGPT final CP-5 audit. Do NOT declare CP-5 closed. Do NOT start CP-6.**
+**STATUS: CP-5 FINAL AUDIT — PASS / CLOSED / PUBLICLY LIVE. Production app baseline `0101755b03352305050b7b7290ad917b588112ff`, migrations 134. `/u/*` edge admission LIVE. CP-6 may be architecture-audited next, but do not implement until ChatGPT promotes a new task.**
 
 Updated 2026-10-09.
 
-## Phase-A final verdict
-**PASS.**
+## CP-5 final closure verdict
+**PASS — CP-5 CLOSED.**
 
-Independent audit verified:
-- approved candidate `2d87c38dadb5af61a630805dc2da3a6e11eb2f02`;
-- production/main/deployed `0101755b03352305050b7b7290ad917b588112ff`;
-- candidate→merge = one merge commit, **zero changed files**;
-- exact merge-tree full gate: 1188 passed / 6033 assertions / 1 accepted WebP skip / exit 0;
-- production migration 134 and intended CP-5 schema;
-- zero handle-bearing publication rows and zero tombstones created by migration;
-- CP-3 immutability trigger unchanged;
-- deterministic provenance row-data procedure now preserved in governance evidence;
-- PRE == POST fingerprint `d15a5cbdfb8df52ba65628b276533cfe`;
-- canonical counts unchanged `3/3/4/4/5/2/1/1/7`;
-- collector/private/public/public-item counts 3/0/0/0;
-- Stripe dormant, mail log;
-- no Caddy/DNS/Shopify/SMTP change in Phase A;
-- /u/* still externally Caddy-404 while application routes exist internally.
+### Authoritative production state
+- Implementation repo: `francisjonee/francisjonee-sca-platform-private`
+- Approved CP-5 candidate: `2d87c38dadb5af61a630805dc2da3a6e11eb2f02`
+- Production/main/deployed app: `0101755b03352305050b7b7290ad917b588112ff`
+- Production migrations: **134**
+- Phase-A evidence: `docs/SCA-COLLECTOR-PROFILE-CP5-PHASE-A-DEPLOY-RESULT.md`
+- Phase-B evidence: `docs/SCA-COLLECTOR-PROFILE-CP5-PHASE-B-EDGE-ACTIVATION.md`
+- Phase-B governance evidence commit: `367edc7263fd4cdd85b4f38aecd5c9302bfa989d`
 
-## CP-5 Phase B — edge admission only
-
-Goal: admit the already-deployed `/u/*` namespace through the existing SCA public edge to the SAME `kr-app:80` upstream used by `/c/*`.
-
-### Allowed change
-Modify only the existing `verify.secondchanceauthenticators.com` public-path matcher in the live Caddyfile.
-
-Current CP-3/CP-4 matcher is expected to include:
-`@public path /p/* /collector /collector/* /c/*`
-
-Add exactly:
-`/u/*`
-
-Expected result:
-`@public path /p/* /collector /collector/* /c/* /u/*`
-
-No other matcher, route, upstream, TLS, header, DNS, app, Docker app service, database, or co-tenant change.
-
-### Preflight — STOP on drift
-Before editing:
-- implementation origin/main == deployed head == `0101755b03352305050b7b7290ad917b588112ff`;
-- migration 134;
-- exact current Caddyfile backed up with timestamp;
-- verify current matcher and same `kr-app:80` upstream;
-- external /u/ada = Caddy 404;
-- external bogus /c/PUB ref = Apache/Laravel 404;
-- /collector/login reachable;
-- /admin/login restricted externally;
-- external :8080 closed;
-- co-tenant health;
-- provenance fingerprint `d15a5cbdfb8df52ba65628b276533cfe` and canonical counts baseline;
-- presentation counts including handle/tombstone 0 unless legitimate production activity has occurred; report any drift before proceeding.
-
-### Validate before activation
-Validate the edited Caddy config using the established safe validation method before applying it.
-The config delta must be exactly the addition of `/u/*` to the existing public matcher.
-
-### Activate
-Use the established safe Caddy activation procedure for this host. If ordinary reload is known ineffective because of the readonly single-file mount, use the already-established Caddy-only force-recreate procedure.
-
-Only the Caddy container may be recreated/reloaded.
-Do not restart/recreate kr-app or MariaDB.
-
-### External verification
-Use syntactically valid bogus values; do NOT create production collector/profile/handle fixtures.
-
-After activation:
-- `GET /u/ada` → ordinary **Apache/Laravel 404**, proving /u reaches kr-app;
-- `GET /u/ada/avatar` → Apache/Laravel 404;
-- `GET /u/ada/items/<syntactically-valid-bogus-item-ref>/image` → Apache/Laravel 404;
-- no redirect;
-- no PUB ref/internal identity emitted in 404 body/headers;
-- existing bogus `/c/PUB-...` remains Apache/Laravel 404;
-- Passport bogus /p remains app-level reachable/404;
-- /collector/login remains reachable;
-- external /admin/login remains restricted;
-- unrelated unknown path remains **Caddy 404**;
+### Independent final audit findings
+ChatGPT independently verified:
+- implementation `main == 0101755b...` after Phase B;
+- Phase-A merge tree was file-identical to the exact audited candidate;
+- production migration 134 contains the intended CP-5 handle/tombstone presentation schema;
+- CP-5 R1 collision contract was fixed and independently audited before merge;
+- exact merge-tree gate was 1188 passed / 6033 assertions / 1 accepted WebP skip / exit 0;
+- Phase B was edge-only;
+- live Caddy matcher changed exactly from
+  `@public path /p/* /collector /collector/* /c/*`
+  to
+  `@public path /p/* /collector /collector/* /c/* /u/*`;
+- same `kr-app:80` upstream retained;
+- Caddy config validated before activation;
+- only `sr-caddy` recreated; kr-app and MariaDB untouched;
+- external /u profile/avatar/item-image bogus requests changed from Caddy 404 to Apache/Laravel 404, proving correct app admission;
+- no redirect and no PUB/COL/internal identity leak in the shared not-found response;
+- /c and /p remain app-routed;
+- collector login remains reachable;
+- external admin restriction remains intact;
+- unrelated unknown paths remain Caddy 404;
 - external :8080 remains closed;
-- co-tenant health unchanged.
+- co-tenant health unchanged;
+- application SHA and migration unchanged during Phase B;
+- reproducible provenance row-data fingerprint remains `d15a5cbdfb8df52ba65628b276533cfe`;
+- canonical provenance counts remain `3/3/4/4/5/2/1/1/7`;
+- collectors/private-profile/public-profile/public-item/handle-bearing/tombstone counts = `3/0/0/0/0/0` at final verification;
+- Stripe remains dormant;
+- `MAIL_MAILER=log`;
+- no app/schema/DNS/Shopify/SMTP change in Phase B.
 
-### Invariants
-After edge activation:
-- implementation origin/main/deployed still exact `0101755b...`;
-- migration still 134;
-- run exact documented provenance fingerprint procedure: still `d15a5cbdfb8df52ba65628b276533cfe`;
-- canonical counts still `3/3/4/4/5/2/1/1/7`;
-- report collector/private/public/public-item/handle-bearing/tombstone counts;
-- Stripe dormant;
-- mail log;
-- no DNS/Shopify/SMTP changes;
-- only intended Caddy matcher delta.
+## CP-5 delivered boundary
+CP-5 now provides:
+- human-readable public handles as mutable aliases;
+- immutable high-entropy PUB public_ref remains permanent identity/fallback;
+- /u/{handle} public profile namespace;
+- /u/{handle}/avatar;
+- /u/{handle}/items/{itemRef}/image;
+- lowercase conservative normalized syntax;
+- centralized reserved names/prefixes;
+- account-first lifecycle serialization;
+- DB-backed collision authority;
+- bounded concurrency retry + generic unavailable error contract;
+- atomic rename/removal;
+- no old-handle redirect;
+- 90-day PII-free tombstones;
+- unpublish preserves handle reservation and closes public route;
+- republish restores same handle;
+- pseudonymization tombstones then removes publication state atomically;
+- no public availability/search/directory endpoint;
+- handle routes reuse CP-3/CP-4 eligibility rather than forking privacy logic;
+- opaque /c/PUB routes remain valid and unchanged;
+- zero provenance coupling.
 
-### Evidence + STOP
-Write CP-5 Phase-B edge-activation evidence including:
-- before/after exact Caddy matcher;
-- backup path;
-- validation result;
-- activation procedure and which container changed;
-- external /u origin evidence (Caddy before → Apache/Laravel after);
-- /c, /p, collector, admin, catch-all, :8080 and co-tenant regressions;
-- implementation/deployed SHA and migration;
-- provenance fingerprint/counts;
-- presentation counts;
-- Stripe/mail state;
-- confirmation no app/schema/DNS/Shopify/SMTP change.
+Core invariant:
+**Handle = mutable presentation alias. PUB ref = permanent publication identity. Ownership ≠ publicity.**
 
-Then STOP for ChatGPT final CP-5 audit.
-Do NOT declare CP-5 closed yourself.
-Do NOT start CP-6.
+## Reproducible provenance baseline
+Use the exact 13-table row-data fingerprint procedure recorded in the CP-5 Phase-A deployment evidence for future deployment gates.
+
+Current production baseline:
+- fingerprint: `d15a5cbdfb8df52ba65628b276533cfe`
+- canonical counts: `3/3/4/4/5/2/1/1/7`.
+
+## Collector Profile roadmap
+- CP-1 Private Profile Foundation — CLOSED
+- CP-2 Rich My Collection — CLOSED
+- CP-3 Public Profile Foundation — CLOSED / LIVE
+- CP-4 Public Collection Controls — CLOSED / LIVE
+- CP-5 Public Handle / Profile URL — **CLOSED / LIVE**
+- CP-6 Collection Organization — NEXT, NOT STARTED
+
+## Next initiative
+Before implementation, ChatGPT must architecture-audit CP-6 against production baseline `0101755b...` / migration 134.
+
+CP-6 must explicitly decide what “organization” means without duplicating provenance or public-visibility state. Audit at minimum:
+- private collections/folders vs tags vs favorites;
+- whether an item can belong to multiple user-defined groups;
+- ordering/ranking semantics;
+- rename/delete behavior;
+- transfer/ownership-loss cleanup;
+- reacquisition behavior;
+- interaction with CP-4 public visibility;
+- whether organization is private-only initially or any public grouping is in scope;
+- pseudonymization cleanup;
+- concurrency and stale-membership prevention;
+- bounded queries/indexes;
+- mobile/private My Collection UX;
+- zero provenance mutation.
+
+Do not infer CP-6 implementation from old roadmap notes.
+Do not start coding until ChatGPT writes a promoted CP-6 task after architecture inspection.
