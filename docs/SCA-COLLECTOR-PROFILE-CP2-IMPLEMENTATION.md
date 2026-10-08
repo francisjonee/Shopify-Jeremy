@@ -1,12 +1,26 @@
-# SCA Collector Profile — CP-2 — Rich My Collection — CANDIDATE
+# SCA Collector Profile — CP-2 — Rich My Collection — CANDIDATE (remediated R1–R3)
 
-**Date:** 2026-10-09 · **Status: CANDIDATE pushed, NOT merged / NOT deployed / production untouched / Stripe DORMANT / mail=log. STOP for ChatGPT pre-merge audit.**
+**Date:** 2026-10-09 · **Status: CANDIDATE remediated (pre-merge audit R1–R3), NOT merged / NOT deployed / production untouched / Stripe DORMANT / mail=log. STOP for ChatGPT re-audit.**
 
 - **Branch:** `feat/sca-collector-profile-cp2`
 - **Base (exact production baseline):** `8d8c35947d7c405124e0df4f09ff3ef4ee9e6bb8`
-- **Candidate head:** `eddac539c8c66f00c07d5adb54ffbc1a9d53e4b6`
+- **Candidate head:** `5ebe9591a530874f5376296a2e10f538772834e8` (R1–R3 remediation of `eddac539`)
 - **Impl repo:** `francisjonee/francisjonee-sca-platform-private` · **Governance:** `francisjonee/Shopify-Jeremy`
 - **Migrations:** **NONE** — stays **131** (all display state derived at read time; no schema/model change)
+
+## Pre-merge audit remediation (R1–R3) — head `5ebe959`
+
+Four files changed from `eddac539` (`CollectionService.php`, `CollectionController.php`, `collection/index.blade.php`, `RichMyCollectionTest.php`); no migration. Core CP-2 architecture unchanged.
+
+- **R1 — admin-correction chronology proof.** New `o4` uses the real `OwnershipCorrectionService::correct(itemId, 'collector', B.public_ref, reason, expectedEventCount)` (not a fabricated projection write) to reassign an item from A to B. Proves A loses membership immediately; B's default recent ordering treats the `admin_correction` event as the acquisition (newest first, `[corrected, mid, early]`); no reason/staff/internal data leaks into the card DTO or the rendered page. No tail-event query change was needed — the existing windowed max(effective_at,id) sub-join already treats the admin_correction terminal event as the acquisition.
+- **R2 — collector presentation name in header.** `CollectionController::index` derives the authenticated collector's canonical `display_name` server-side (`trim`; null/blank → null) and passes it to the view; the header renders `"<name>'s Collection"` when present, else a neutral `"My Collection"`. Never email/public_ref/another collector. Presentation-only, no stored state; pseudonymized/disabled accounts remain gated by `collector.auth` (no bypass). Tests `r2a` (present), `r2b` (null + whitespace-only → neutral), `r2c` (no sensitive/cross-collector leak).
+- **R3 — bounded aggregate summary.** `collectionStats()` refactored from fetch-all-rows-into-PHP to ONE SQL aggregate: `COUNT(*)` owned, `COUNT(current_certification_id)` certified, `COUNT(DISTINCT CASE WHEN brand IS NOT NULL AND TRIM(brand)<>'' THEN LOWER(TRIM(brand)) END)` brands. Exact CP-1 semantics preserved (null/empty/whitespace-only brand excluded; case-insensitive; transferred-away + unclaimed excluded by the current-owner join). Constant-size single-row result regardless of collection size. Tests `r3a` (casing/whitespace/null), `r3b` (certified vs uncertified), `r3c` (transferred-away + unclaimed excluded), `r3d` (single bounded query as the collection grows). Shared with CP-1 — the existing `CollectorProfileTest` stats tests (st1–st6) still pass.
+
+Focused: `RichMyCollectionTest` **27 passed** (19 original + 8 remediation) + `MyCollectionTest` **12 passed** + `CollectorProfileTest` **32 passed / 1 skipped** (stats semantics under the new aggregate). Full governed SCA regression: **1085 passed / 5608 assertions, 1 skipped (webp)**, exit 0. Production re-verified untouched (deployed SHA still `8d8c359`, migr **131**, provenance DATA byte-identical FP `35e06328…`, collectors 3 / profiles 0, `STRIPE_ENABLED=false`/secret UNSET, `MAIL_MAILER=log`). **STOP for ChatGPT re-audit of head `5ebe959`.**
+
+---
+
+## Original candidate detail (head `eddac539`) — unchanged except as remediated above
 
 ## Scope delivered
 Collection-LEVEL experience only. Item detail is untouched (no rebuild). `/collector/collection` becomes a responsive private catalog: summary header, owner-safe cards, GET-only search/filter/sort, canonical "recently added" ordering, clear empty/no-result states, bounded queries. No public surface, no favorites/tags/social/marketplace/valuation, no handles.

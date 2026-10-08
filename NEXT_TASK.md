@@ -1,15 +1,23 @@
 # NEXT TASK
 
-**STATUS: CP-2 PRE-MERGE AUDIT — FAIL / bounded remediation required. Do not merge/deploy or start CP-3.**
+**STATUS: CP-2 R1–R3 REMEDIATED — CANDIDATE awaiting ChatGPT re-audit. NOT merged / NOT deployed. Deployed baseline unchanged (prod main `8d8c359`, migr 131, Stripe DORMANT, mail=log). Do not start CP-3.**
 
 Updated 2026-10-09.
 
-## Audited candidate
-Implementation repo: `francisjonee/francisjonee-sca-platform-private`
-Branch: `feat/sca-collector-profile-cp2`
-Base: `8d8c35947d7c405124e0df4f09ff3ef4ee9e6bb8`
-Candidate: `eddac539c8c66f00c07d5adb54ffbc1a9d53e4b6`
-GitHub compare currently shows candidate tree 1 commit ahead / 0 behind base, four CP-2 files, no migration. Production remains migrations 131.
+## Re-audit target
+Branch `feat/sca-collector-profile-cp2`, base `8d8c35947d7c405124e0df4f09ff3ef4ee9e6bb8`, candidate **`5ebe9591a530874f5376296a2e10f538772834e8`** (R1–R3 remediation of `eddac539`). No migration (stays 131). Production untouched.
+
+### Remediation summary (all three gaps closed; 4 files changed from `eddac539`, no migration)
+- **R1**: new `o4` proves default recent ordering treats a canonical `OwnershipCorrectionService` admin_correction as the acquisition event (B newest-first `[corrected,mid,early]`), A loses membership immediately, no reason/staff/internal leak. Real service used; no tail-query change needed.
+- **R2**: controller derives the authenticated collector's canonical `display_name` server-side (trim; null/blank → neutral "My Collection"), view renders "<name>'s Collection"; never email/public_ref/other-collector; `collector.auth` still gates disabled/pseudonymized. Tests r2a/r2b/r2c.
+- **R3**: `collectionStats()` is now ONE SQL aggregate (COUNT(*) / COUNT(cert) / COUNT(DISTINCT CASE … LOWER(TRIM(brand)))) — exact CP-1 semantics (null/empty/whitespace excluded, case-insensitive, transferred-away/unclaimed excluded), constant-size result. Tests r3a/r3b/r3c/r3d. Shared with CP-1; its stats tests still pass.
+
+Focused `RichMyCollectionTest` **27** + `MyCollectionTest` **12** + `CollectorProfileTest` **32 (+1 webp skip)**; full SCA gate **1085 passed / 5608**. Evidence: `docs/SCA-COLLECTOR-PROFILE-CP2-IMPLEMENTATION.md` (R1–R3 section). **STOP for ChatGPT re-audit of `5ebe959`.**
+
+---
+
+## Prior pre-merge audit (FAIL — R1–R3) — addressed above
+Prior candidate: `eddac539c8c66f00c07d5adb54ffbc1a9d53e4b6`
 
 ## Audit result
 Core CP-2 architecture is accepted:
