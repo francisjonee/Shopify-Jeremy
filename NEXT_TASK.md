@@ -1,15 +1,22 @@
 # NEXT TASK
 
-**STATUS: CP-1 RE-AUDIT — FAIL / PRIVACY-RACE REMEDIATION REQUIRED. Do not merge/deploy or start CP-2.**
+**STATUS: CP-1 R5 REMEDIATED (privacy-race) — CANDIDATE awaiting ChatGPT re-audit. Do not merge/deploy or start CP-2.**
 
 Updated 2026-10-08.
 
-## Audit target
+## Re-audit target
 Base: `f461c17b7e0cbd5a5e5f026d5f5000870ef04752`
-Original candidate: `5eddb141d175b5cbfa7e409a46f44fefd8617d98`
-Re-audit candidate: `3c422fe669bc6b14ee8bb476cf6c798cc0a35273`
-Branch: `feat/sca-collector-profile-cp1`
-Head is 2 commits ahead / 0 behind deployed base. Migration remains 130→131. Production untouched.
+Candidate: **`bd32988ead30ada09a36726be165c3ef8aebe5d0`** (R5 fix on `3c422fe`; branch `feat/sca-collector-profile-cp1`, now 3 commits ahead / 0 behind base). Migration remains 130→131 (one additive table; prod still 130). Production untouched; Stripe DORMANT.
+
+### R5 remediation summary (BLOCKER addressed; 4 files changed from `3c422fe`)
+Profile writes are now serialized against the privacy lifecycle: `CollectorProfileService::withProfile()` locks the canonical `sca_collector_accounts` row `FOR UPDATE` and requires `status='active'` INSIDE the write transaction before any profile create/update — `pseudonymize()` locks the same row, so a racing write either waits-then-fails-closed or runs-before-privacy-waits; it can never resurrect profile/avatar or repopulate `display_name` after pseudonymization. Fail-closed via new `ProfileLifecycleException` (controller logs out + redirects to sign-in); `setAvatar` compensates its newly-written bytes on rejection. The same account lock serializes concurrent first-creates, so the UNIQUE 1062 race can no longer occur → the R2 1062 convergence retry is REMOVED (no speculative machinery); UNIQUE + immutability trigger unchanged. Real two-connection non-transactional `CollectorProfileConcurrencyTest`: `cc1` write serializes on the account lock (blocks while held, no duplicate), `cc2` sequential one-row, `cc3` write racing a committed pseudonymization fails closed (account pseudonymized, display_name null, no profile, no new/reachable avatar, zero provenance). R1/R3/R4 retained.
+
+Focused `CollectorProfileTest` **31 passed / 1 skip (webp)** + `CollectorProfileConcurrencyTest` **3 passed**; full SCA gate **1055 passed / 5465**. Evidence: `docs/SCA-COLLECTOR-PROFILE-CP1-IMPLEMENTATION.md` (R5 section). **STOP for ChatGPT re-audit of `bd32988`.**
+
+---
+
+## Prior re-audit (FAIL — R5 privacy race) — addressed above
+Prior candidate: `3c422fe669bc6b14ee8bb476cf6c798cc0a35273` (R1–R4 remediation)
 
 ## Re-audit result
 R1 avatar compensation: addressed.

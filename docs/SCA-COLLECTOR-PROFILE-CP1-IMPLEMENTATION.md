@@ -1,12 +1,37 @@
 # SCA Collector Profile — CP-1 — Private Profile Foundation — CANDIDATE (remediated)
 
-**Date:** 2026-10-08 · **Status: CANDIDATE remediated (audit R1–R4), NOT merged / NOT deployed / production untouched / Stripe DORMANT. STOP for ChatGPT re-audit.**
+**Date:** 2026-10-08 · **Status: CANDIDATE remediated (audit R1–R4 + re-audit R5), NOT merged / NOT deployed / production untouched / Stripe DORMANT. STOP for ChatGPT re-audit.**
 
 - **Branch:** `feat/sca-collector-profile-cp1`
 - **Base (exact deployed baseline):** `f461c17b7e0cbd5a5e5f026d5f5000870ef04752`
-- **Candidate head:** `3c422fe669bc6b14ee8bb476cf6c798cc0a35273` (remediation of prior candidate `5eddb141`)
+- **Candidate head:** `bd32988ead30ada09a36726be165c3ef8aebe5d0` (R5 fix on `3c422fe`, which remediated `5eddb141`)
 - **Impl repo:** `francisjonee/francisjonee-sca-platform-private` · **Governance:** `francisjonee/Shopify-Jeremy`
 - **Migrations:** prod 130 → candidate **131** (one additive table; prod still 130 — candidate NOT deployed)
+
+## R5 remediation (re-audit BLOCKER: profile resurrection after pseudonymization) — head `bd32988`
+
+Four files changed from `3c422fe`: new `Sca/Provenance/src/Exceptions/ProfileLifecycleException.php`; `CollectorProfileService.php` (`withProfile()` rewrite); `ProfileController.php` (fail-closed catch); `CollectorProfileConcurrencyTest.php` (rebuilt). No schema/Passport/stats/public-surface change; migration stays 130→131.
+
+**Mechanism.** `CollectorProfileService::withProfile()` — the single write path for profile create/update (used by `saveProfile` and `setAvatar`) — now, as the FIRST statement of its transaction, locks the canonical `sca_collector_accounts` row `FOR UPDATE` and requires `status='active'`; otherwise it throws `ProfileLifecycleException` (fail closed). `CollectorPrivacyService::pseudonymize()` already locks the SAME account row, deletes the profile, and sets `status='pseudonymized'`. So a profile write either (a) runs before privacy and privacy then waits for it, or (b) waits for privacy's lock and then observes the committed `pseudonymized` status and fails closed — it can never interleave between privacy's profile-delete and its commit, so it cannot resurrect bio/location/avatar or repopulate `display_name`. Route middleware is no longer relied upon for this (auth can precede the privacy commit); the account-row lock at the write boundary is the authority.
+
+**1062 simplification (per audit's "1062 scope").** The same per-collector account lock serializes concurrent profile writers, so two first-creates for one collector can never both reach the INSERT — the UNIQUE `1062` first-create race can no longer occur. The speculative 1062 convergence/retry added in R2 is therefore **removed**; UNIQUE(collector_account_id) + the immutability trigger remain the authority. `lockOrNew()` keeps the gap-lock-free create path.
+
+**Avatar failure path.** On a lifecycle rejection inside `setAvatar`, the already-written new bytes are deleted by the existing `catch (\Throwable)` compensation before the exception propagates — no orphan.
+
+**Controller.** `update()` and `uploadAvatar()` catch `ProfileLifecycleException`, log the collector out, invalidate the session, and redirect to sign-in (the account is no longer usable). `removeAvatar()` needs no change (it only clears an existing row and cannot resurrect).
+
+**Mandatory concurrency proof (real two-connection, non-transactional, self-cleaning `CollectorProfileConcurrencyTest`).**
+- `cc1` — a second connection holds the account row `FOR UPDATE`; a profile write on the default connection is forced to WAIT on that lock (observed deterministically via a 1s `innodb_lock_wait_timeout` → 1205) and inserts NO row; after release the write proceeds to exactly one correctly-bound row. Proves profile writes serialize on the account lock (so first-create cannot duplicate). (In production the write simply waits for the fast privacy/competing txn to commit; the short timeout only makes the block observable.)
+- `cc2` — sequential replay keeps one row.
+- `cc3` — the privacy op runs and **commits on the second connection** (locks account, deletes profile, sets pseudonymized); two in-flight writes (`saveProfile`, `setAvatar`) on the default connection then each throw `ProfileLifecycleException`. End state: account stays `pseudonymized`, `display_name` NULL, **no** profile row, **no** new/reachable avatar (the failed `setAvatar` compensated its newly-written bytes), provenance byte-identical.
+
+R1 (`av8`), R3 (`pa2b`), R4 (`ps1`) coverage retained.
+
+**Tests.** `CollectorProfileTest` **31 passed / 1 skipped (webp, GD)** + `CollectorProfileConcurrencyTest` **3 passed**. Full governed SCA regression: **1055 passed / 5465 assertions, 1 skipped**, exit 0. Production re-verified untouched (prod migr **130**, `sca_collector_profiles` absent, provenance items 3 / certs 4 / ownership 5 unchanged, `STRIPE_ENABLED=false`/secret UNSET, `MAIL_MAILER=log`). **STOP for ChatGPT re-audit of head `bd32988`.**
+
+---
+
+## Prior remediation (audit R1–R4, head `3c422fe`)
 
 ## Remediation of the pre-merge audit (R1–R4) — head `3c422fe`
 
