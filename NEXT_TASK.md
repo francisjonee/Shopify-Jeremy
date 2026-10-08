@@ -1,166 +1,72 @@
 # NEXT TASK
 
-**STATUS: CP-3 PHASE B (edge activation of `/c/*`) DONE — external `/c/*` now reaches the CP-3 application; edge-only Caddy change, co-tenants healthy, app/schema/DNS unchanged. STOP for ChatGPT FINAL CP-3 post-edge audit. CP-3 NOT declared closed here. Do not start CP-4.**
+**STATUS: CP-3 FINAL POST-EDGE AUDIT — PASS / CLOSED. Public Profile Foundation is LIVE. Production app baseline `3e707582c21e40b97e909c8593987787fd4c33c4`, migrations 132. CP-4 may now be architecture-audited/planned, but do not implement until ChatGPT promotes a new task.**
 
-Updated 2026-10-08.
+Updated 2026-10-09.
 
-## CP-3 Phase B — edge activation — DONE (awaiting ChatGPT final CP-3 audit)
-Edge-only change to the shared production Caddy site `verify.secondchanceauthenticators.com`: the `@public` matcher gained `/c/*` (now `path /p/* /collector /collector/* /c/*`) → same `kr-app:80` upstream. That is the ENTIRE diff (one line). Backup `/opt/smsrocket-stack/Caddyfile.bak.pre-cp3-edge.20261008T191946Z` retained. Candidate validated in throwaway `caddy:2` ("Valid configuration"). `caddy reload` is a no-op on this single-file-mount host (documented), so activation used the established `docker compose up -d --force-recreate caddy` (recreates ONLY the edge container; brief edge blip; kr-app/kr-mariadb/sr-mariadb NOT restarted). Rollback not needed.
+## CP-3 final closure verdict
+**PASS — CP-3 CLOSED.**
 
-External proof (origin headers, no fixture created): `GET /c/PUB-<32hex>` and `/c/PUB-<32hex>/avatar` → 404 served by **kr-app (server: Apache + Laravel session + CP-3 "Profile not found" noindex view)**, matching internal loopback — distinct from the edge catch-all (`/unrelated-xyz` → server: Caddy "Not found", unchanged). Regression: Passport `/p/*` app-served + identity-free; `/collector/*` 302 (auth); `/admin/login` 403 (staff-IP); `/sca/shopify/webhook` 404; smsrocket.io 302 + mail3.relaytask.online 302 (healthy); direct `:8080` 000 (loopback-only).
+### Authoritative production state
+- Implementation repo: `francisjonee/francisjonee-sca-platform-private`
+- Production/main/deployed app: `3e707582c21e40b97e909c8593987787fd4c33c4`
+- Production migrations: **132**
+- Phase-A audited candidate: `8aa8e8014ed2308f362972bb0c445ab1289dfb2f`
+- Phase-A candidate→merge: one merge commit, zero file differences
+- Phase-A evidence: `docs/SCA-COLLECTOR-PROFILE-CP3-PHASE-A-DEPLOY-RESULT.md`
+- Phase-B evidence: `docs/SCA-COLLECTOR-PROFILE-CP3-PHASE-B-EDGE-ACTIVATION.md`
+- Phase-B governance commit: `0bff4b43f5964a4dc7a16ba9e848e243b139a128`
 
-Post-change invariants: impl deployed head `3e70758` unchanged; prod migration **132**; publication rows **0**; provenance DATA byte-identical FP `35e06328…`; collectors 3 / profiles 0 / publication 0; Stripe DORMANT; mail=log; DNS/TLS unchanged; active Caddyfile diff vs backup = exactly the one `/c/*` line; only `sr-caddy` recreated. Evidence: `docs/SCA-COLLECTOR-PROFILE-CP3-PHASE-B-EDGE-ACTIVATION.md`.
-
-**NEXT:** ChatGPT final CP-3 post-edge audit of the Phase-B evidence. Do NOT declare CP-3 closed autonomously; do NOT start CP-4 until CP-3 is formally closed.
-
-## Phase-A closure (superseded context retained below)
-Authoritative implementation/deployed baseline:
-`3e707582c21e40b97e909c8593987787fd4c33c4`
-Production migrations: **132**.
-
-## Phase-A closure
-Authoritative implementation/deployed baseline:
-`3e707582c21e40b97e909c8593987787fd4c33c4`
-Production migrations: **132**.
-
+### Final audit findings
 ChatGPT independently verified:
-- implementation `main == 3e707582...`;
-- approved candidate `8aa8e801...` → merge has one merge commit and **zero file differences**;
-- Phase-A deployment evidence documents exact audited 14-file scope and migration 131→132;
-- `sca_collector_public_profiles` exists with required FK/uniques/index/immutability trigger and 0 rows;
-- deploy gate 1106 passed / 5726 assertions / 1 accepted WebP skip;
-- internal loopback /c bogus refs reach CP-3 ordinary 404;
-- external /c remains edge-blocked as intentionally required;
-- provenance fingerprint/counts unchanged;
-- collector/private-profile/publication counts 3/0/0;
-- Stripe dormant; mail log;
-- no Caddy/DNS/Shopify/SMTP change in Phase A.
-
-**Phase A PASS.**
-
-## Phase B objective
-Make the already-deployed CP-3 public routes externally reachable through the existing production Caddy site:
-- `/c/{publicRef}`
-- `/c/{publicRef}/avatar`
-
-This is an **EDGE-ONLY** activation. The app and schema are already deployed and audited.
-
-### Hard scope
-Allowed:
-- minimal Caddy routing change needed to admit `/c/*` to the same kr-app upstream/path handling used by existing public app routes;
-- Caddy config validation/reload;
-- rollback backup;
-- read-only smoke;
-- governance evidence.
-
-Forbidden:
-- NO implementation repo commit/code change;
-- NO migration/schema/data mutation;
-- NO DNS change;
-- NO TLS/certificate policy redesign;
-- NO broad catch-all admission;
-- NO change to /admin restrictions;
-- NO change to /p/* or /collector/* semantics except proving they remain intact;
-- NO Stripe/SMTP/Shopify change;
-- NO production collector/publication fixture creation just for smoke;
-- NO CP-4.
-
-## 1. Preflight — STOP on drift
-Before touching Caddy:
-- verify implementation `origin/main == deployed head == 3e707582c21e40b97e909c8593987787fd4c33c4`;
-- verify production migration 132;
-- verify publication table exists and report row count;
-- capture provenance DATA fingerprint/counts and collector/private-profile/publication counts;
-- verify Stripe dormant and mail log;
-- capture current external results for:
-  - bogus `/c/PUB-<32hex>`;
-  - bogus `/c/PUB-<32hex>/avatar`;
-  - bogus Passport `/p/...`;
-  - unauthenticated `/collector/profile`;
-  - `/admin/login`;
-- capture matching internal loopback CP-3 bogus profile + avatar responses;
-- capture current active Caddy config and identify the exact site/routing block responsible for admitting /p/* and /collector/*.
-
-If implementation/deployment/schema state drifted, STOP.
-
-## 2. Backup + proposed diff
-Create a timestamped backup of the active Caddy configuration before editing.
-
-Prepare the smallest possible diff:
-- admit only path namespace `/c/*` (including `/c/{ref}` itself);
-- send it to the same application upstream as the established public SCA app routes;
-- preserve all existing admin/IP restrictions, catch-all behavior, headers, TLS, co-tenant routes, and unrelated site blocks.
-
-Do not broaden to a generic application catch-all.
-
-Record the exact before/after diff in the deployment evidence.
-
-## 3. Validate before reload
-Run the established Caddy formatter/validator against the candidate config.
-Require validation success before reload.
-
-If validation fails:
-- restore/leave active config unchanged;
-- STOP and report.
-
-## 4. Activate with rollback ready
-Reload Caddy using the established safe procedure.
-Do not restart unrelated application/database services.
-
-If reload fails or health checks regress:
-- restore the exact backup;
-- validate;
-- reload rollback;
-- verify prior edge behavior restored;
-- STOP and report failure.
-
-## 5. External smoke — no production fixture required
-Use a syntactically valid bogus `PUB-` ref so the request can safely reach the CP-3 resolver without creating data.
-
-Require externally:
-- `GET /c/PUB-<32hex>` reaches the app-level CP-3 404;
-- `GET /c/PUB-<32hex>/avatar` reaches the app-level 404;
-- response status/body characteristics match the corresponding internal loopback CP-3 404 closely enough to prove Caddy is forwarding rather than serving its old edge catch-all;
-- no internal path/upstream information leaks.
-
-Because publication rows are currently expected to be 0, **do not create a real published collector solely to obtain a 200**. App tests already prove the 200 lifecycle on the identical deployed tree.
-
-Regression smoke:
-- public Passport behavior unchanged;
-- unauthenticated collector profile/collection remain auth-redirected;
-- /admin/login remains under its existing edge restriction;
-- unknown/unadmitted unrelated paths retain existing catch-all behavior;
-- co-tenant(s) remain healthy;
-- direct external :8080 remains unavailable/loopback-only.
-
-## 6. Post-change invariants
-Verify:
-- implementation deployed head/main unchanged at `3e707582...`;
+- implementation `main` remains exact Phase-A deployed SHA `3e707582...`; no post-deploy app drift;
+- Phase B made no implementation/schema change;
+- active edge change documented as exactly one matcher addition:
+  `@public path /p/* /collector /collector/*`
+  → `@public path /p/* /collector /collector/* /c/*`;
+- /c/* is routed to the same existing `kr-app:80` upstream, not a broad catch-all;
+- timestamped pre-change Caddy backup retained;
+- candidate Caddy config validated successfully before activation;
+- only the edge Caddy container was recreated; app/database containers were not restarted/rebuilt;
+- external syntactically-valid bogus public-profile and avatar requests now originate from kr-app/Apache/Laravel, proving /c/* reaches CP-3;
+- unrelated unknown paths still originate from the Caddy catch-all, proving routing was not broadly opened;
+- Passport remains app-served and collector-identity-free;
+- /collector remains authenticated;
+- /admin restriction remains intact;
+- co-tenants and loopback-only :8080 behavior remain intact;
 - migration remains 132;
-- publication row count unchanged by edge activation;
-- provenance fingerprint/counts byte-identical;
-- collector/private-profile/publication counts unchanged except independently occurring legitimate production activity (investigate/report any drift);
-- Stripe dormant;
-- mail log;
-- DNS unchanged;
-- no app/container rebuild/redeploy occurred;
-- active Caddy config contains only the intended /c admission change relative to backup.
+- publication rows remain 0;
+- provenance DATA fingerprint remains `35e063282e004eaabcc9240360ecc0e3`;
+- provenance counts remain items/qr/certs/auth/ownership/claims/grants/sale/status = 3/3/4/4/5/2/1/1/7;
+- collector/private-profile/publication counts remain 3/0/0;
+- Stripe remains dormant / secret unset;
+- `MAIL_MAILER=log`;
+- DNS/TLS policy, Shopify, SMTP and application code unchanged;
+- rollback was not required.
 
-## 7. Evidence + STOP
-Create `docs/SCA-COLLECTOR-PROFILE-CP3-PHASE-B-EDGE-ACTIVATION.md` (or equivalent) recording:
-- baseline/deployed SHA;
-- migration;
-- preflight state;
-- Caddy backup identifier/path (do not include secrets);
-- exact sanitized before/after routing diff;
-- validation/reload result;
-- pre/post external + internal smoke;
-- regression smoke;
-- provenance/counts;
-- Stripe/mail/DNS state;
-- rollback status (not used, or exact evidence if used).
+## CP-3 delivered boundary
+CP-3 now provides a publicly reachable, explicitly opt-in, share-by-link collector profile foundation:
+- ownership does NOT imply publicity;
+- dedicated publication state with stable opaque PUB reference;
+- minimal allowlisted presentation only;
+- public avatar cannot outlive profile eligibility;
+- publish/unpublish and pseudonymization use account-first lifecycle serialization;
+- pseudonymization removes publication state;
+- Passport does not link collector identity;
+- My Collection remains private;
+- no public collection/items/counts;
+- no public directory/search;
+- no public handle/custom slug.
 
-Update governance `NEXT_TASK.md` to report Phase B result and STOP.
+## Next initiative
+Collector Profile roadmap next slice: **CP-4 — Public Collection Controls**.
 
-Do not call CP-3 closed yourself. STOP for ChatGPT final CP-3 post-edge audit.
-Do not start CP-4.
+Before implementation, ChatGPT must architecture-audit the deployed CP-2 current-owner catalog semantics together with CP-3 publication/privacy lifecycle at baseline `3e707582...`.
+
+The invariant remains:
+**Ownership ≠ publicity. Profile publication ≠ item publication.**
+
+CP-4 must define explicit per-item/public-collection visibility semantics and immediate transfer/privacy revocation before any code task is promoted.
+
+Do not infer or implement CP-4 from old roadmap notes.
+Do not start CP-4 coding until ChatGPT writes a new promoted task after architecture inspection.
