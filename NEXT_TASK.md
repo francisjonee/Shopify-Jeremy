@@ -1,8 +1,22 @@
 # NEXT TASK
 
-**STATUS: CP-3 PHASE-A POST-DEPLOY AUDIT — PASS. Promote Phase B: minimal production-edge activation for /c/* only. No application/schema/DNS changes. Do not start CP-4.**
+**STATUS: CP-3 PHASE B (edge activation of `/c/*`) DONE — external `/c/*` now reaches the CP-3 application; edge-only Caddy change, co-tenants healthy, app/schema/DNS unchanged. STOP for ChatGPT FINAL CP-3 post-edge audit. CP-3 NOT declared closed here. Do not start CP-4.**
 
-Updated 2026-10-09.
+Updated 2026-10-08.
+
+## CP-3 Phase B — edge activation — DONE (awaiting ChatGPT final CP-3 audit)
+Edge-only change to the shared production Caddy site `verify.secondchanceauthenticators.com`: the `@public` matcher gained `/c/*` (now `path /p/* /collector /collector/* /c/*`) → same `kr-app:80` upstream. That is the ENTIRE diff (one line). Backup `/opt/smsrocket-stack/Caddyfile.bak.pre-cp3-edge.20261008T191946Z` retained. Candidate validated in throwaway `caddy:2` ("Valid configuration"). `caddy reload` is a no-op on this single-file-mount host (documented), so activation used the established `docker compose up -d --force-recreate caddy` (recreates ONLY the edge container; brief edge blip; kr-app/kr-mariadb/sr-mariadb NOT restarted). Rollback not needed.
+
+External proof (origin headers, no fixture created): `GET /c/PUB-<32hex>` and `/c/PUB-<32hex>/avatar` → 404 served by **kr-app (server: Apache + Laravel session + CP-3 "Profile not found" noindex view)**, matching internal loopback — distinct from the edge catch-all (`/unrelated-xyz` → server: Caddy "Not found", unchanged). Regression: Passport `/p/*` app-served + identity-free; `/collector/*` 302 (auth); `/admin/login` 403 (staff-IP); `/sca/shopify/webhook` 404; smsrocket.io 302 + mail3.relaytask.online 302 (healthy); direct `:8080` 000 (loopback-only).
+
+Post-change invariants: impl deployed head `3e70758` unchanged; prod migration **132**; publication rows **0**; provenance DATA byte-identical FP `35e06328…`; collectors 3 / profiles 0 / publication 0; Stripe DORMANT; mail=log; DNS/TLS unchanged; active Caddyfile diff vs backup = exactly the one `/c/*` line; only `sr-caddy` recreated. Evidence: `docs/SCA-COLLECTOR-PROFILE-CP3-PHASE-B-EDGE-ACTIVATION.md`.
+
+**NEXT:** ChatGPT final CP-3 post-edge audit of the Phase-B evidence. Do NOT declare CP-3 closed autonomously; do NOT start CP-4 until CP-3 is formally closed.
+
+## Phase-A closure (superseded context retained below)
+Authoritative implementation/deployed baseline:
+`3e707582c21e40b97e909c8593987787fd4c33c4`
+Production migrations: **132**.
 
 ## Phase-A closure
 Authoritative implementation/deployed baseline:
