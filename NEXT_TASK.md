@@ -1,5 +1,182 @@
 # NEXT TASK
 
+**STATUS: PROMOTED — SCA Collector Profile & Rich Collection Experience, CP-1 Private Profile Foundation. ONE task only. Implementation repo baseline is deployed main `f461c17b7e0cbd5a5e5f026d5f5000870ef04752`, prod migrations 130. Stripe remains DORMANT.**
+
+Updated 2026-10-08.
+
+## Objective
+
+Implement the first slice of the Collector Profile initiative: a **private, authenticated collector profile** that lets the signed-in collector maintain presentation information and see truthful derived collection statistics. This is NOT a public/social profile slice.
+
+The existing provenance/ownership system, public Passport, My Collection detail, Shopify, external-paid-auth, payment, certification, transfer, registry-status and staff workflows are authoritative and must not be redesigned.
+
+## Audited baseline / existing facts
+
+- Canonical collector identity is `sca_collector_accounts`: internal id, opaque `public_ref`, email, password, optional `display_name`, lifecycle status, timestamps.
+- `display_name` already exists and is registration/account identity data. CP-1 may provide a self-edit UI for that existing field, but MUST NOT create a duplicate display-name source.
+- Collector auth is the independent `collector` guard. Staff auth does not satisfy it.
+- Current account page shows display name/email and account/security/privacy actions.
+- My Collection already derives current ownership server-side and already exposes owner-safe item/gallery/auth/certification/document/history DTOs.
+- Existing collector item images are streamed through authenticated owner-authorized routes; raw storage paths are never emitted and `/storage` is not a public content contract.
+- Existing pseudonymization irreversibly removes email/display_name/password/verification while retaining only minimum referential identity/provenance. CP-1 profile PII and avatar MUST participate in that privacy lifecycle.
+- Public Passport deliberately exposes no collector identity. Keep that invariant.
+
+## Architecture decision
+
+Add a **one-to-one SCA-owned presentation table** `sca_collector_profiles`, keyed/bound to `collector_account_id` with DB uniqueness and restrictive FK semantics. Keep authentication identity in `sca_collector_accounts`.
+
+CP-1 profile fields:
+- `collector_account_id` — server/session derived, UNIQUE, immutable.
+- `bio` — nullable short text, max 500 characters.
+- `location` — nullable coarse free-text location, max 120 characters. Do NOT collect street address, coordinates, phone, DOB, gender, social accounts, or other unnecessary PII.
+- `avatar_path` / `avatar_mime` only if needed for the chosen private storage implementation. Never expose either to HTML/DTO/API.
+- timestamps.
+
+Do NOT add a public handle, public-profile flag, per-item visibility, follower/like/comment/message fields, public URL, social graph, favorites, custom collections, marketplace fields, valuation fields, or analytics tables in CP-1.
+
+## Required behavior
+
+1. **Private profile page/edit**
+   - Behind `collector.auth`.
+   - Target identity always comes from the authenticated collector session; no collector id/ref/email supplied by the request may retarget the write.
+   - Show/edit the existing canonical `display_name` plus profile `bio` and `location`.
+   - Email may be displayed read-only as account identity; CP-1 does NOT implement email change.
+   - Normalize whitespace sensibly; validate lengths server-side.
+   - Empty bio/location should persist as NULL rather than meaningless empty strings.
+   - Update must be transactional and mutate only allowed profile/display-name fields.
+
+2. **Avatar**
+   - Optional. Accept only a narrow image allowlist (JPEG/PNG/WebP) using server-side validation; reject SVG and arbitrary files.
+   - Set a conservative size limit (<= 5 MB).
+   - Generate the stored filename server-side; never trust the upload filename/path.
+   - The avatar must NOT be reachable through a raw user-controlled storage URL. Serve it only through a collector-authenticated route that resolves the current session collector server-side.
+   - Response must use the stored/validated MIME, `X-Content-Type-Options: nosniff`, and privacy-appropriate cache headers.
+   - Replacing an avatar must not leave an unbounded trail of old files. Deleting/removing avatar is required.
+   - DB/file failure handling must not leave the profile pointing at a missing/new partial file. Design the smallest robust compensation/ordering and prove it with tests.
+
+3. **Derived collection statistics**
+   On the private profile/account experience show a small truthful summary derived from canonical current ownership, not counters stored on the profile:
+   - total currently owned registered frames;
+   - currently certified count;
+   - distinct known brands count.
+   Unknown/null brands must not become a fake brand. Previous-owner items must disappear automatically after transfer. Do not count submissions as owned frames before canonical claim/ownership.
+
+4. **Collector since**
+   - May display the existing collector account `created_at` as “Collector since …”.
+   - Do not introduce another join-date field.
+
+5. **Privacy / pseudonymization**
+   - Extend the existing `CollectorPrivacyService` transaction so an eligible collector's profile row is removed as part of pseudonymization.
+   - Avatar bytes must be removed or made irretrievable as part of successful anonymization. Because filesystem deletion is not transactionally rollbackable, choose a fail-closed/compensating ordering that does not allow DB pseudonymization to commit while identifiable profile/avatar remains reachable.
+   - Existing rule remains: pseudonymization fails closed while collector currently owns items.
+   - Pseudonymization must still preserve provenance exactly and remain idempotent.
+   - A pseudonymized/disabled account must never reach profile routes.
+
+6. **No public exposure**
+   - No new unauthenticated collector-profile route.
+   - Public Passport output must remain byte/field-contract compatible with respect to collector identity: no display name, bio, location, avatar, email, COL ref, internal id.
+   - Do not make ownership publicly discoverable.
+   - Do not change robots/public indexing behavior as part of CP-1.
+
+7. **UI**
+   - Improve the collector account/profile experience coherently rather than bolting fields onto the danger-zone card.
+   - Keep Account Security and Danger Zone clearly separated.
+   - Add a visible route/link to My Collection and authentication submissions as today.
+   - Profile should work on mobile and desktop within the existing standalone SCA collector chrome.
+   - CP-1 may widen the private profile page if needed, but do not redesign unrelated collector item-detail pages.
+
+## Data / provenance invariants
+
+CP-1 must create ZERO:
+- eyewear items,
+- authentications,
+- certifications,
+- QR identities/lifecycle,
+- claims/grants,
+- ownership/transfer events,
+- registry/status events,
+- service events,
+- Shopify sale links,
+- authentication submissions/payments/returns.
+
+Editing profile or avatar must never change current ownership, certification, Passport resolution, claimability, transfer eligibility, or external-auth workflow state.
+
+## Migration requirements
+
+- Additive migration only from prod level 130.
+- New table only unless an audited necessity is discovered; do not alter provenance tables.
+- UNIQUE one profile per collector.
+- FK to collector account with conservative delete behavior consistent with existing no-hard-delete identity model.
+- If DB-level immutability protection for `collector_account_id` is consistent with existing SCA patterns, add it.
+- Do not deploy/migrate production during implementation. Candidate only.
+
+## Tests required
+
+Create a focused CP-1 feature suite on `sca_domain_test` with a hard DB-name guard. At minimum prove:
+
+- unauthenticated profile GET/POST/avatar routes rejected;
+- staff session does not satisfy collector auth;
+- collector sees only own profile;
+- request cannot retarget another collector by id/ref/email;
+- create/update display_name + bio + location;
+- validation boundaries and normalization;
+- empty optional values -> NULL;
+- email cannot be changed through profile payload;
+- avatar valid JPEG/PNG/WebP accepted; SVG/non-image/oversize rejected;
+- avatar filename/path is server-generated and never rendered/exposed;
+- avatar stream is session-self-only and nosniff/privacy-safe;
+- replace/remove avatar cleanup semantics;
+- profile edit creates zero provenance/domain mutations;
+- stats derive from canonical current ownership;
+- certified count is canonical;
+- distinct brands correct;
+- transfer causes prior owner's stats to drop and recipient's to rise;
+- unclaimed external-auth submission does not count;
+- collector-since derives from account created_at;
+- public Passport contains none of profile/collector PII and remains public as before;
+- pseudonymization removes profile data/avatar access and preserves provenance;
+- pseudonymization failure while still owning items leaves account/profile/avatar intact;
+- pseudonymized/disabled collectors cannot access profile;
+- concurrency/replay behavior is safe enough for profile create/update and avatar replace.
+
+Run focused tests and the full `tests/Feature/Sca/` regression gate. Report exact pass/assertion counts.
+
+## Boundaries / forbidden scope
+
+- NO public collector profile yet.
+- NO public handle/username.
+- NO public collection/per-item visibility.
+- NO social features.
+- NO marketplace/resale.
+- NO valuation.
+- NO Stripe activation/test-mode runtime.
+- NO SMTP activation.
+- NO Shopify changes.
+- NO Krayin core/vendor edits.
+- NO production deployment.
+- NO weakening of public Passport privacy.
+- NO direct provenance-table mutation from profile code.
+
+## Deliverables / handoff
+
+Implement on a dedicated branch from exact deployed baseline `f461c17b7e0cbd5a5e5f026d5f5000870ef04752`.
+
+Commit:
+- implementation;
+- migration;
+- focused tests;
+- `docs/SCA-COLLECTOR-PROFILE-CP1-IMPLEMENTATION.md` containing schema, routes, privacy/storage decisions, exact changed files, focused/full test results, migration count, and explicit confirmation that Stripe remains dormant and production was untouched.
+
+Update this governance `NEXT_TASK.md` with candidate branch/head SHA, exact base SHA, migration delta, test counts, findings/deferrals, and **STOP for ChatGPT pre-merge audit**.
+
+Do not merge or deploy. Do not start CP-2.
+
+---
+
+## Previous authoritative state
+
+# NEXT TASK
+
 **STATUS: Slices 1–6 CODE DEPLOYED + payment concurrency hardening + Stripe webhook amount/currency hardening (R1) DEPLOYED; Stripe DORMANT; Stripe Test Mode real-provider dry-run pending. External Paid Authentication Intake product slices are CODE-COMPLETE, pending provider testing/activation and final launch validation. STOP for ChatGPT deployment audit of Slice 6.**
 
 Updated 2026-10-08.
