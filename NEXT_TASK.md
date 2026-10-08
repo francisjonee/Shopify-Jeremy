@@ -1,8 +1,23 @@
 # NEXT TASK
 
-**STATUS: CP-4 PRE-MERGE AUDIT — FAIL. One concurrency architecture blocker must be remediated. Do not merge/deploy or start CP-5.**
+**STATUS: CP-4 R1 REMEDIATED (concurrency/TOCTOU) — CANDIDATE awaiting ChatGPT re-audit. NOT merged / NOT deployed. Deployed baseline unchanged (prod main `3e70758`, migr 132, Stripe DORMANT, mail=log). Do not start CP-5.**
 
 Updated 2026-10-09.
+
+## Re-audit target
+Branch `feat/sca-collector-profile-cp4`, base `3e707582c21e40b97e909c8593987787fd4c33c4`, candidate **`2836114ef5dd7b48e16f696c9195d52125725e11`** (R1 remediation of `e041eea`). Migration unchanged 132→133. Production untouched.
+
+### R1 remediation summary (concurrency blocker closed)
+`CollectorPublicItemService::setVisible()` now acquires `FOR UPDATE` on the SAME `sca_item_current_state` row that every ownership writer (Claim/Transfer/OwnershipCorrection) and status writer (StatusService/Commerce) locks + updates via `ProjectionService::rebuild`, and re-reads canonical current owner + registry UNDER that lock before writing `is_visible=true`. So a transfer/adverse transaction can no longer reset-and-commit between the eligibility read and the write (the TOCTOU): either setVisible holds the row (writer's rebuild then resets the pref) or the writer committed first (setVisible's re-read fails closed). No stale `true` survives → no auto-resurrection on reacquisition/recovery. Lock order account→item-state matches every writer that locks both (claim L74→L118, transfer L61→L113, pseudonymize L54→L67); no writer locks account after item-state → no inversion (deadlock-safe; proven by writer audit). CP-3 publication/active still authoritative; UNIQUE idempotency preserved; zero provenance.
+
+Real overlapping **two-connection** `CollectorPublicItemConcurrencyTest` (non-transactional; deletable fixtures via ItemService + seeded current_state): `cc1` visibility-publish racing a real transfer and `cc2` racing a real adverse transition — a racer connection holds the item-state row FOR UPDATE and commits the ownership/status change + CP-4 reset, the main setVisible BLOCKS on that lock (observed 1205) and writes nothing, then after commit re-reads and fails closed; `cc1` proves B inherits no preference + B→A reacquisition stays private; `cc2` proves recovery stays private — both until explicit re-opt-in. Sequential `pi18`/`pi19` retained. Delta from `e041eea` = 3 files (`CollectorPublicItemService.php` + new `CollectorPublicItemConcurrencyTest.php`, strengthened at `2836114`).
+
+Focused `CollectorPublicItemTest` **29** + `CollectorPublicItemConcurrencyTest` **2**; full SCA gate **1137 passing** (1 webp skip; one run hit the known unrelated `QrReissueTest::rg8` timing flake → 11/11 on isolated re-run). Production untouched (deployed `3e70758`, prod migr 132, no public_items table in prod, provenance byte-identical FP `35e06328…`, Stripe DORMANT, mail=log). Evidence: `docs/SCA-COLLECTOR-PROFILE-CP4-IMPLEMENTATION.md` (R1 section). **STOP for ChatGPT re-audit of `2836114`.**
+
+---
+
+## Prior pre-merge audit (FAIL — R1 concurrency) — addressed above
+Prior candidate: `e041eea7b9ee67bba21914ad4777d42f0a4f0e0a`
 
 ## Audited candidate
 Repo: `francisjonee/francisjonee-sca-platform-private`

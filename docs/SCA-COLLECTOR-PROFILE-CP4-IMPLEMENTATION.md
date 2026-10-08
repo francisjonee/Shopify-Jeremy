@@ -1,12 +1,30 @@
-# SCA Collector Profile — CP-4 — Public Collection Controls — CANDIDATE
+# SCA Collector Profile — CP-4 — Public Collection Controls — CANDIDATE (remediated R1)
 
-**Date:** 2026-10-09 · **Status: CANDIDATE pushed, NOT merged / NOT deployed / production untouched / Stripe DORMANT / mail=log. STOP for ChatGPT pre-merge audit.**
+**Date:** 2026-10-09 · **Status: CANDIDATE remediated (pre-merge audit R1 — concurrency), NOT merged / NOT deployed / production untouched / Stripe DORMANT / mail=log. STOP for ChatGPT re-audit.**
 
 - **Branch:** `feat/sca-collector-profile-cp4`
 - **Base (exact deployed baseline):** `3e707582c21e40b97e909c8593987787fd4c33c4`
-- **Candidate head:** `e041eea7b9ee67bba21914ad4777d42f0a4f0e0a`
+- **Candidate head:** `2836114ef5dd7b48e16f696c9195d52125725e11` (R1 remediation of `e041eea`; `c237a8d` + one extra `cc1` assertion that recipient B inherits no visible preference)
 - **Impl repo:** `francisjonee/francisjonee-sca-platform-private` · **Governance:** `francisjonee/Shopify-Jeremy`
-- **Migrations:** candidate **132 → 133** (one additive table `sca_collector_public_items`); **prod stays 132** until deployment.
+- **Migrations:** candidate **132 → 133** (one additive table `sca_collector_public_items`, unchanged); **prod stays 132** until deployment.
+
+## Pre-merge audit remediation (R1 — concurrency / TOCTOU) — head `c237a8d`
+
+Delta from `e041eea`: 2 files (`CollectorPublicItemService.php` + new `CollectorPublicItemConcurrencyTest.php`); migration unchanged.
+
+**Finding (correct):** the sequential "both orderings" tests did not cover the real TOCTOU — `setVisible()` read canonical ownership/status WITHOUT a lock shared with the ownership/status writers, so a transfer/adverse transaction could perform its reset + commit between `setVisible`'s eligibility read and its `is_visible=true` write. The centralized read predicate prevented immediate disclosure, but a stale `true` preference could auto-resurrect on reacquisition/recovery.
+
+**Lock design / fix.** `setVisible()` now, inside its transaction and AFTER the account lock, acquires `FOR UPDATE` on the SAME `sca_item_current_state` row that every ownership writer (Claim/Transfer/OwnershipCorrection) and status writer (StatusService/Commerce) locks + updates via `ProjectionService::rebuild`, and **re-reads canonical current owner + registry UNDER that lock**, gating on them before writing. So the write is impossible between a writer's reset and commit: either `setVisible` holds the row (the writer's rebuild then resets the preference) or the writer committed first (`setVisible`'s re-read sees the new owner / adverse status and fails closed). No stale `true` can survive.
+
+**Deadlock safety (proven by audit of all writers).** Global lock order is **account → item-state**: writers that lock both do so in that order (ClaimService account L74 → item-state L118; TransferService account L61 → item-state L113; `pseudonymize` account L54 → item-state L67); OwnershipCorrection/Commerce/Status lock only item-state. No writer locks the account AFTER the item-state row, so `setVisible`'s account→item-state order introduces no inversion.
+
+**Real overlapping two-connection proof.** New `CollectorPublicItemConcurrencyTest` (non-transactional; fixtures built WITHOUT append-only provenance — a bare `ItemService` item + a directly-seeded `current_state` projection row — so the graph is fully deletable and self-cleans): `cc1` visibility-publish racing a real transfer and `cc2` racing a real adverse transition. In each, a racer connection holds the `sca_item_current_state` row `FOR UPDATE` (the writers' synchronization boundary) and performs exactly what the writer's rebuild does under that lock (change current owner / set adverse + reset CP-4 rows); the main-connection `setVisible` **blocks on that lock (observed via a 1s `innodb_lock_wait_timeout` → 1205) and writes nothing**, then after the racer commits, `setVisible` re-reads under the released lock and **fails closed**. `cc1` additionally asserts the recipient B inherits no visible preference and that B→A reacquisition stays private (no auto-restore) until explicit opt-in; `cc2` proves recovery stays private likewise. The sequential `pi18`/`pi19` remain. Deadlock/lock-order proof = the documented audit of all writers above (the audit accepts a precise code audit in lieu of a test).
+
+Focused: `CollectorPublicItemTest` **29** + `CollectorPublicItemConcurrencyTest` **2** = **31 passed**. Full governed SCA regression: **1137 passing / ~5863 assertions, 1 skipped (webp)** — one run surfaced the known unrelated `QrReissueTest::rg8` `rebuilt_at` timing flake (passed **11/11** on isolated re-run; prod untouched). Production re-verified untouched (deployed `3e70758`, prod migr **132**, `sca_collector_public_items` absent, provenance DATA byte-identical FP `35e06328…`, Stripe DORMANT, mail=log). **STOP for ChatGPT re-audit of head `2836114`.**
+
+---
+
+## Original candidate detail (head `e041eea`) — unchanged except R1 above
 
 ## Invariants honoured
 **Ownership ≠ publicity. Profile publication ≠ item publication. An old owner's visibility never survives transfer as public authority. A new owner never inherits the old owner's choice.** Public item visibility requires explicit per-item opt-in and ALL of (rechecked at read time): CP-3 profile published + account active + non-blank display_name + this collector+item preference visible + canonical current owner == that collector + non-adverse registry.
