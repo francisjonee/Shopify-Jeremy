@@ -1,6 +1,6 @@
 # NEXT TASK
 
-**STATUS: CP-5 PROMOTED — Public Handle / Profile URL. Implement on a NEW branch from exact deployed baseline `7409a33baecf2ef6bd8c44413a27a9f77fa249f1`. Do not merge/deploy. STOP for ChatGPT pre-merge audit.**
+**STATUS: CP-5 CANDIDATE PUSHED — Public Handle / Profile URL — awaiting ChatGPT pre-merge audit. Branch `feat/sca-collector-profile-cp5`, head `681bc45ee38ce6b12f34a32b129d19de0ca54c07`, base `7409a33baecf2ef6bd8c44413a27a9f77fa249f1`, migration 133→134, 14 files. NOT merged / NOT deployed / production untouched (prod migration 133) / `/u/*` edge-blocked / Caddy+DNS+Stripe+SMTP+Shopify unchanged. Full write-up: `docs/SCA-COLLECTOR-PROFILE-CP5-IMPLEMENTATION.md`. STOP for ChatGPT pre-merge audit; do not merge/deploy/activate the `/u/*` edge or start CP-6.**
 
 Updated 2026-10-09.
 
