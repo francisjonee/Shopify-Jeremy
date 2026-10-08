@@ -1,279 +1,140 @@
 # NEXT TASK
 
-**STATUS: CP-4 (Public Collection Controls) CANDIDATE pushed, awaiting ChatGPT pre-merge audit — NOT merged / NOT deployed. Deployed baseline unchanged: prod main `3e70758`, migrations 132, Stripe DORMANT, mail=log. Do not start CP-5.**
+**STATUS: CP-4 PRE-MERGE AUDIT — FAIL. One concurrency architecture blocker must be remediated. Do not merge/deploy or start CP-5.**
 
 Updated 2026-10-09.
 
-## CP-4 — Public Collection Controls — CANDIDATE awaiting ChatGPT pre-merge audit
+## Audited candidate
+Repo: `francisjonee/francisjonee-sca-platform-private`
+Branch: `feat/sca-collector-profile-cp4`
+Base: `3e707582c21e40b97e909c8593987787fd4c33c4`
+Candidate: `e041eea7b9ee67bba21914ad4777d42f0a4f0e0a`
+GitHub compare: 1 ahead / 0 behind, exactly 13 intended CP-4 files, one migration 132→133.
 
-Branch `feat/sca-collector-profile-cp4`, base `3e707582c21e40b97e909c8593987787fd4c33c4`, head **`e041eea7b9ee67bba21914ad4777d42f0a4f0e0a`**. Migration candidate **132 → 133** (one additive table `sca_collector_public_items`; **prod stays 132**). Explicit per-item opt-in public visibility; ownership≠publicity, profile-publication≠item-publication.
+## Accepted portions
+The core read architecture is accepted:
+- dedicated collector+item presentation state;
+- default private;
+- centralized public read predicate intersects CP-3 publication + active/nonblank profile + explicit visibility + canonical current ownership + non-adverse status;
+- conservative public DTO;
+- no public item detail/Passport link;
+- public image shares eligibility predicate;
+- projection-boundary reset covers canonical ownership/status rebuilds;
+- privacy cleanup present;
+- transfer/correction/adverse/recovery sequential behavior is well covered;
+- migration shape is appropriate.
 
-New `sca_collector_public_items` (collector+item UNIQUE, FKs RESTRICT, is_visible default false, visible_since, binding immutability trigger; presentation-only, zero provenance). `CollectorPublicItemService` sole writer/resolver — ONE centralized eligibility predicate (CP-3 published + account active + non-blank display_name + preference visible + canonical current owner==collector + non-adverse) backs both the public collection list and the public image; setVisible/setPrivate are session-collector-only, account-first locked, idempotent, no-row-on-failed-eligibility, non-disclosing make-private.
+## R1 BLOCKER — real stale-visible race remains; deterministic ordering tests do not prove the required invariant
 
-**Ownership/status integration = SINGLE shared boundary `ProjectionService::rebuild`** (audited: ALL writers rebuild there — ClaimService, TransferService, OwnershipCorrectionService, StatusService collector/staff/admin, CommerceService refund). A conditional reset keyed on POST-rebuild state flips CP-4 preferences private when adverse / no owner / collector≠current-owner — atomic with the ownership/status change, never makes anything visible, no account lock (no inversion). Transfer/correction reset OLD owner (recipient inherits nothing); adverse resets; recovery never auto-restores. Read predicate independently intersects current ownership + non-adverse (defense in depth).
+The promoted task explicitly required real concurrency proof for:
+- visibility publish racing ownership transfer;
+- visibility publish racing adverse status.
 
-Public (within already-admitted `/c/*`): `/c/{publicRef}` opt-in Collection section (bounded, allowlisted: ref+brand+model+year+cert-label+image; omits SKU/condition/dates/history/ids/paths/tokens; empty hides totals; NO Passport link) + `GET /c/{publicRef}/items/{itemRef}/image` (nosniff/no-store; indistinguishable 404). Private toggle on My Collection item detail (`POST`/`DELETE /collector/collection/{ref}/public`). Pseudonymization deletes CP-4 rows in the privacy txn; CP-3 unpublish closes collection/images, republish restores still-safe items.
+Candidate substitutes sequential “both orderings” tests and claims literal concurrency is infeasible. That claim is not accepted.
 
-13 files (5 new + 8 modified). `CollectorPublicItemTest` **29 passed / 118** (incl. pi18/pi19 both race orderings for transfer + adverse; literal 2nd-connection race infeasible — append-only provenance can't be torn down non-transactionally + invariant is read-predicate/rebuild-reset based not lock-timing). Full SCA gate **1135 passed / 5850** (1 webp skip). Production untouched (deployed `3e70758`, prod migr 132, no public_items table in prod, provenance byte-identical FP `35e06328…`, Stripe DORMANT, mail=log). No Caddy/DNS/Stripe/SMTP/Shopify change; no CP-5. Evidence: `docs/SCA-COLLECTOR-PROFILE-CP4-IMPLEMENTATION.md`. **STOP — do not merge/deploy/start CP-5 until ChatGPT audits head `e041eea`.**
+### Why the race exists
+`CollectorPublicItemService::setVisible()`:
+1. locks only the collector account;
+2. checks CP-3 publication;
+3. reads `sca_item_current_state` for current ownership + non-adverse WITHOUT locking the item/current-state row;
+4. later inserts/updates `sca_collector_public_items.is_visible=true`.
 
----
+Ownership/status writers rebuild/reset visibility in their own transaction through `ProjectionService::rebuild()`.
 
-## CP-3 (closed / deployed app+edge) — baseline retained below
+A valid interleaving can therefore be:
 
-## Architecture audit
-ChatGPT audited deployed CP-2 current-owner collection semantics and CP-3 publication/privacy lifecycle before promotion.
+#### Transfer race
+T1 visibility:
+- locks collector A account;
+- reads projection: A still owner, normal → eligible;
+- pauses before visibility insert/update.
 
-### Existing truths
-- Private My Collection membership is derived ONLY from `sca_item_current_state.current_owner_collector_id`.
-- Transfer changes canonical current ownership; previous owner immediately loses private collection/detail/image authorization.
-- CP-3 public profile publication is explicit, account-first serialized, active-account gated, and removed by pseudonymization.
-- CP-3 public profile currently exposes ZERO collection/item/count information.
-- Public Passport is item/provenance oriented and deliberately collector-identity-free.
-- Registry adverse statuses are `disputed, lost, stolen, retired, invalidated`.
-- Owner images are currently streamed only through owner-authorized private routes with raw paths hidden.
+T2 transfer/correction:
+- changes canonical ownership to B;
+- rebuilds projection;
+- resets currently-existing stale visibility rows;
+- commits.
 
-Critical invariants:
-**Ownership ≠ publicity.**
-**Profile publication ≠ item publication.**
-**An old owner's visibility preference must never survive as public authority after transfer.**
-**A new owner must never inherit the old owner's publication choice.**
+T1:
+- resumes and writes/commits A's visibility=true based on the stale eligibility read.
 
-## CP-4 objective
-Allow an authenticated collector with a currently published CP-3 profile to explicitly choose which CURRENTLY OWNED items appear on that public profile.
+Immediate public read is still safe because centralized predicate sees B as current owner. BUT A now retains a stale visible=true preference.
 
-Default is private. Publication is per collector+item, explicit opt-in, reversible, and presentation-only.
+Later B→A reacquisition rebuild sees A as current owner and, by current reset logic, preserves A's visible row. The item can therefore automatically reappear without a new explicit opt-in, violating:
+- old-owner preference must reset private;
+- reacquisition remains private until explicit re-opt-in.
 
-CP-4 adds:
-1. private per-item public-visibility controls;
-2. a minimal public collection section on the existing `/c/{publicRef}` profile;
-3. public item image streaming for eligible visible items;
-4. immediate fail-closed behavior on transfer, unpublish, account disable/pseudonymization, or adverse registry state.
+#### Adverse race
+Same pattern:
+T1 reads normal/non-adverse and pauses.
+T2 commits adverse status + reset.
+T1 then writes visible=true.
 
-No standalone public item detail page in CP-4.
+Immediate public read is suppressed by adverse predicate, but stale true survives. On later recovery, rebuild sees same owner + non-adverse and preserves the row, so the item can auto-republish after recovery, violating CP-4.
 
-## Visibility data model
-Add dedicated presentation/privacy state, preferred table:
-`sca_collector_public_items`
+Defense-in-depth public reads prevent an immediate disclosure, but they do NOT satisfy the persistent privacy-state invariant.
 
-Columns:
-- id
-- collector_account_id
-- eyewear_item_id
-- is_visible boolean default false
-- visible_since nullable timestamp
-- created_at / updated_at
+## Required remediation
+Make visibility publication serialize with canonical ownership/status eligibility so a stale eligibility read cannot write visible=true after an ownership/adverse commit.
 
-Constraints:
-- UNIQUE(collector_account_id, eyewear_item_id)
-- FK collector → sca_collector_accounts RESTRICT
-- FK item → sca_eyewear_items RESTRICT
-- no copied brand/model/cert/image/ownership/status fields
-- no provenance mutation
-- collector_account_id + eyewear_item_id immutable at storage layer
-- one preference per collector/item.
+Choose the smallest safe lock design after auditing existing lock order. Requirements:
+- `setVisible()` must acquire an item/current-state lock that is also mutually exclusive with ownership/status writers BEFORE relying on eligibility;
+- re-read canonical current ownership + registry status under that lock;
+- preserve consistent global lock ordering and avoid account↔item deadlock with existing workflows;
+- if account-first is incompatible with canonical item writers, redesign the CP-4 mutation lock order safely rather than layering an inversion;
+- CP-3 publication/account active eligibility must still be authoritative at commit;
+- UNIQUE replay/idempotency behavior preserved;
+- no provenance mutation by visibility action.
 
-Expected migration 132→133.
+A robust alternative is an ownership/status **epoch binding** stored with the preference (e.g. bind to canonical last ownership/status event identity) and require exact epoch equality at public read, but this is a larger schema/read design. Prefer serialization if it can be proven deadlock-safe.
 
-A visibility row is only a collector's presentation preference. It is NEVER evidence of ownership and never authorizes public rendering by itself.
+Do NOT merely add another post-write read/check without locking; that remains TOCTOU.
+Do NOT rely only on the public read predicate; reacquisition/recovery resurrection remains the issue.
+Do NOT delete the sequential tests; retain them in addition to real race tests.
 
-Rows MAY remain after transfer as inert historical presentation preference, because public reads must always intersect canonical current ownership. If the same collector later legitimately reacquires the same item, do NOT automatically resurrect old visibility: on loss of ownership the old preference must be forced/reset to private OR the read/write model must include an ownership-epoch binding that makes the old choice permanently ineligible. Prefer the simpler, explicit privacy rule: **transfer/ownership-loss resets old owner's visibility to private transactionally** while public reads still independently require current ownership as defense in depth.
+## Mandatory real concurrency regressions
+Use two real DB connections/processes or the established deterministic concurrency harness used elsewhere in SCA. Prove actual overlap, not sequential calls.
 
-Do not make the recipient visible automatically.
+### Transfer race
+Force visibility transaction to pause after acquiring the chosen synchronization boundary / during eligibility evaluation, then race a real transfer (or vice versa as appropriate to lock design). Prove after both commits:
+- canonical owner is B;
+- A preference is false/absent;
+- A public collection/image cannot resolve item;
+- B has no inherited visible preference;
+- after B→A reacquisition, A is STILL private until explicit re-opt-in.
 
-## Private controls
-Add controls only behind `collector.auth`.
+Also exercise the inverse start order if the lock design makes it materially distinct.
 
-Preferred endpoints:
-- POST `/collector/collection/{ref}/public` → make visible
-- DELETE `/collector/collection/{ref}/public` → make private
+### Adverse race
+Race visibility publication with a real adverse status writer. After both commits:
+- canonical status adverse;
+- preference false/absent;
+- public collection/image cannot resolve;
+- after recovery/normalization, item remains private until explicit re-opt-in.
 
-Rules:
-- session collector only; no collector id from payload;
-- opaque item public_ref route;
-- server derives item id;
-- mutation requires:
-  - account active;
-  - CP-3 public profile currently published;
-  - canonical CURRENT ownership by session collector;
-  - item public-eligible under registry rules below;
-- CSRF + throttle;
-- idempotent;
-- do not create a visibility row on failed eligibility;
-- make-private should be safe/idempotent for current owner; if ownership has already been lost it must not disclose whether a stale preference/item exists.
+### Deadlock/lock-order proof
+Add/document a test or precise code audit demonstrating the chosen lock order is compatible with:
+- TransferService;
+- OwnershipCorrectionService;
+- StatusService writers;
+- CP-3 publish/unpublish;
+- CollectorPrivacyService;
+- CP-4 setPrivate/setVisible.
 
-UI:
-- My Collection card/detail may show neutral “Shown on public profile” / “Private” state and controls.
-- Explain that public-profile publication and item visibility are separate.
-- No bulk “publish everything” in CP-4.
+No unresolved deadlock retry should be considered a PASS.
 
-## Public eligibility
-An item appears publicly ONLY when ALL are true at read time:
-1. collector CP-3 publication exists and is_published=true;
-2. collector account status=active and CP-3 profile itself is resolvable (including nonblank display_name);
-3. visibility preference for THIS collector+item is visible;
-4. canonical `sca_item_current_state.current_owner_collector_id` equals that collector;
-5. registry status is NOT in `StatusService::ADVERSE_STATUSES`.
+## Re-run gates
+- CollectorPublicItemTest;
+- new real concurrency test class if separated;
+- CP-3 public profile + concurrency;
+- CP-2 My Collection;
+- transfer/status/privacy/Passport regressions;
+- full `tests/Feature/Sca`.
+Report exact pass/assertion/skip counts.
 
-Certification is NOT required merely to list an item publicly. Public UI must truthfully say certified/not currently certified from canonical current state.
+Migration may remain 132→133 if no schema change is required.
+Production stays untouched at `3e707582...`, migration 132.
+No Caddy/DNS/Stripe/SMTP/Shopify changes.
+No CP-5.
 
-Adverse registry status must immediately suppress the item and its public image. Recovery/normalization does NOT automatically republish a previously adverse item: when an item enters an adverse status, reset visibility to private transactionally, or bind preference to a safe eligibility epoch. Prefer explicit reset-to-private so collector must opt in again after recovery.
-
-No public disclosure that a hidden item exists or why it disappeared.
-
-## Transfer / ownership-loss integration
-This is release-critical.
-
-When canonical ownership changes away from collector A:
-- A's public visibility for that item must be reset private in the SAME ownership-changing transaction before/with projection rebuild/commit;
-- recipient B gets no visible preference;
-- public profile query independently requires current ownership, so even an integration failure cannot authorize A;
-- previous owner's public image route must fail immediately after commit;
-- reacquisition by A remains private until A explicitly republishes.
-
-Integrate at the canonical ownership-changing workflow/service, not only the collector TransferController. This must cover all ownership-change paths that can replace the current owner, including accepted collector transfer and staff/admin ownership correction. Audit existing ownership writers and hook the reset at the shared canonical boundary if one exists; if not, cover each writer explicitly and document why.
-
-Lock order must be consistent with existing ownership/projection locks and CP-3 account/publication locks. Do not introduce account↔item lock inversion. Visibility reset caused by ownership/status change should not need to lock the collector account; it may update/delete the presentation row by item/current-old-owner under the already-held item/ownership transaction.
-
-## Adverse-status integration
-When canonical registry status transitions INTO any adverse status:
-- visibility for the current owner/item must reset private in the SAME status-changing transaction;
-- public reads independently reject adverse status;
-- returning to normal/recovered does NOT restore visibility automatically.
-
-Cover all status writers that can enter adverse state (collector and staff/system paths). Prefer a shared status-service boundary after the append and before transaction commit.
-
-## Public collection presentation
-Extend existing `/c/{publicRef}` only.
-
-If eligible visible items exist, show a modest “Collection” section/grid.
-If none exist, do NOT reveal hidden/private item count. A neutral empty public state is acceptable, e.g. “No items shared publicly.”
-
-For each visible item allow only:
-- public SCA item reference;
-- brand;
-- model;
-- optional year;
-- optional SKU only if already considered public-safe; if uncertain OMIT SKU in CP-4;
-- current certification state: “Certified” / “Not currently certified”;
-- certification number only when currently certified and already public-safe under Passport semantics;
-- condition label only if already public-safe; if uncertain OMIT condition in CP-4;
-- image if an eligible catalog image exists.
-
-Conservative CP-4 default: expose ref + brand + model + year + current certification label + image. Do not expose SKU, condition, ownership dates, acquisition date, service history, transfer history, registry history/status reason, documents, internal ids, QR/passport token, frame_serial, staff data, Shopify data, notes.
-
-Do NOT link a public item to Passport in CP-4. Passport remains independently discoverable by its QR/token, not through collector identity.
-
-Public ordering: deterministic, e.g. brand/model/ref or visible_since then ref. Do not expose private acquisition chronology.
-
-No public search/filter/pagination required unless needed for bounded performance; cap the public list to a documented safe maximum or paginate without revealing hidden totals. Prefer bounded pagination if collections can grow.
-
-## Public item image
-Add a public image route bound to BOTH public profile ref and item public ref, e.g.
-`GET /c/{publicRef}/items/{itemRef}/image`.
-
-It succeeds only if the item currently passes the SAME public-item eligibility predicate used by the public collection query:
-- profile resolvable/published/active;
-- preference visible;
-- current owner = profile collector;
-- non-adverse registry;
-- image exists.
-
-Then stream bytes from existing catalog storage.
-- raw path never emitted;
-- `X-Content-Type-Options: nosniff`;
-- `Cache-Control: no-store` because transfer/unpublish/adverse transition must revoke immediately;
-- missing/hidden/non-owner/transferred/adverse/no-image/unknown refs → same ordinary 404;
-- do not reuse the private collector-auth image URL in public HTML.
-
-## CP-3 unpublish / pseudonymization
-Unpublishing the profile may leave per-item preferences stored, but the entire public collection/image surface must immediately 404/vanish because public reads require CP-3 publication.
-
-Republishing the profile MAY restore previously selected item visibility only if the collector still currently owns the item and it is non-adverse. This is acceptable because profile unpublish is a profile-level switch, not an ownership/status revocation.
-
-Pseudonymization already refuses while collector owns items. If privacy eventually succeeds with no owned items, delete any remaining CP-4 visibility rows for that collector in the SAME privacy transaction as publication/profile deletion. Presentation state must not survive anonymization.
-
-## Service architecture
-Create a dedicated CP-4 service as sole writer/resolver for public item visibility.
-
-Centralize one public-item eligibility query/predicate used by:
-- public collection cards;
-- public image resolver;
-- private visibility-state display where appropriate.
-
-Do not duplicate eligibility logic across controller/view methods.
-
-Keep DTO allowlisted and path/id free.
-
-Avoid N+1:
-- public profile collection should be bounded aggregate/list query;
-- image presence only in DTO;
-- image bytes separate route;
-- no per-card ownership/cert/status queries.
-
-## Mandatory tests
-At minimum prove:
-
-1. current ownership alone never makes item public;
-2. published CP-3 profile alone never makes item public;
-3. explicit visible preference + published profile + current ownership + non-adverse => item appears;
-4. private control is authenticated self-only and payload cannot retarget collector/item;
-5. cannot publish item not currently owned;
-6. cannot publish while CP-3 profile unpublished/non-resolvable/account non-active;
-7. first publish creates one preference; replay idempotent; unpublish idempotent;
-8. public HTML allowlist: no email/account ref/internal ids/raw paths/SKU/condition if omitted/ownership dates/history/service/docs/tokens/staff/Shopify/hidden totals;
-9. public image succeeds only for same eligible visible item and has correct MIME/nosniff/no-store;
-10. hidden/non-owner/unknown/adverse/transferred/no-image image cases are indistinguishable 404;
-11. accepted transfer A→B: A item + image disappear immediately; A preference reset private; B does not inherit visibility;
-12. A→B→A reacquisition: A remains private until explicit new opt-in;
-13. staff/admin ownership correction away from A also immediately removes/reset visibility;
-14. entering EACH relevant adverse path (at least collector lost/stolen and staff/system disputed/retired/invalidated as feasible) suppresses item + image and resets visibility;
-15. recovery/normalization does not auto-republish; explicit opt-in required again;
-16. CP-3 profile unpublish closes collection/images immediately; republish may restore still-safe selected items;
-17. pseudonymization cleanup deletes stale CP-4 rows when privacy succeeds; owning-item privacy rejection leaves state intact;
-18. real concurrency/race proof: visibility publish racing ownership transfer cannot leave publicly resolvable old-owner item after transfer commits;
-19. race: visibility publish racing adverse status cannot leave publicly resolvable item after adverse commit;
-20. public collection query is bounded/no N+1 and hidden items do not affect exposed totals/counts;
-21. Passport remains collector-identity-free and gains no profile/item link;
-22. My Collection remains private and complete regardless of public visibility;
-23. visibility actions/public browsing create zero provenance/domain events except the already-requested ownership/status operation in integration tests;
-24. migration uniqueness/FKs/immutability/default-private proven;
-25. malformed/unknown profile/item refs fail closed.
-
-Run focused CP-4 tests, CP-3 public-profile/concurrency tests, CP-2 My Collection tests, transfer/status/privacy/Passport regressions, and full `tests/Feature/Sca`. Report exact counts/skips.
-
-## Production edge
-Current Caddy already admits `/c/*`, so the nested CP-4 public image route is within the existing namespace. No Caddy/DNS change should be required. Prove route reachability in deployment later; do not modify edge config in this implementation slice.
-
-## Forbidden / out of scope
-- NO automatic publish-all;
-- NO public item detail page;
-- NO public Passport links from collector profile;
-- NO public search/directory;
-- NO public handles/slugs (CP-5);
-- NO custom collections/tags/favorites (CP-6);
-- NO social/follow/comment;
-- NO marketplace/resale/valuation;
-- NO ownership/provenance redesign;
-- NO Stripe/SMTP/Shopify/Caddy/DNS work;
-- NO CP-5+;
-- NO production deployment.
-
-## Handoff
-Create a NEW CP-4 branch from exact `3e707582c21e40b97e909c8593987787fd4c33c4`.
-Implement the complete bounded slice, expected migration 132→133.
-Audit every canonical ownership/status writer before wiring revocation/reset; document coverage.
-Run all required tests and full SCA gate.
-Push candidate and report:
-- branch/base/head;
-- changed files;
-- migration;
-- ownership/status integration points;
-- public/private routes;
-- focused/full test counts;
-- production untouched at `3e70758`, migration 132;
-- provenance fingerprint/counts unchanged;
-- publication/private-profile counts;
-- Stripe dormant/mail log.
-
-Then STOP for ChatGPT pre-merge audit.
-Do not merge/deploy or start CP-5.
+Push remediation on SAME CP-4 branch, update implementation evidence, report exact new head + delta from `e041eea...`, and STOP for ChatGPT re-audit.
