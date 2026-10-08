@@ -1,6 +1,6 @@
 # NEXT TASK
 
-**STATUS: CP-5 R1 PRE-MERGE RE-AUDIT — PASS. Exact candidate `2d87c38dadb5af61a630805dc2da3a6e11eb2f02` approved for Phase-A merge/deployment. Do NOT activate /u/* edge yet. Do NOT start CP-6.**
+**STATUS: CP-5 PHASE A DEPLOYED — awaiting ChatGPT Phase-A post-deployment audit. MERGE_SHA = ORIGIN_MAIN = DEPLOYED_HEAD = `0101755b03352305050b7b7290ad917b588112ff` (merged `--no-ff` from approved candidate `2d87c38`, tree-identical; base `7409a33`). Prod migration 133→134 (handle columns + additive tombstone table `sca_collector_handle_reservations`, 0 rows); CP-3 immutability trigger unchanged. Provenance row-data fingerprint `d15a5cbdfb8df52ba65628b276533cfe` byte-identical PRE/POST; canonical counts `3/3/4/4/5/2/1/1/7` unchanged. Full gate exit 0 / 1188 passed / 1 skipped(webp) / 0 failed. `/u/*` still externally **Caddy-404** (edge NOT activated); routes verified at app layer only. Stripe DORMANT; mail=log; no Caddy/DNS/Shopify/SMTP change. Evidence: `docs/SCA-COLLECTOR-PROFILE-CP5-PHASE-A-DEPLOY-RESULT.md`. Do NOT activate `/u/*` edge. Do NOT declare CP-5 closed. Do NOT start CP-6. STOP for Phase-A post-deployment audit; Phase B (`/u/*` edge admission) is a separate task after this audit.**
 
 Updated 2026-10-09.
 
