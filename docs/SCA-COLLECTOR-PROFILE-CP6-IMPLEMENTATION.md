@@ -1,17 +1,50 @@
 # SCA Collector Profile — CP-6 — Private Collection Organization — CANDIDATE
 
-**Date:** 2026-10-12 · **Status: CANDIDATE pushed, NOT merged / NOT deployed / production untouched (migration 134) / Stripe DORMANT / mail=log / no Caddy/DNS/Shopify/SMTP change. STOP for ChatGPT pre-merge audit.**
+**Date:** 2026-10-12 · **Status: CANDIDATE — R1 REMEDIATED (real add-vs-transfer/correction concurrency proof), re-pushed. NOT merged / NOT deployed / production untouched (migration 134) / Stripe DORMANT / mail=log / no Caddy/DNS/Shopify/SMTP change. STOP for ChatGPT re-audit.**
 
 - **Impl repo:** `francisjonee/francisjonee-sca-platform-private` · **Governance:** `francisjonee/Shopify-Jeremy`
 - **Branch:** `feat/sca-collector-profile-cp6`
 - **Base (exact deployed baseline):** `0101755b03352305050b7b7290ad917b588112ff` (prod HEAD, migration 134)
-- **Candidate head:** `82c819240d8bdb768477778613dd3eb9e2469d3f` (1 commit ahead of base)
+- **Candidate head:** `2d15c6bb40b842c7368bd9bd08123a06e5df95d7` (R1 remediation of `82c8192`; 2 commits ahead of base)
 - **Migrations:** candidate **134 → 135** (one additive migration, two new tables + triggers); **prod stays 134**.
+
+## 0. Pre-merge audit R1 remediation (head `2d15c6b`)
+
+**Finding (accepted):** mandatory concurrency proof #25 was not real — the previous
+`CollectorCollectionConcurrencyTest::cc1` manually locked/updated `sca_item_current_state` and manually
+deleted CP-6 membership rows instead of invoking the real `TransferWorkflow`/`ProjectionService::rebuild()`.
+
+**Fix (2 files, delta from `82c8192`; NO production code change):** `tests/Support/cp6_worker.php` (new,
+test-only; not autoloaded in prod) + rewritten `CollectorCollectionConcurrencyTest`. `pcntl_fork` is
+unavailable in this image, so genuine overlap of two REAL service calls is achieved by running one side in
+a separate OS process (its own DB connection) against COMMITTED `sca_domain_test` fixtures, coordinated by
+a deterministic DB row-lock barrier:
+- **cc1a (transfer wins):** the worker runs the REAL `TransferWorkflow::accept()`; the parent holds a barrier
+  on the old-owner membership row so the transfer blocks mid-flight AT its real CP-6 delete while HOLDING
+  `sca_item_current_state`; a concurrent old-owner `addItem()` (second worker) blocks on item-state; on
+  release the real transfer commits (owner=B, real rebuild deleted the membership) and the add then ends in
+  the generic **NOT_ELIGIBLE** — never a raw 1205/1213/SQL — writing no membership; old owner cannot group-read.
+- **cc1b (add wins):** `addItem()` committed the membership first; the REAL transfer worker is held mid-flight
+  at the CP-6 delete and the parent OBSERVES the membership still present + owner still A (delete is inside
+  the uncommitted transfer txn); on release the real `rebuild()` deletes it and the transfer commits; B→A
+  reacquisition does not resurrect it.
+- **cc2 (admin correction):** same proof driving the REAL `OwnershipCorrectionService::correct()`.
+- **cc3/cc4** unchanged (same-name DB-UNIQUE collision → generic DUPLICATE_NAME no raw SQL; pseudonymization
+  account-first, cannot resurrect).
+
+**No production behaviour changed** — the genuine overlap exposed NO defect: the existing lock order
+(account→collection→item-state) and the `ProjectionService::rebuild()` CP-6 cleanup behave correctly under
+real contention. The test is non-transactional (cross-process visibility) and **fully self-cleans**:
+ownership is seeded by a single direct `claim` event (only `sca_ownership_events` + `sca_transfer_events`
+append-only tables are touched), and tearDown briefly drops those two `no_delete` guard triggers around a
+scoped delete, recreating them in a `finally` and self-healing in setUp — so it never pollutes neighbouring
+tests' global-count assertions. Deterministic across repeated runs (5×). **Full `tests/Feature/Sca`: exit 0
+· 1222 passed · 1 skipped (webp) · 0 failed · 6188 assertions.**
 
 ## 1. Invariant honoured
 **Organization is presentation state only. Canonical current ownership remains the SOLE membership authority for My Collection.** CP-6 adds private user-defined collections (named groups) with many-to-many item membership and manual ordering. It NEVER grants ownership, NEVER makes an item public, NEVER becomes provenance. PRIVATE ONLY — no public route, no CP-4 grouping, no handle/public-profile change. No tag system, no first-class favorites.
 
-## 2. Changed files (16: 9 new, 7 modified)
+## 2. Changed files (17: 10 new, 7 modified) — +`tests/Support/cp6_worker.php` (R1)
 **NEW** — migration `2026_10_16_000001_create_sca_collector_collections.php`; `Models/CollectorCollection.php`; `Models/CollectorCollectionItem.php`; `Support/CollectionName.php`; `Exceptions/CollectionRejection.php`; `Services/CollectorCollectionService.php`; `Http/Controllers/CollectionGroupController.php`; `tests/Feature/Sca/CollectorCollectionTest.php`; `tests/Feature/Sca/CollectorCollectionConcurrencyTest.php`.
 **MODIFIED** — `Services/ProjectionService.php` (ownership-loss cleanup hook); `Services/CollectorPrivacyService.php` (pseudonymization purge); `Http/Controllers/CollectionController.php` (group filter + organize state); `Services/CollectionService.php` (CP-2 catalog group filter); `Routes/collector-routes.php` (CP-6 routes); `Resources/views/collection/index.blade.php` (Collections section); `Resources/views/collection/show.blade.php` (Organize control).
 
@@ -41,7 +74,12 @@ Under `collector.auth` + web/CSRF, throttled: `POST /collector/collections` (cre
 
 ## 9. Tests
 - `CollectorCollectionTest` — **29 passed**: defaults + CP-2 unchanged (c1, c32); create + normalized-duplicate + invalid + cross-collector-name-OK (c2/c2b); 50-cap (c3); rename preserves ref/memberships (c4); delete removes only group+memberships, provenance+CP-4 intact (c5); group order + collector-scoped reorder + item reorder + payload cap (c6/c6b); add eligibility (active/collection-ownership/current-ownership/disabled→lifecycle) (c7); multi-group + idempotent add (c8/c9); remove idempotent/non-disclosing (c10); group catalog intersects ownership + preserves CP-2 filters (c11); counts from current-ownership intersection (c12); owner-scoped membership state (c13); transfer deletes memberships + no resurrection (c14/c15); admin correction cleanup (c16); **adverse does NOT delete organization** (c17); CP-4 independence both ways (c18); pseudonymization purge (c19); zero provenance (c20); opaque-refs-only HTML + HTTP roundtrip (c21/c21b); cross-collector guesses privacy-safe (c22); identity immutability + cross-collector-membership-blocked-at-DB (c23/c23b); normalized-name DB uniqueness (c24); bounded/no-N+1 (c29); no CP-6 on public surfaces/routes (c30/c31).
-- `CollectorCollectionConcurrencyTest` — **4 passed**, REAL two-connection (non-transactional, self-cleaning, deterministic across repeated runs): cc1 add-vs-transfer (serializes on item-state lock → generic NOT_ELIGIBLE, never raw SQL; post-commit old owner cannot organize), cc2 add-vs-admin-correction (same shared canonical lock; real correction integration proven transactionally in c16), cc3 same-name collision (DB UNIQUE arbitrates → one winner, loser generic DUPLICATE_NAME, no raw SQL), cc4 pseudonymization-vs-mutation (account-first; no state created under contention, cannot resurrect after commit).
+- `CollectorCollectionConcurrencyTest` — **5 passed** (R1), REAL two-connection via a separate OS process
+  driving the UNMODIFIED production workflows (see §0), non-transactional + fully self-cleaning,
+  deterministic across repeated runs (5×): cc1a REAL transfer wins → concurrent add generic NOT_ELIGIBLE;
+  cc1b add wins → REAL rebuild deletes membership inside the transfer txn, no resurrection; cc2 REAL admin
+  correction racing add; cc3 same-name collision (DB UNIQUE → generic DUPLICATE_NAME, no raw SQL); cc4
+  pseudonymization-vs-mutation (account-first; cannot resurrect).
 - **Full `tests/Feature/Sca`: exit 0 · 1221 passed · 1 skipped (known WebP GD env) · 0 failed · 6159 assertions.** Focused required regressions (CP-6 + CP-2 + CP-4 + concurrency + transfer + ownership correction + ownership history + CP-5 handle + CP-3 public profile + Passport) = 198 passed.
 
 ## 10. Production state (verified at restored baseline)
@@ -51,4 +89,4 @@ Live tree restored to `main` = `0101755` (deployed SHA unchanged), `--no-dev` re
 - collectors **3** / private-profiles **0** / public-profiles **0** / public-items **0** / handle-bearing **0** / handle-tombstones **0**; `STRIPE_ENABLED` unset (dormant); `MAIL_MAILER` log.
 - No Caddy/DNS/Shopify/SMTP change. `/u/*` edge admission (CP-5 Phase B) unchanged.
 
-**STOP for ChatGPT pre-merge audit of head `82c8192`.** Do not merge/deploy; no Caddy/DNS; do not start any post-CP6 initiative.
+**STOP for ChatGPT re-audit of head `2d15c6b`.** Do not merge/deploy; no Caddy/DNS; do not start any post-CP6 initiative.
