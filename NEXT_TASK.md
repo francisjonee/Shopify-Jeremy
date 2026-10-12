@@ -1,102 +1,139 @@
 # NEXT TASK
 
-**STATUS: SHOPIFY RECONCILIATION & OPERATIONS — POST-DEPLOYMENT AUDIT PASS / CLOSED. Production `9bc0907c486688c7acd0d22ad2ee9f5db37d93bb`, migration 136. ChatGPT independently verified GitHub candidate→merge is exactly 1 merge commit with `files=[]` (zero tree drift), so deployed main is content-identical to approved `682bbbc4779cbd688789685506c7f9f4309806e6`. Governance deployment evidence records exact merge-tree gate 1243 passed / 1 WebP skipped / 0 failed / 6488 assertions; first known d9 low-id flake aborted before prod migration and clean rerun passed. Migration 135→136 is additive: 7 nullable safe outcome columns + `idx_receipt_topic_outcome`, empty `sca_shopify_reconciliation_runs` + expected indexes; legacy receipts were not fabricated/backfilled. Existing integration counts are byte-stable across migration: webhook receipts 32→32, sale links 1→1, non-null legacy processing outcomes 0, reconciliation runs initially 0. Reproducible 13-table provenance fingerprint remains `d15a5cbdfb8df52ba65628b276533cfe` PRE==POST with canonical counts `3/3/4/4/5/2/1/1/7`. OAuth scopes/credentials were unchanged by deploy. Effective production `SHOPIFY_SCOPES=read_orders` differs from the code default/earlier expected string `read_orders,read_products`, but this is a documented pre-existing configuration and is NOT a closure blocker: this slice's authoritative `GET orders/{id}.json` requires `read_orders`, which is present, and deployment was explicitly forbidden from silently expanding OAuth scope. Stripe remains dormant, mail=log, no Caddy/DNS/SMTP change. Operations/reconcile routes are registered behind existing admin edge; ACL/CSRF/throttle were proven by the exact merge-tree tests; webhook remains HMAC fail-closed; public/collector/admin/co-tenant boundaries unchanged; no live production reconciliation was needed. Core invariant preserved: Shopify reconciliation changes only the sale-link projection; Sale ≠ ownership; provenance unchanged. This initiative is CLOSED. Do NOT begin another initiative until a separate architecture audit/promotion selects it.**
+**STATUS: POST-SHOPIFY ARCHITECTURE AUDIT COMPLETE — PROMOTED: SERVICE-HISTORY CORRECTION & ANNOTATION. Implement on a NEW branch from exact production baseline `9bc0907c486688c7acd0d22ad2ee9f5db37d93bb` / migration 136. Do not merge/deploy. STOP for ChatGPT pre-merge audit.**
 
-Updated 2026-10-12.
+Updated 2026-10-13.
 
 ## Why this is next
-CP-6 is CLOSED. ChatGPT audited the live Shopify integration at production `b9baa34`. The ingestion/domain path is already strong: verified HMAC before payload trust, expected-shop enforcement, supported-topic allowlist, DB-backed receipt idempotency, atomic receipt+sale-link processing with retryable 5xx on infrastructure failure, exact SCA-ref mapping, deterministic paid/cancel/refund handling, and zero ownership/collector/claim side effects.
+Shopify Reconciliation & Operations is CLOSED. ChatGPT audited the live service-history architecture at production `9bc0907`.
 
-The actual operational gap is reconciliation and staff observability. Today the diagnostics page exposes essentially configuration state + a total receipt count. A verified delivery can be domain-rejected/unmapped and acknowledged 200, but the receipt row remains only `status=received`; staff cannot see safe per-delivery outcomes, identify unresolved/rejected SCA lines, inspect sale-link state, reconcile a known Shopify order/line against the authoritative Shopify API, or safely repair integration drift.
+The existing service-history foundation is intentionally strong and must be preserved:
+- `sca_service_events` is append-only and storage-immutable.
+- service recording is staff-only and session-attributed.
+- service type and condition observations are validated.
+- service events never rewrite authentication grade, certification, ownership, registry status, QR identity, or lifecycle.
+- the current owner sees owner-safe service history; non-owners fail closed.
+- public Passport does not expose service notes/staff data.
+
+The operational integrity gap is correction: if staff records the wrong service type/date/condition/notes, there is currently no governed way to correct the record. Editing/deleting the immutable event is forbidden and must remain forbidden.
 
 ## Initiative
-**SCA Shopify Reconciliation & Operations**
+**SCA Service-History Correction & Annotation**
 
-Build a staff-only, ACL-separated operational layer over the existing Shopify webhook/sale-link foundation.
+Build an append-only correction/annotation layer over immutable service events.
 
 ### Core invariant
-**Shopify commerce evidence may create/update/revoke the Shopify sale-link projection only. Reconciliation MUST NOT create ownership, collector accounts, claims, grants, authentication/certification state, QR state, or any other provenance event. Sale ≠ ownership.**
+**A recorded service event is permanent historical evidence. Correction never edits or deletes it. A correction appends new evidence that explicitly supersedes/corrects presentation of the target event while preserving the original forever. Service-history correction must never mutate ownership, authentication, certification, QR, registry status, claim, Shopify state, or any other provenance domain.**
 
 ### Architecture requirements
-1. Preserve the existing webhook security/idempotency boundary. Do not weaken HMAC, expected-shop, topic allowlist, atomic retry semantics, or duplicate handling.
-2. Extend webhook receipt operational state so a NEW verified receipt records a safe processing summary/outcome after `SaleLinkEventProcessor` runs. Never store raw payload or customer PII. Existing rows must migrate safely.
-3. Distinguish at minimum operational outcomes such as processed/actionable, safe no-op/non-SCA, domain-rejected/unmapped, and infrastructure failure semantics. Do not mark a rolled-back infrastructure failure as successfully consumed.
-4. Store only bounded non-PII reconciliation/audit metadata needed for operations: receipt/topic/shop/webhook id/digest/timestamps and safe counts/codes. Do not persist customer name/email/address or raw Shopify payload.
-5. Add a staff Shopify operations screen, separate from mere configuration diagnostics, showing bounded/paginated recent receipts and sale links with filters for topic/outcome/eligibility and unresolved/rejected conditions. No N+1/materialize-all.
-6. Add a dedicated mutation ACL (e.g. `sca.shopify.reconcile`) separate from `sca.shopify.view`. View-only staff cannot trigger API calls that mutate local integration state.
-7. Reconciliation targets a **server-resolved existing receipt/sale-link or validated Shopify order/line identifier**; never accept internal DB ids as authoritative bindings and never allow staff to type an arbitrary SCA item ref to force-bind an order line.
-8. Extend the host-locked, HTTPS-only, pinned-version `ShopifyClient` with the minimum read-only Admin API operation(s) needed to fetch authoritative order/line state. Reuse OAuth token storage. Preserve no-redirect/token-leak and fail-closed auth/network behavior.
-9. Reconciliation must derive the SCA ref only from the authoritative Shopify line-item property configured by SCA, then feed the existing domain service rules. No fuzzy matching by brand/model/SKU/title.
-10. Reconciliation must be idempotent and deterministic. Re-running against unchanged Shopify state produces no duplicate sale link and no provenance mutation.
-11. Handle at least:
-   - paid/valid SCA line missing locally → create the same eligible sale link the verified webhook path would create;
-   - already-correct link → no-op;
-   - cancelled/refunded authoritative line/order → converge local eligibility to the same terminal state used by webhook processing;
-   - malformed/missing/ambiguous SCA property → fail closed with safe operational outcome, no binding;
-   - conflicting existing line↔item binding → fail closed; do not silently rebind;
-   - owned/ineligible item → fail closed under existing SaleLinkService policy;
-   - Shopify auth/network/429/5xx/bad response → retryable/generic operational error; no partial local mutation.
-12. Do NOT add an unrestricted “edit sale link” UI. Repairs are evidence-driven from Shopify.
-13. If Shopify API shape makes refund/cancel lookup materially different from order lookup, introduce a small normalized authoritative-commerce DTO/service rather than spreading raw Shopify response parsing through controllers.
-14. Keep the existing webhook path fast and bounded. Do not perform outbound Shopify API reconciliation synchronously inside webhook receipt handling.
-15. All reconciliation writes must be transactional. A failed API fetch causes zero DB mutation; a domain rejection records only safe operational audit state if appropriate, never a partial sale link.
-16. Existing claim flow remains unchanged. An eligible sale link may support the existing claim path, but reconciliation itself never claims.
-17. No public/collector route. No Caddy/DNS edge change.
-18. No Shopify credential/scope expansion unless the current granted/requested scopes are proven insufficient. If scope expansion is actually required, STOP and document it instead of silently changing production OAuth permissions.
+1. Preserve the existing `sca_service_events` rows and immutability trigger unchanged. No UPDATE/DELETE escape hatch.
+2. Add a dedicated append-only service-history correction/annotation ledger, preferably migration **136→137**.
+3. Corrections target one exact existing service event and exact eyewear item. The target relationship must be server-validated; cross-item correction must fail closed.
+4. Do NOT create a replacement `sca_service_events` row pretending the corrected facts were another real service occurrence. Keep the original service occurrence immutable and attach correction evidence to it.
+5. Support a bounded correction snapshot for the displayable service facts:
+   - service type
+   - occurred_at
+   - condition_grade_after
+   - notes
+   A correction should carry the effective corrected values plus mandatory reason, actor staff ref, and created_at.
+6. Prefer **full corrected snapshot per correction row** rather than one row per changed field, because service history is one coherent historical occurrence and reads need deterministic latest-effective presentation.
+7. Corrections themselves are append-only. If a correction is wrong, append another correction against the same original service event. Latest valid correction wins for effective presentation; the entire correction chain remains auditable.
+8. Add storage-level immutability for correction rows (UPDATE/DELETE rejected).
+9. Add storage-level same-item integrity where practical: correction.eyewear_item_id must match the target service event's eyewear_item_id. If MariaDB CHECK cannot enforce cross-table identity, use a BEFORE INSERT trigger plus service validation.
+10. Add a dedicated mutation ACL, e.g. `sca.eyewear.service.correct`, separate from ordinary `sca.eyewear.service` recording and `sca.eyewear.view`.
+11. Staff correction must use a GET confirmation/review interstitial + POST mutation. The target event must be server-resolved; never accept staff id, item id, or prior values from the client as authoritative evidence.
+12. Require a nonblank correction reason, bounded length. Normalize corrected notes safely and preserve nullable semantics.
+13. The correction screen must show the immutable original event and the current effective presentation so staff understands what is being corrected.
+14. Use optimistic concurrency. The POST must prove the correction chain is still the one the staff reviewed. Prefer expected correction-count or latest-correction opaque/version token; re-check under lock. A concurrent correction must produce safe STALE rejection, never last-write-wins silently.
+15. Transaction lock order: lock the canonical item/current-state row first, then resolve/lock the target service event/correction chain as needed. Keep consistent with other SCA correction workflows.
+16. Reject a semantic no-op: if submitted effective values equal the current effective presentation, no correction row is appended.
+17. Existing service recording remains unchanged and may continue after a corrected historical event.
+18. Owner-facing My Collection service history must show the **effective corrected presentation**, not stale original values, while preserving privacy. It may show a simple non-sensitive “Corrected” indicator/date, but must not expose correction reason, staff identity, internal ids, or correction-chain metadata.
+19. Staff item detail should show effective service history and a correction affordance to authorized staff. Staff audit view may show original + correction history/reasons/actor refs as appropriate behind staff ACL.
+20. Public Passport remains unchanged: no service notes/corrections/reasons/staff data become public.
+21. Transfer behavior: service history follows the item as it does today. The new current owner sees effective corrected service history; former owner loses access under existing ownership authorization.
+22. Correction does NOT change `condition_grade_after` into an authentication grade or current condition projection. It remains a historical observation only.
+23. No hard delete. No “undo” by deleting correction rows. Re-correction is another append.
+24. No collector/public mutation route. No Caddy/DNS/edge change.
+25. No SMTP/Stripe/Shopify/OAuth changes.
 
-## Suggested data shape
-Prefer additive migration **135→136**. Exact schema is implementation-dependent after inspection, but favor:
-- extending `sca_shopify_webhook_receipts` with bounded processing outcome/count/timestamp fields, and/or
-- a dedicated PII-free reconciliation-run table if manual/API reconciliation needs durable audit evidence.
-Do not duplicate the sale-link source of truth.
+## Suggested schema
+Prefer a table such as `sca_service_event_corrections`:
+- id BIGINT
+- service_event_id FK → `sca_service_events.id` RESTRICT
+- eyewear_item_id FK → `sca_eyewear_items.id` RESTRICT
+- corrected_service_type VARCHAR(24)
+- corrected_condition_grade_after nullable VARCHAR(8)
+- corrected_notes nullable TEXT
+- corrected_occurred_at timestamp/date consistent with canonical event semantics
+- reason bounded text/string
+- actor_staff_ref nullable/soft ref
+- created_at
+Indexes:
+- (service_event_id, id)
+- (eyewear_item_id, service_event_id, id)
+Immutability trigger: reject UPDATE/DELETE.
+Insert integrity trigger: target event must exist and belong to eyewear_item_id.
+Canonical type/grade constraints should mirror `ServiceService::TYPES/GRADES`.
 
-Any operational status enum/check constraint must have an explicit lifecycle and safe migration/backfill for existing `received` rows.
+Do not copy unrelated provenance/current-state data.
+
+## Effective read rule
+For each original service event:
+- if no correction exists → render original values;
+- if corrections exist → render the latest correction row's corrected snapshot;
+- original event identity/occurrence remains canonical historical anchor.
+
+Implement the effective read in one domain/read service and reuse it for staff + collector presentation. Avoid duplicate “latest correction” logic in controllers/views.
+
+Queries must be bounded and avoid N+1. Service history per item is expected to be modest, but use a deterministic join/subquery/window/latest-id strategy rather than issuing one correction query per event.
 
 ## Staff UX
-Under existing admin Shopify area:
-- configuration/connectivity summary remains;
-- operations/reconciliation view is ACL-protected;
-- recent receipt table: time, topic, safe webhook identifier, processing outcome, counts/reason code;
-- sale-link table: SCA item opaque ref, Shopify order/line refs, eligibility state, timestamps;
-- filters/pagination;
-- explicit reconcile action with confirmation for mutation-capable staff;
-- result shown as generic/safe outcome;
-- no secrets, tokens, raw payload, customer PII, internal numeric ids, SQL errors.
+From item service history:
+- existing “Record service” remains.
+- authorized staff see “Correct” per service event.
+- GET correction screen shows item opaque ref, immutable original, current effective values, prior correction count/history, and mandatory warning that original evidence will remain.
+- POST submits corrected snapshot + reason + optimistic concurrency token.
+- success returns to item detail with clear “correction appended” message.
+- stale/no-op/not-found/cross-item failures are safe and generic; no raw SQL/internal details.
 
 ## Mandatory tests
 At minimum prove:
-1. Existing forged webhook rejection unchanged.
-2. Existing duplicate webhook idempotency unchanged.
-3. Existing transient infrastructure failure remains retry-safe/receipt rollback semantics unchanged.
-4. New successful webhook receipt gets correct safe processing outcome.
-5. Ordinary non-SCA order is safe no-op and distinguishable operationally.
-6. malformed/missing/ambiguous mapping records safe rejected/unresolved outcome without sale link.
-7. receipt/outcome persistence contains no raw payload/customer PII.
-8. operations pages require staff auth + view ACL.
-9. reconcile action requires separate mutation ACL + CSRF + throttle.
-10. ShopifyClient remains expected-host locked, HTTPS, pinned API version, no redirects, no secret leakage.
-11. authoritative paid valid line missing locally → reconcile creates exactly one eligible sale link.
-12. repeat reconciliation → idempotent no-op.
-13. authoritative cancel → converges to cancelled.
-14. authoritative refund → converges to revoked_refund.
-15. conflicting existing binding → generic fail-closed; original binding unchanged.
-16. owned/ineligible item → fail closed; no link/provenance mutation.
-17. missing/malformed/ambiguous authoritative SCA property → no binding.
-18. auth failure/network/429/5xx/bad JSON → no partial DB mutation; safe error.
-19. reconciliation creates zero collector/ownership/claim/grant/auth/cert/QR/status events.
-20. no raw Shopify payload/customer PII persisted by reconciliation.
-21. view queries are paginated/bounded and no N+1.
-22. no public/collector reconciliation routes.
-23. existing claim eligibility behavior from sale links remains unchanged.
-24. existing Shopify connection/OAuth/webhook/sale-link suites remain green.
-25. full `tests/Feature/Sca` green.
-26. provenance fingerprint procedure remains unchanged by test/deployment fixtures outside rolled-back disposable DB.
+1. Original `sca_service_events` row remains byte-identical after correction.
+2. Correction appends exactly one immutable correction row.
+3. UPDATE and DELETE on correction row fail at DB layer.
+4. Direct cross-item correction insert fails at DB layer.
+5. invalid corrected service type fails validation + DB constraint.
+6. invalid corrected condition grade fails validation + DB constraint.
+7. performer/actor is derived from authenticated staff; client spoof ignored.
+8. correction requires dedicated ACL; ordinary service-record permission alone cannot correct.
+9. GET correction interstitial is read-only and CSRF-safe POST performs mutation.
+10. missing item/event and cross-item target fail closed.
+11. reason required/bounded.
+12. no-op correction rejected with zero new row.
+13. first correction changes effective presentation while original stays unchanged.
+14. second correction supersedes first for effective presentation; both correction rows remain immutable/auditable.
+15. optimistic concurrency: two staff review same chain; first commits; second gets STALE and appends nothing.
+16. real two-connection concurrency proof if practical: overlapping corrections cannot both silently win.
+17. correction changes zero ownership/current-state/authentication/certification/QR/status/claim/grant/Shopify rows.
+18. corrected condition remains observation only; authentication grade unchanged.
+19. current owner My Collection sees corrected type/date/condition/notes.
+20. owner view leaks no reason/staff/internal/correction ids.
+21. former owner loses service history after transfer; new owner sees effective corrected history.
+22. public Passport still exposes no service notes/correction/reason/staff data.
+23. staff item detail uses effective values and authorized correction link.
+24. staff audit view/history can distinguish original and corrections without editing them.
+25. service-history reads use bounded queries/no N+1.
+26. existing ordinary service-recording tests remain green.
+27. existing ownership/transfer/collector/privacy/passport/auth/cert/status/Shopify suites remain green.
+28. full `tests/Feature/Sca` green.
+29. established 13-table provenance fingerprint procedure remains unchanged by deployment; note that service-event/correction tables are outside that historical fingerprint, so additionally record PRE/POST service-event counts and correction counts at deploy.
 
 ## Audit/deployment discipline
-- NEW branch from exact production `b9baa341060dda08144b57017ca59776b7062cb2`.
-- Expected migration 135→136 if schema changes.
-- Do not touch Caddy/DNS/SMTP/Stripe.
-- Do not activate/change Shopify OAuth scopes or credentials.
+- NEW branch from exact production `9bc0907c486688c7acd0d22ad2ee9f5db37d93bb`.
+- Expected migration 136→137.
+- Do not alter existing service-event immutability.
+- Do not touch Caddy/DNS/SMTP/Stripe/Shopify/OAuth.
 - Do not merge/deploy.
 - Push candidate + governance implementation evidence.
 - STOP for ChatGPT pre-merge audit.
