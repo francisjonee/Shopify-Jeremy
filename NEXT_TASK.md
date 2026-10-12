@@ -1,80 +1,63 @@
 # NEXT TASK
 
-**STATUS: SERVICE HISTORY CORRECTION & ANNOTATION — CANDIDATE PUSHED, AWAITING ChatGPT PRE-MERGE AUDIT. Branch `feat/sca-service-correction`, base `9bc0907` (migration 136), candidate SHA `18aba7c8f464e1ac384561648698373444d07c88`, migration 136→137. Focused 31 passed; full `tests/Feature/Sca` 1274 passed / 1 skipped / 0 real failures (d9 low-ID flake passes isolated). Prod untouched: FP `d15a5cbd`, counts `3/3/4/4/5/2/1/1/7`, migration 136, no correction table. Evidence: `docs/SCA-SERVICE-CORRECTION-IMPLEMENTATION.md`. DO NOT merge/deploy — STOP for pre-merge audit.**
+**STATUS: SERVICE HISTORY CORRECTION & ANNOTATION PRE-MERGE AUDIT — FAIL R1. Candidate `18aba7c8f464e1ac384561648698373444d07c88` is NOT approved for merge/deploy. Production remains `9bc0907c486688c7acd0d22ad2ee9f5db37d93bb` / migration 136. Remediate on the existing feature branch, push a NEW candidate, update governance evidence, then STOP for ChatGPT re-audit.**
 
-_Original promotion spec (implemented by candidate `18aba7c`) follows unchanged:_
+### ChatGPT audit — R1 merge blocker: factual correction evidence is not sparse
+The promoted architecture explicitly required sparse correction semantics: only fields actually corrected are stored as correction values; unchanged fields are inherited from the prior effective state. Candidate `18aba7c8...` instead stores a FULL four-field replacement snapshot on every `correct` row:
+- migration describes corrected rows as a “FULL corrected displayable snapshot”
+- `ServiceCorrectionService::correct()` materializes all four effective fields and writes all four corrected columns
+- `fold()` replaces the entire effective snapshot whenever it sees a `correct`
+- `ServiceCorrectionController::apply()` always passes service_type, condition_grade_after, notes, and occurred_at from the form.
 
-### Architecture audit finding
-Production already has SCA-SERVICE-015. `ServiceService` appends immutable `sca_service_events`; canonical service types are repair/lens/polish/tuneup/inspection/other and optional observed condition A-D; performer is server-derived staff; service events do not mutate ownership/current-state/certification/authentication/lifecycle. DB immutability protects existing rows. Staff registry shows history and has append-only record-service flow; current collector owners receive an owner-safe service DTO; public passport intentionally exposes no service data. Existing correction patterns (ownership, certification, item metadata) consistently use append-only evidence, item locking/optimistic freshness, safe rejection codes, staff attribution, and never rewrite prior evidence.
+This is an audit-semantics defect. Immutable correction evidence must identify exactly what staff amended. A notes-only correction must not permanently look like the staff re-attested service type, grade and occurred date. It also makes later field-level correction chronology less truthful and violates requirement #6 of the promoted task.
 
-### Initiative
-**SCA Service History Correction & Annotation**
+### Required R1 remediation
+1. Make factual correction rows genuinely **sparse**. For a `correct` disposition, each corrected field column is nullable and means “this field was changed by this correction”; NULL means inherit the prior effective value / not amended by this row.
+2. Preserve the ability to intentionally correct a nullable field **to NULL** (e.g. clear condition grade or notes). Because SQL NULL alone cannot distinguish “not supplied” from “explicitly corrected to null,” add an unambiguous immutable representation. Preferred options:
+   - per-field changed flags (e.g. `changes_notes`, `changes_condition_grade_after`, etc.) plus nullable corrected value; or
+   - another bounded schema representation that makes field presence explicit and remains queryable/auditable.
+   Do not use ambiguous sentinel strings.
+3. The canonical fold must start from the original event and apply only fields explicitly marked changed, ordered by `(created_at,id)`. Unchanged fields inherit the prior effective state.
+4. NOOP detection must compare the explicitly requested field changes against current effective values. A request that marks only notes changed to its existing value is NOOP. A mixed request where at least one explicitly changed field differs may append only those actual differing fields; do not record unchanged fields as corrected.
+5. The UI/request must preserve field-change intent. Do not infer that all displayed form values were corrected merely because they were posted. Provide explicit per-field correction intent or a server-safe equivalent.
+6. Staff correction chronology must show which factual field(s) each correction actually changed, with old→new values or an equally clear audit representation. Preserve actor/time/reason. **Current candidate collects `actor_staff_ref` but the correction-history table does not render actor; fix this at the same time so the promoted “actor/time/reason” staff-audit requirement is fully met.**
+7. Collector projection remains effective-value only. Do not expose field-level staff audit metadata, actor, reason, internal ids, or voided content.
+8. Keep the already-good boundaries unchanged: original `sca_service_events` immutable; exact item/event binding; item lock + correction-count STALE guard; terminal void; dedicated ACL; public passport service-free; no `ProjectionService::rebuild()`; no provenance mutation.
 
-### Core invariant
-**A recorded service event is permanent evidence. Correction must NEVER UPDATE or DELETE `sca_service_events`. Corrections/annotations are new immutable evidence layered over the original event. The original values remain auditable forever. Service correction must never mutate ownership, current-state projection, authentication grade/result, certification/QR, registry status, claim/transfer, Shopify sale links, collector account state, or any other provenance ledger.**
+### Mandatory R1 tests
+Add/adjust tests proving:
+1. notes-only correction stores evidence for **notes only**; type/grade/date are not marked changed.
+2. grade-only correction stores grade only.
+3. explicit clear-to-NULL of notes and condition grade is distinguishable from “field not changed” and folds correctly.
+4. sequential sparse corrections to different fields compose correctly (e.g. notes correction then date correction preserves corrected notes).
+5. same-field later correction wins while prior correction evidence remains immutable.
+6. NOOP for an explicitly selected field whose submitted value equals current effective value.
+7. mixed selected fields store only fields that actually differ (or reject unchanged selected fields consistently, but never record them as amended).
+8. staff chronology identifies changed fields and old→new/equivalent, and displays actor/time/reason.
+9. existing real two-connection concurrency proof remains green.
+10. correction/annotation/void still leave original service row byte-identical and mutate zero provenance/current-state.
+11. collector privacy + public passport tests remain green.
+12. full `tests/Feature/Sca` green.
 
-### Required model
-1. Add one dedicated append-only service-correction/annotation ledger; expected migration **136→137**. Do not create a second service-event table or copy history.
-2. Each correction row must bind to exactly one existing `sca_service_events` row and therefore exactly one item. FK/item consistency must be enforced in service/domain code and, where practical, DB constraints/triggers.
-3. Support two explicit staff operations:
-   - **correct**: replace the *effective display values* of a service event for factual mistakes in service_type, condition_grade_after, notes, and/or occurred_at. Original event remains byte-unchanged.
-   - **annotate**: append a staff note that supplements the event without replacing factual fields.
-4. Support **void/entered-in-error** as an explicit correction disposition for a wholly erroneous service record. It hides the event from ordinary collector-effective history but NEVER deletes it; staff audit must still show the original + void evidence. Do NOT implement moving/rebinding an event to another item. If an event was recorded against the wrong item, staff voids it and separately records a new correct event through the existing SCA-SERVICE-015 flow.
-5. Effective service history is a deterministic fold: original event + ordered correction evidence. Define ordering explicitly (created_at,id). Latest valid factual correction wins for supplied corrected fields; annotations accumulate; void is terminal for ordinary effective display and cannot be silently “unvoided.” Do not overwrite prior correction rows.
-6. Prefer sparse correction semantics: only actually corrected fields are supplied/stored as correction values; unchanged fields remain inherited from the prior effective state. Reject a factual correction that changes nothing.
-7. A correction/annotation must carry a required bounded reason/annotation text and server-derived staff actor. Never accept actor id from request.
-8. Add append-only DB immutability for the new ledger (UPDATE/DELETE blocked), consistent with existing provenance/event tables.
-9. Concurrency: correction mutation runs in one transaction, locks the item's canonical current-state row (or another established item serialization row), resolves the target event under that lock, and validates an optimistic freshness token for the target correction stream. A concurrent correction/void must cause STALE rather than silently reorder staff intent.
-10. Target binding must be exact. The controller must resolve the service event as belonging to the route item; no cross-item correction and no request-supplied item rebinding.
-11. Reuse canonical `ServiceService::TYPES` and `GRADES`; do not invent divergent type/grade validation.
-12. Do not call `ProjectionService::rebuild()` for service correction. Service history remains orthogonal to current-state projection.
-13. Existing `ServiceService::record()` behavior stays intact; no weakening of SCA-SERVICE-015.
-14. Build one canonical effective-history reader/service and use it for BOTH staff display and collector owner-safe history. Do not duplicate correction-fold logic in controllers/views/Collector CollectionService.
-15. Staff view must clearly distinguish:
-   - original recorded event,
-   - current effective values,
-   - correction chronology with actor/time/reason,
-   - annotations,
-   - entered-in-error/void state.
-   Staff may see staff attribution; no edit/delete controls for historical rows.
-16. Collector view remains privacy-safe: current owner only; show effective non-void service events and safe annotations only if policy explicitly marks them collector-visible. Default annotations should be **staff-only** unless the implementation introduces an explicit safe visibility flag with tests. Never expose staff ids, correction reasons, internal ids, or voided erroneous event content to collector.
-17. Public passport remains unchanged: no service history/correction/annotation data.
-18. Add a dedicated mutation ACL such as `sca.eyewear.service.correct`, separate from existing `sca.eyewear.service` record permission. View-only/record-only staff cannot correct/void/annotate.
-19. CSRF + existing staff auth boundary required. Add reasonable mutation throttling if consistent with current admin mutation surfaces.
-20. No Krayin core edits; no Caddy/DNS/Shopify/Stripe/SMTP changes.
+### Audit notes
+The following inspected areas are structurally appropriate and should not be redesigned during R1:
+- branch is exactly one commit ahead of production baseline and the diff is scoped to this initiative
+- migration 136→137 with dedicated correction ledger
+- append-only UPDATE/DELETE triggers
+- DB cross-item binding trigger
+- exact item+event service validation
+- item-state `FOR UPDATE` serialization and correction-count optimistic token
+- real two-connection concurrency test invokes the production service
+- dedicated `sca.eyewear.service.correct` ACL
+- throttled POST / CSRF under admin web boundary
+- server-derived staff actor
+- terminal void behavior
+- one canonical correction-aware reader feeding staff + collector privacy projection
+- collector hides voided events and staff-only annotations
+- public passport remains service-free
+- `ServiceService::record()` and `ProjectionService::rebuild()` unchanged.
 
-### Required fail-closed behavior
-- missing item/event or event not belonging to item → safe 404/rejection, zero write
-- stale correction-stream token → STALE, zero write
-- invalid type/grade/date/text → validation rejection, zero write
-- factual no-op → NOOP, zero write
-- correction/annotation after terminal void → reject (except read-only audit)
-- duplicate/replayed submit must not create ambiguous effective state; use the established confirmation/idempotency pattern appropriate to this admin surface
-- any DB failure → zero partial correction rows
-- original `sca_service_events` row remains byte-identical under every success/failure path
-
-### Mandatory tests
-1. factual correction appends correction evidence; original service row byte-identical; effective staff history shows corrected values.
-2. sparse correction inherits unchanged original/prior-effective fields.
-3. second correction deterministically folds over first; chronology retained.
-4. annotation appends without changing effective factual values.
-5. void marks event entered-in-error without deleting/updating original; collector ordinary history excludes it; staff audit retains it.
-6. no unvoid / no correction-or-annotation after terminal void.
-7. wrong-item target fails closed.
-8. stale concurrent correction token fails with zero write.
-9. no-op factual correction rejected.
-10. invalid type/grade/date and oversized text fail safely.
-11. actor is authenticated staff, not spoofable request input.
-12. separate correction ACL enforced; record-only/view-only cannot mutate correction ledger.
-13. collector current-owner sees only effective non-void safe service history; previous owner/non-owner denied exactly as today; no staff/internal/correction-reason leak.
-14. public passport remains service-free.
-15. zero mutation of ownership/current-state/authentication/certification/QR/status/claim/transfer/Shopify provenance tables; reproduce the established provenance fingerprint/count gate around focused correction operations.
-16. DB UPDATE/DELETE against original service event remains blocked; UPDATE/DELETE against correction ledger also blocked.
-17. existing SCA-SERVICE-015 record-service tests remain green.
-18. full `tests/Feature/Sca` green.
-
-### Delivery
-Implement this as one substantial slice on a NEW branch from exact production `9bc0907c486688c7acd0d22ad2ee9f5db37d93bb`. Expected migration 136→137 if the architecture holds. Run focused service/correction/collector/passport tests plus the full SCA suite. Produce a governance implementation report mapping requirements/tests and documenting schema, fold semantics, ACL/routes, concurrency token, privacy, and zero-provenance proof. Push candidate + governance evidence. **DO NOT merge or deploy. STOP for ChatGPT pre-merge audit.**
+Do not merge. Do not deploy. Do not start another initiative. Push a NEW candidate + updated governance implementation evidence and STOP for ChatGPT re-audit.
 
 Updated 2026-10-13.
 
