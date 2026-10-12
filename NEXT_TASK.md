@@ -1,8 +1,8 @@
 # NEXT TASK
 
-**STATUS: CP-6 PROMOTED — Private Collection Organization. Implement on a NEW branch from exact production baseline `0101755b03352305050b7b7290ad917b588112ff` / migration 134. Do not merge/deploy. STOP for ChatGPT pre-merge audit.**
+**STATUS: CP-6 CANDIDATE PUSHED — Private Collection Organization — awaiting ChatGPT pre-merge audit. Branch `feat/sca-collector-profile-cp6` head `82c819240d8bdb768477778613dd3eb9e2469d3f`, base `0101755b03352305050b7b7290ad917b588112ff`, migration 134→135, 16 files. Private user-defined collections (CCL- groups, many-to-many membership, manual order); organization is presentation-only, canonical current ownership stays the sole membership authority; ownership-loss cleanup through ProjectionService::rebuild (adverse keeps organization); pseudonymization purge; CP-4 independent; opaque refs; no public route. Full `tests/Feature/Sca` exit 0 / 1221 passed / 1 skipped (webp) / 0 failed; 4 real two-connection proofs. Production untouched (migration 134, prov FP d15a5cbd, counts 3/3/4/4/5/2/1/1/7), no Caddy/DNS/Stripe/SMTP/Shopify change, `/u/*` edge unchanged. Full write-up: `docs/SCA-COLLECTOR-PROFILE-CP6-IMPLEMENTATION.md`. STOP for ChatGPT pre-merge audit of `82c8192`; do not merge/deploy or start any post-CP6 initiative.**
 
-Updated 2026-10-09.
+Updated 2026-10-12.
 
 ## Architecture audit
 ChatGPT audited the live CP-2 My Collection catalog, CP-4 public-item visibility, canonical projection/ownership boundary, transfer service, ownership correction, privacy lifecycle, and collector routes at exact production baseline `0101755b...`.
