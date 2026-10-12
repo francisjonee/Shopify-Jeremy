@@ -1,6 +1,6 @@
 # NEXT TASK
 
-**STATUS: POST-CP6 ARCHITECTURE AUDIT COMPLETE — PROMOTED: SHOPIFY RECONCILIATION & OPERATIONS. Implement on a NEW branch from exact production baseline `b9baa341060dda08144b57017ca59776b7062cb2` / migration 135. Do not merge/deploy. STOP for ChatGPT pre-merge audit.**
+**STATUS: SHOPIFY RECONCILIATION & OPERATIONS — CANDIDATE PUSHED, awaiting ChatGPT pre-merge audit. Branch `feat/sca-shopify-reconciliation` head `af2269f9a9f9fa47cfbd064c48222b0218aa5635`, base `b9baa341060dda08144b57017ca59776b7062cb2`, migration 135→136, 14 files. Staff-only ACL-separated reconciliation/observability over the existing webhook/sale-link foundation; webhook HMAC/idempotency/retry boundary unchanged; reconciliation reuses SaleLinkService (Sale≠ownership, zero provenance); read-only ShopifyClient::getOrder uses already-granted read_orders (NO OAuth scope change). Full `tests/Feature/Sca` exit 0 / 1240 passed / 1 skipped (webp) / 0 failed; existing Shopify/sale-link/claim suites green (110). Production untouched (migration 135, prov FP d15a5cbd, no reconciliation table), no Caddy/DNS/Stripe/SMTP/OAuth-scope change. Evidence: `docs/SCA-SHOPIFY-RECONCILIATION-IMPLEMENTATION.md`. STOP for ChatGPT pre-merge audit of `af2269f`; do not merge/deploy or expand OAuth scopes.**
 
 Updated 2026-10-12.
 
