@@ -1,6 +1,8 @@
 # NEXT TASK
 
-**STATUS: SERVICE HISTORY CORRECTION & ANNOTATION PRE-MERGE AUDIT — FAIL R1. Candidate `18aba7c8f464e1ac384561648698373444d07c88` is NOT approved for merge/deploy. Production remains `9bc0907c486688c7acd0d22ad2ee9f5db37d93bb` / migration 136. Remediate on the existing feature branch, push a NEW candidate, update governance evidence, then STOP for ChatGPT re-audit.**
+**STATUS: SERVICE HISTORY CORRECTION & ANNOTATION — R1 REMEDIATION PUSHED, AWAITING ChatGPT RE-AUDIT. NEW candidate `57672b05f7163eb1346e869633e84de31cec7f86` (branch `feat/sca-service-correction`, base `9bc0907`/migr 136→137; supersedes FAILED `18aba7c`). R1 blocker fixed — factual corrections are now SPARSE (per-field `changes_<field>` flags + nullable `corrected_<field>`; explicit clear-to-NULL distinct from unchanged; sparse fold; explicit per-field UI intent; chronology shows changed fields old→new + actor/time/reason). Focused 38 passed; full `tests/Feature/Sca` 1281 passed / 1 skipped / 0 failed. Prod untouched: FP `d15a5cbd`, counts `3/3/4/4/5/2/1/1/7`, migration 136, no correction table. Evidence: `docs/SCA-SERVICE-CORRECTION-IMPLEMENTATION.md`. DO NOT merge/deploy — STOP for re-audit.**
+
+<!-- Prior status (audit FAIL R1 of candidate 18aba7c) retained below for traceability. -->
 
 ### ChatGPT audit — R1 merge blocker: factual correction evidence is not sparse
 The promoted architecture explicitly required sparse correction semantics: only fields actually corrected are stored as correction values; unchanged fields are inherited from the prior effective state. Candidate `18aba7c8...` instead stores a FULL four-field replacement snapshot on every `correct` row:
