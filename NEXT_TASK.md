@@ -1,6 +1,8 @@
 # NEXT TASK
 
-**STATUS: POST-SHOPIFY ARCHITECTURE AUDIT COMPLETE — PROMOTED: SERVICE HISTORY CORRECTION & ANNOTATION. Implement on a NEW branch from exact production baseline `9bc0907c486688c7acd0d22ad2ee9f5db37d93bb` / migration 136. Do not merge/deploy. STOP for ChatGPT pre-merge audit.**
+**STATUS: SERVICE HISTORY CORRECTION & ANNOTATION — CANDIDATE PUSHED, AWAITING ChatGPT PRE-MERGE AUDIT. Branch `feat/sca-service-correction`, base `9bc0907` (migration 136), candidate SHA `18aba7c8f464e1ac384561648698373444d07c88`, migration 136→137. Focused 31 passed; full `tests/Feature/Sca` 1274 passed / 1 skipped / 0 real failures (d9 low-ID flake passes isolated). Prod untouched: FP `d15a5cbd`, counts `3/3/4/4/5/2/1/1/7`, migration 136, no correction table. Evidence: `docs/SCA-SERVICE-CORRECTION-IMPLEMENTATION.md`. DO NOT merge/deploy — STOP for pre-merge audit.**
+
+_Original promotion spec (implemented by candidate `18aba7c`) follows unchanged:_
 
 ### Architecture audit finding
 Production already has SCA-SERVICE-015. `ServiceService` appends immutable `sca_service_events`; canonical service types are repair/lens/polish/tuneup/inspection/other and optional observed condition A-D; performer is server-derived staff; service events do not mutate ownership/current-state/certification/authentication/lifecycle. DB immutability protects existing rows. Staff registry shows history and has append-only record-service flow; current collector owners receive an owner-safe service DTO; public passport intentionally exposes no service data. Existing correction patterns (ownership, certification, item metadata) consistently use append-only evidence, item locking/optimistic freshness, safe rejection codes, staff attribution, and never rewrite prior evidence.
