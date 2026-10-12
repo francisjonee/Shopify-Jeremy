@@ -1,21 +1,40 @@
-# SCA Service-History Correction & Annotation — Implementation Evidence (pre-merge, R1)
+# SCA Service-History Correction & Annotation — Implementation Evidence (pre-merge, R2)
 
-**Status:** R1 REMEDIATION pushed — awaiting ChatGPT re-audit. NOT merged, NOT deployed.
+**Status:** R2 REMEDIATION pushed — awaiting ChatGPT re-audit. NOT merged, NOT deployed.
 
 | | |
 |---|---|
 | Governance baseline (promotion) | `ffe7ce958a939fd96e03050c3d5345cf77ff7d31` |
 | Pre-merge audit (FAIL R1) | `57a12cc3266e3c34b45d01a557546040eaec86ff` |
+| R1 re-audit (FAIL R2) | `f0d23dd23d0ac3d98a0065d893b7a67cb638786e` |
 | Implementation branch | `feat/sca-service-correction` (one commit ahead of base) |
 | Exact production base SHA | `9bc0907c486688c7acd0d22ad2ee9f5db37d93bb` (migration 136) |
-| Prior candidate (FAILED) | `18aba7c8f464e1ac384561648698373444d07c88` |
-| **NEW candidate SHA** | **`57672b05f7163eb1346e869633e84de31cec7f86`** |
+| Prior candidates (superseded) | `18aba7c…` (FAIL R1), `57672b05…` (FAIL R2) |
+| **NEW candidate SHA** | **`2d578feb5f429d9e7549d968c21fbfc879ba0885`** |
 | Expected migration | 136 → **137** (`2026_10_18_000001_create_sca_service_event_corrections`) |
-| Files changed vs base | 15 (1889 insertions, 28 deletions) |
-| Focused tests | `ServiceCorrectionTest` 37 + `ServiceCorrectionConcurrencyTest` 1 → **38 passed** |
-| Full `tests/Feature/Sca` | **1281 passed / 1 skipped / 0 failed** |
+| Focused tests | `ServiceCorrectionTest` 41 + `ServiceCorrectionConcurrencyTest` 1 → **42 passed** |
+| Full `tests/Feature/Sca` | **1285 passed / 1 skipped / 0 failed** |
 | Production provenance FP (unchanged) | `d15a5cbdfb8df52ba65628b276533cfe`, counts `3/3/4/4/5/2/1/1/7` |
 | Production schema | migration 136, `sca_service_event_corrections` absent, `sca_service_events` 0 |
+
+## R2 merge blocker — resolved (DB sparse-row self-consistency)
+
+The R1 re-audit accepted all application semantics but found the DB did not enforce sparse-row self-consistency: a raw insert could persist contradictory immutable evidence (e.g. `changes_notes=0` with a non-null `corrected_notes`, or an annotate/void row carrying `corrected_*` payload). Since the ledger is append-only (UPDATE/DELETE blocked), such a row could never be repaired.
+
+**Fix — four DB CHECK constraints on `sca_service_event_corrections` (no service/UI/fold change):**
+- `chk_svc_corr_type_flag`: `changes_service_type = (corrected_service_type IS NOT NULL)` — required field: flag ⇔ value present.
+- `chk_svc_corr_occurred_flag`: `changes_occurred_at = (corrected_occurred_at IS NOT NULL)` — required field: flag ⇔ value present.
+- `chk_svc_corr_notes_flag`: `changes_notes = 1 OR corrected_notes IS NULL` — flag=0 ⇒ NULL; flag=1 allows NULL (explicit clear) or value.
+- `chk_svc_corr_grade_flag`: `changes_condition_grade_after = 1 OR corrected_condition_grade_after IS NULL` — same, nullable.
+
+Together with the existing `chk_svc_corr_noncorrect_noflags` (annotate/void carry no flags), these make it impossible for a non-`correct` row to carry any `corrected_*` payload, and impossible for any row to hold a corrected value without its flag. `ServiceService::record`, the sparse fold, controller, UI, concurrency, ACL, privacy and void behavior are **unchanged** (R1 remained accepted).
+
+**R2 tests added (direct raw inserts + explicit grade clear):**
+- `sc38_db_rejects_unflagged_corrected_values` — unflagged non-null notes/grade/type/date rejected (23000); annotate/void carrying corrected payload rejected.
+- `sc39_db_requires_value_for_flagged_required_fields` — flagged type/date with NULL rejected (23000).
+- `sc40_db_accepts_flagged_null_clear_for_nullable_fields` — flagged notes/grade with NULL accepted (explicit clear persists).
+- `sc41_explicit_clear_grade_to_null_through_service` — clears `condition_grade_after` through the production controller; asserts `changes_condition_grade_after=1`, stored corrected grade NULL, effective grade folds to NULL, notes inherited (completes the previously-missing grade-clear proof).
+- Real two-connection concurrency proof (`cc_sc1`) re-run green.
 
 ## R1 merge blocker — resolved
 
@@ -66,4 +85,4 @@ Live tree restored to `main@9bc0907`, vendor `--no-dev`, `/admin/login → 200` 
 
 No Krayin core edits. No Caddy / DNS / Shopify / Stripe / SMTP / OAuth changes. No collector/public mutation route. No `ProjectionService::rebuild()` from correction. `ServiceService::record()` unchanged. No hard delete / unvoid.
 
-**STOP — awaiting ChatGPT re-audit of candidate `57672b05`. Do not merge or deploy.**
+**STOP — awaiting ChatGPT R2 re-audit of candidate `2d578feb`. Do not merge or deploy.**

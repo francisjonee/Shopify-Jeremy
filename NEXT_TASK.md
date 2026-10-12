@@ -1,6 +1,8 @@
 # NEXT TASK
 
-**STATUS: SERVICE HISTORY CORRECTION & ANNOTATION R1 RE-AUDIT — FAIL R2. R1 application semantics are fixed, but candidate `57672b05f7163eb1346e869633e84de31cec7f86` is NOT approved for merge/deploy. Production remains `9bc0907c486688c7acd0d22ad2ee9f5db37d93bb` / migration 136. Remediate only the DB sparse-row integrity + missing explicit-grade-clear proof, push a NEW candidate, update governance evidence, then STOP for ChatGPT re-audit.**
+**STATUS: SERVICE HISTORY CORRECTION & ANNOTATION — R2 REMEDIATION PUSHED, AWAITING ChatGPT RE-AUDIT. NEW candidate `2d578feb5f429d9e7549d968c21fbfc879ba0885` (branch `feat/sca-service-correction`, base `9bc0907`/migr 136→137; supersedes FAILED `18aba7c` R1 and `57672b05` R2). R2 blocker fixed — four DB CHECK constraints enforce sparse-row self-consistency (corrected value only when its changes_<field> flag is set; flagged required type/date must be non-null; nullable notes/grade may flag with NULL = explicit clear; non-correct rows carry no corrected payload). Added direct-insert rejection tests (sc38/sc39) + flagged-NULL-clear acceptance (sc40) + explicit grade-clear-to-NULL through the service (sc41). R1 application semantics unchanged. Focused 42 passed; full `tests/Feature/Sca` 1285 passed / 1 skipped / 0 failed. Prod untouched: FP `d15a5cbd`, counts `3/3/4/4/5/2/1/1/7`, migration 136, no correction table. Evidence: `docs/SCA-SERVICE-CORRECTION-IMPLEMENTATION.md`. DO NOT merge/deploy — STOP for R2 re-audit.**
+
+<!-- Prior status (R1 re-audit FAIL R2 of candidate 57672b05) retained below for traceability. -->
 
 ### ChatGPT R1 re-audit result
 **R1 is substantively fixed.** Verified in actual GitHub candidate:
