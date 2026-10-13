@@ -1,6 +1,43 @@
 # NEXT TASK
 
-**STATUS: SERVICE HISTORY CORRECTION & ANNOTATION — DEPLOYED to production, AWAITING ChatGPT POST-DEPLOYMENT audit. Approved candidate `2d578feb` merged `--no-ff` into main (merge=main=deployed SHA `b4b51b7bb0244da6e1624c1095239c80cc206bb9`, tree byte-identical to candidate); migration 136→137 applied. Full merge-tree SCA gate 1285 passed / 1 skipped / 0 failed (two prior gate runs aborted before migrate on documented unrelated QR flakes rg8/rg2 — prod stayed at 136; third run clean). Schema verified (table + 9 CHECKs + 3 triggers + 2 indexes + 2 FKs). PRE==POST: prov FP `d15a5cbd`, counts `3/3/4/4/5/2/1/1/7`, service_events 0, corrections 0 (new table empty — no fabricated evidence). Boundary smoke fail-closed (302/419, 0 mutations); kr-app loopback-only; no Caddy/DNS/Shopify-OAuth(read_orders)/Stripe(dormant)/SMTP(log) change. Evidence: `docs/SCA-SERVICE-CORRECTION-DEPLOY-RESULT.md`. Initiative remains OPEN — do NOT declare closed, do NOT start another initiative; STOP for post-deployment audit.**
+**STATUS: SERVICE HISTORY CORRECTION & ANNOTATION — POST-DEPLOYMENT AUDIT PASS / CLOSED.**
+
+ChatGPT independently audited the deployed production result against the exact pre-merge-approved candidate.
+
+### Authoritative closure
+- Approved candidate: `2d578feb5f429d9e7549d968c21fbfc879ba0885`
+- Production base before deployment: `9bc0907c486688c7acd0d22ad2ee9f5db37d93bb`
+- Merge = main = deployed: `b4b51b7bb0244da6e1624c1095239c80cc206bb9`
+- Production migration: **137**
+- Deployment evidence: `docs/SCA-SERVICE-CORRECTION-DEPLOY-RESULT.md`
+- Governance deployment evidence commit: `947a88b`
+
+### Independent post-deployment findings
+**PASS.**
+- GitHub candidate→deployed comparison is exactly 1 commit ahead / 0 behind with **files=[]**: merge tree is content-identical to approved candidate.
+- Deployed commit is the expected auditable merge of the approved Service History Correction candidate.
+- Exact merge-tree full SCA gate recorded as **1285 passed / 1 skipped / 0 failed**. Two earlier runs aborted before migration on known unrelated QR flakes; evidence confirms production remained at migration 136 until the clean gate.
+- Migration **136→137** applied.
+- Production schema evidence matches approved migration: `sca_service_event_corrections` present with 9 CHECK constraints, 3 triggers, 2 secondary indexes + PK, and 2 RESTRICT FKs.
+- New correction ledger contained **0 rows** after deploy; no fabricated production evidence.
+- `sca_service_events` remained **0→0**.
+- Reproducible provenance fingerprint remained byte-identical: `d15a5cbdfb8df52ba65628b276533cfe`.
+- Canonical provenance counts remained `3/3/4/4/5/2/1/1/7`.
+- Production-safe route/auth/CSRF smoke was fail-closed and created zero correction rows.
+- kr-app remains loopback-only.
+- No Caddy/DNS change.
+- Shopify OAuth remains `read_orders`.
+- Stripe remains dormant.
+- Mail remains `log`.
+- `ServiceService::record()` and `ProjectionService::rebuild()` remained outside this slice.
+- Core invariant preserved: original service events remain permanent evidence; correction/annotation/void are append-only overlay evidence and do not mutate provenance/current-state ledgers.
+
+### Closure decision
+**SCA Service History Correction & Annotation is CLOSED and LIVE in production.**
+
+Do not perform further work on this initiative unless a separately audited defect/remediation is opened.
+
+**Do not automatically begin another initiative. The next product initiative must first be selected and architecture-audited before implementation is promoted.**
 
 <!-- Prior status (pre-merge PASS gate for candidate 2d578feb) retained below for traceability. -->
 
