@@ -1,49 +1,54 @@
 # NEXT TASK
 
-**STATUS: SCA MARKET REFERENCE / VALUE HISTORY — SLICE 1 POST-DEPLOYMENT AUDIT PASS / CLOSED + LIVE.**
+**STATUS: TRANSACTIONAL EMAIL / POSTMARK — ARCHITECTURE AUDIT COMPLETE; CONTROLLED ACTIVATION PROMOTED. Production baseline `9cf72728248cf3e36d0525de4520d69717dacd5d`, migration 138. This is an operations/provider activation with explicit external prerequisites and rollback gates, NOT an automatic code deployment. STOP at any unmet prerequisite. Do not claim LIVE until real receipt and reset-link validation succeed.**
 
-## ChatGPT independent post-deployment audit
-**PASS — Slice 1 is CLOSED and LIVE.**
+## Audited production architecture
+- Collector forgot/reset uses dedicated `sca_collectors` broker, hashed account-bound 60-minute single-use token, active-only eligibility, CSRF and throttle, enumeration-safe generic response, no auto-login or provenance mutation.
+- ForgotPasswordController catches mail transport exceptions without exposing account status/PII; intentionally retains token because SMTP failure may occur after provider acceptance.
+- Collector reset notification URL origin was hardened to trusted `config('app.url')` rather than request Host.
+- `app/config/mail.php` no longer disables SMTP TLS peer verification.
+- Docker app loads `app/.env` directly (no injected env_file); app is loopback-only behind existing Caddy.
+- Production `MAIL_MAILER=log`, so real delivery remains inactive.
+- No SMTP provider credential or verified sender/domain is established by this audit. Do not invent either.
+- Public canonical application origin: `https://verify.secondchanceauthenticators.com`. Verify actual effective `APP_URL` before activation; do not assume it matches.
 
-Authoritative production state:
-- approved candidate: `d880e128e0713d60e42a2d821206cf663c09be43`
-- merge = main = deployed: `9cf72728248cf3e36d0525de4520d69717dacd5d`
-- production migration: **138**
-- candidate→deployed compare: exactly **1 merge commit ahead / 0 behind / files=[]**; deployed tree is content-identical to the exact pre-merge-approved candidate
-- exact merge-tree SCA gate: **1320 passed / 1 skipped / 0 failed**, clean first run
-- deployment evidence: `docs/SCA-MARKET-REFERENCE-SLICE1-DEPLOY-RESULT.md`
+## Provider decision
+Use **Postmark Transactional SMTP**, not Broadcast SMTP or API transport. Official Postmark SMTP host `smtp.postmarkapp.com`, port 587 STARTTLS. Prefer a dedicated per-Transactional-stream SMTP Token (access key username, secret key password) rather than account-wide credentials. Postmark must verify the sender domain/signature and DNS DKIM + custom Return-Path; check DMARC alignment. Follow provider-generated DNS values exactly; never fabricate DKIM or credential values.
 
-Production schema evidence accepted:
-- `sca_market_reference_events` present
-- 9 CHECK constraints
-- 3 triggers: append-only UPDATE/DELETE + BEFORE INSERT same-item predecessor/lifecycle/monotonic append order
-- expected item + two self RESTRICT FKs
-- expected indexes
-- ledger contains **0 rows** after safe smoke; no fabricated production Market Reference evidence.
+Proposed sender identity: a dedicated mailbox at `send.secondchanceauthenticators.com` (e.g. `no-reply@send.secondchanceauthenticators.com`) ONLY if verified and accepted by the owner/provider. If the owner chooses a different sender/domain, record that decision before changing DNS. Do not modify MX, existing mail routing, or unrelated DNS.
 
-PRE→POST invariants accepted:
-- provenance fingerprint unchanged: `d15a5cbdfb8df52ba65628b276533cfe`
-- canonical counts unchanged: `3/3/4/4/5/2/1/1/7`
-- service events 0→0
-- service corrections 0→0
-- no unexpected ownership/current-state/authentication/certification/PDF/snapshot/QR/status/claim/transfer/Shopify/collector/service mutation.
+## One controlled activation work package
 
-Production boundary/integration evidence accepted:
-- app/admin healthy
-- Market Reference routes registered
-- unauthenticated GET staff-gated 302→login
-- unauthenticated POST fails CSRF 419
-- smoke leaves ledger at 0 rows
-- kr-app remains loopback-only
-- no Caddy/DNS change
-- Shopify OAuth remains `read_orders`
-- Stripe remains dormant
-- mail remains `log`.
+### Phase 0 — read-only preflight and external prerequisites
+1. Verify production main/deployed SHA `9cf7272...`, migration 138, clean tree, existing reset/mail tests, current effective `APP_URL`, `MAIL_MAILER`, `MAIL_FROM_ADDRESS`, config cache state, PHP SMTP transport availability, egress to Postmark TCP 587, and authoritative DNS control.
+2. Identify Postmark account/server/Transactional stream availability, SMTP enabled, verified sender/domain, provider-supplied DKIM/Return-Path DNS, and authorized safe recipient inbox for real test. **Do not print/commit/mail/log secrets or reset tokens.**
+3. If provider access, DNS authority, test inbox, or SMTP credentials are missing, **STOP WITH BLOCKED PREREQUISITES** and return a precise owner action list. Do not silently switch to another provider or claim activation.
 
-### Closure invariant
-Market Reference is live as an **append-only advisory non-provenance domain**, private to authorized staff/current owner in Slice 1. It is not authentication/certification evidence, not guaranteed sale value, and not a provenance/current-state writer.
+### Phase 1 — provider/DNS readiness (only with explicit owner authorization)
+4. Create/use a dedicated Postmark Transactional stream and scoped SMTP Token; never use broadcast host/stream.
+5. Configure ONLY provider-issued DKIM TXT and custom Return-Path CNAME for approved sending domain; verify status in Postmark and validate DNS propagation, SPF/DMARC alignment. Preserve existing DNS/MX and other tenants.
+6. Validate trusted `APP_URL` and From identity before real mail. Keep `MAIL_MAILER=log` until prerequisites and test transport are proven.
+7. Record sanitized evidence of provider stream status, DNS verification, and SMTP TLS reachability (never credentials).
 
-**Do not further modify Slice 1 unless a separately audited defect/remediation is opened. Do not automatically start automated pricing, public value exposure, resale/marketplace, analytics, notifications, SMTP activation, backup work, or another initiative from this closure. The next initiative must be separately selected and architecture-audited before promotion.**
+### Phase 2 — safe isolated delivery proof
+8. Use a disposable isolated runtime/config or non-production test account/inbox to prove Postmark SMTP auth and STARTTLS with certificate verification ON, correct sender/recipient, provider acceptance and actual mailbox receipt. No production customer email during setup.
+9. Validate delivered headers: DKIM pass, SPF/Return-Path alignment as configured, DMARC pass, trusted HTTPS reset origin; verify no Host-header poisoning. Provider acceptance alone is NOT inbox delivery proof.
+10. Exercise a controlled collector password reset end-to-end using an authorized test collector/inbox: active account gets link, single use, expiry, no auto-login; unknown/disabled generic responses and no usable reset; mail failure stays enumeration-safe; no provenance/identity mutation.
+11. Ensure logs, screenshots, governance evidence and tests do not contain SMTP tokens, collector emails, reset links, plaintext tokens or personal data.
+
+### Phase 3 — production cutover / rollback
+12. Only after Phase 2 PASS and owner-authorized change window, securely set production `MAIL_MAILER=smtp`, `MAIL_HOST=smtp.postmarkapp.com`, `MAIL_PORT=587`, `MAIL_ENCRYPTION=tls`, scoped `MAIL_USERNAME`/`MAIL_PASSWORD`, verified `MAIL_FROM_ADDRESS`/`MAIL_FROM_NAME`, canonical HTTPS `APP_URL`; retain TLS peer verification.
+13. Reload/clear config safely and confirm effective transport WITHOUT printing secrets. Do not change application code/schema unless a separately reviewed defect truly requires it.
+14. Controlled production delivery smoke only to authorized test inbox; confirm real receipt and one successful test-account reset. Confirm no customer blast.
+15. Re-check app health, collector/guest boundary, canonical provenance fingerprint/counts, current-state and integration config. No Caddy/edge/Shopify/Stripe/DB migration changes.
+16. On any authentication/TLS/DNS/delivery/reset/security failure, rollback `MAIL_MAILER=log` and restore previous safe mail config, then re-check health and report BLOCKED. Do not leave partially activated SMTP or pretend log delivery is success.
+
+### Evidence and stop
+- Run focused existing `TransactionalEmailHardeningTest`, `CollectorPasswordRecoveryTest`, and full `tests/Feature/Sca` before production cutover if runtime permits.
+- Record exact deployed SHA/migration, prerequisite states, sanitized provider/DNS/TLS checks, authorized test mailbox receipt and authentication results, reset lifecycle matrix, PRE/POST invariants, config change/rollback evidence.
+- Commit governance report `docs/SCA-TRANSACTIONAL-EMAIL-ACTIVATION-RESULT.md` (no secrets).
+- **STOP for ChatGPT independent activation audit.** Do not declare email LIVE until independent audit PASS. Do not start backups, Stripe, pricing, resale or other initiative.
+
 
 <!-- Prior status (pre-merge PASS gate for candidate d880e12) retained below for traceability. -->
 
