@@ -1,39 +1,166 @@
 # NEXT TASK
 
-**STATUS: COLLECTOR EXPERIENCE / UI 2.0 — SLICE 2 CLOSED + LIVE. ChatGPT independent post-deployment audit PASS. Production/main/deployed = `ffef6dedfdd21d865c73bb809bf81c917b367dda`, migration 138. Do not begin another initiative until the next scope is architecture-audited and explicitly promoted.**
+**STATUS: COLLECTOR EXPERIENCE / UI 2.0 — SLICE 3 PROMOTED (FINAL COLLECTOR UX SLICE). Architecture audit completed against production `ffef6dedfdd21d865c73bb809bf81c917b367dda`, migration 138. Redesign Authenticate/Submissions + Profile + Account presentation over EXISTING capabilities. No new domain behavior, payment activation, profile/publication semantics, schema, provenance logic, or infrastructure. Slices 1–2 are CLOSED and must not be reopened.**
 
-## Post-deployment audit — PASS
-ChatGPT independently verified:
-- approved candidate: `dba6c4d7b83b674615f461d081f64d9c07e2077d`
-- production merge/main/deployed: `ffef6dedfdd21d865c73bb809bf81c917b367dda`
-- GitHub candidate→deployed compare is **1 ahead / 0 behind** and **files=[]**: deployed merge tree is content-identical to the exact approved candidate
-- merge commit message identifies the approved Slice-2 candidate and governance approval; no unrelated implementation delta
-- deployment evidence records full exact merge-tree SCA gate **1347 passed / 1 skipped / 0 failed (7041 assertions)**, clean first run
-- migration remains **138**, `Nothing to migrate`; no schema change
-- PRE/POST provenance fingerprint unchanged: `d15a5cbdfb8df52ba65628b276533cfe`
-- canonical counts unchanged: `3/3/4/4/5/2/1/1/7`
-- production smoke: `/admin/login → 200`; guest `/collector` and `/collector/collection` fail closed to `/collector/login`
-- authenticated Collection index/detail + Slice-1 shell behavior are covered by the exact deployed merge-tree gate without fabricating production collector/session data
-- app remains loopback-only; no Caddy/DNS drift
-- Shopify OAuth remains `read_orders`
-- mail remains `log`
-- Stripe remains dormant
-- no provider/infrastructure drift.
+## Architecture audit conclusion
+A final collector UX slice is justified. Existing backend/domain behavior is already mature; remaining debt is presentation and journey coherence.
 
-## Closed Slice-2 capability
-Collector Experience / UI 2.0 Slice 2 is production-live:
-- My Collection is browse-first with responsive asset cards and preserved search/filter/sort/private-group context
-- collection administration is secondary under Manage collections
-- Eyewear Detail is asset-first: gallery + brand/model + SCA ref + current trusted state lead
-- current owner-safe Market Reference is surfaced near the asset with advisory/non-guarantee semantics
-- Passport and normal Transfer actions remain eligibility-bound
-- Lost/Stolen/Recovered safety controls are visually separated from ordinary ownership actions
-- public-profile visibility and private organization are secondary item controls
-- owner/privacy/image/document/provenance/domain invariants remain unchanged.
+### Authenticate / Submissions today
+Already correct/capable:
+- collector-scoped draft/create/edit/review/submit lifecycle
+- opaque SUB refs and privacy-safe 404
+- payment CTA only from canonical submitted state and provider configuration
+- truthful canonical post-custody result states: awaiting examination, not passed, passed-not-certified, certified-pending-grant, claimable, registered-to-you, unavailable
+- explicit grant→claim ownership action
+- physical return status
+- declared frame data explicitly distinguished from authenticated data
+- immutable progress events.
 
-**SLICE 2 IS CLOSED.**
+UX debt:
+- index is a plain row list with raw submission-state labels and obsolete Back-to-account link
+- detail is a vertical stack of operational cards; the collector must interpret Submission status, Authentication result, Return status and Progress separately
+- raw status/event chronology is useful evidence but should not be the primary explanation of “what happens next”
+- create/review/payment-return pages are visually disconnected steps rather than one coherent Authenticate journey
+- Stripe is dormant, so UI must remain truthful when payment is unavailable; do not simulate provider readiness.
 
-No Slice 3 or other initiative is authorized by this closure. The next step is an architecture audit/priority decision before writing another implementation task.
+### Profile today
+Already correct/capable:
+- private identity + avatar
+- canonical collection stats
+- display name/bio/location editing
+- avatar upload/remove
+- explicit opt-in public publication
+- permanent opaque public URL
+- optional mutable public handle with cooling semantics
+- publication/handle/privacy boundaries already heavily tested.
+
+UX debt:
+- one long page mixes identity, collection links, editing, avatar, publication and handle management at equal visual weight
+- private identity and public-sharing state are not clearly separated
+- public profile + handle are conceptually one sharing area but appear as separate long cards
+- collection/submission navigation duplicates the persistent shell.
+
+### Account today
+Already correct/capable:
+- signed-in identity
+- password change
+- logout
+- privacy/anonymization danger zone.
+
+UX debt:
+- still behaves partly as the old navigation hub with Profile/Collection/Submit links duplicated from the Slice-1 shell
+- everyday account/security and destructive privacy action need clearer hierarchy.
+
+## Slice 3 goal
+Create a coherent **Authenticate journey + Profile/Account settings experience** using existing routes/controllers/services/read models. This is presentation composition, copy hierarchy and accessibility work.
+
+**Prefer view/CSS/test changes only. No migration.** If a controller/read composition change is believed necessary, keep it read-only and return architecture rationale in evidence. Do not add new authoritative state.
+
+## A. Authenticate — lifecycle-first experience
+1. Index should lead with **Submit eyewear** and explain the service briefly, then show collector-owned submissions as clear cards/rows with:
+   - declared brand/model
+   - SUB reference secondary
+   - a collector-friendly truthful state label derived ONLY from existing canonical submission/result/return data already available to that page; if the current index lacks safe downstream data, do NOT invent it—use exact submission-state semantics or a narrowly justified read-only composition.
+   - clear “View status” action.
+2. Remove obsolete Back-to-account navigation; persistent shell is authoritative.
+3. Empty state should explain what Submit eyewear does and provide the CTA.
+4. Create/Edit → Review → Status should visually read as one journey. Do not change POST/PATCH routes or state transitions.
+5. Submission detail must establish a clear top-level hierarchy:
+   - submitted frame identity/reference
+   - **current stage / what happens next**
+   - primary eligible action (submit draft, pay when genuinely enabled, claim when genuinely claimable, view in collection when registered)
+   - physical return state when applicable
+   - declared details and raw Progress chronology as secondary evidence.
+6. Do NOT collapse distinct canonical truths into a fabricated single state. Submission status, authentication result and physical return can coexist; presentation may summarize them only if wording remains truthful.
+7. Keep the distinction between **declared by collector** and **authenticated by SCA** explicit.
+8. Payment:
+   - preserve dormant/provider-disabled behavior exactly
+   - never say paid/confirmed from browser return alone
+   - never expose Stripe/provider secrets/state
+   - no Stripe activation/test-mode work in this slice.
+9. Claim remains explicit and uses the existing submission-bound canonical grant→claim POST.
+10. Failed/inconclusive authentication must never look certified/claimable. Certified/claimable/registered-to-you semantics must remain exact.
+11. Return status must remain operational and must not imply that return changes authentication/certification/ownership.
+
+## B. Profile — private identity first, sharing second
+1. Lead with collector identity/avatar + member-since + concise canonical collection stats.
+2. Group **Edit profile + Profile photo** into a coherent private-profile settings area; retain exact validation/upload/remove routes and semantics.
+3. Create a clearly separated **Public sharing** area combining publication state + public link + handle controls conceptually:
+   - default/private semantics unchanged
+   - publication still requires existing eligibility
+   - opaque permanent URL semantics unchanged
+   - handle remains optional mutable alias
+   - never imply unpublished URLs are public/resolvable
+   - retain exact unpublish/handle remove warnings.
+4. Remove Collection/Authenticate/Account navigation duplication where persistent shell already provides it, except contextual links that genuinely help completion.
+5. No redesign of the public profile page itself.
+
+## C. Account — security-focused
+1. Make Account clearly about account/security rather than navigation.
+2. Keep signed-in identity and Sign out.
+3. Keep password change with existing CSRF/validation/security behavior.
+4. Keep privacy/anonymization as a visually separated final Danger zone; do not weaken explicit confirmation or eligibility failures.
+5. Remove redundant Profile/Collection/Authenticate hub links now covered by shell.
+6. Do not add email change, MFA, sessions/devices, notification preferences, or other new account capabilities.
+
+## D. Responsive/accessibility
+- Continue Slice-1 shell and active Authenticate/Profile/Account states.
+- ~360px through desktop, no horizontal overflow.
+- visible focus, semantic headings/labels, adequate touch targets.
+- status/stage meaning cannot rely on color alone.
+- errors/flash messages remain prominent.
+- forms retain explicit labels, autocomplete and validation semantics.
+- destructive/unpublish/remove/anonymize actions remain clearly named; no ambiguous icon-only actions.
+- no frontend framework.
+
+## Domain/security invariants — MUST NOT CHANGE
+- collector guard + active-account boundary
+- collector-scoped submissions and privacy-safe 404
+- SubmissionService transition rules and immutable status-event history
+- payment/webhook truth and Stripe dormant state
+- canonical bound-item result/claim eligibility and grant→claim workflow
+- physical-return semantics
+- profile/avatar/publication/handle concurrency and privacy rules
+- password security/throttle/recovery behavior
+- privacy pseudonymization/ownership fail-closed behavior
+- CSRF and opaque refs
+- zero new provenance/current-state mutation from GET/read presentation.
+
+No Market Reference Slice 2, marketplace, analytics, notifications, SMTP, Stripe activation, backups, staff UI, public profile redesign or Passport redesign.
+
+## Mandatory tests / evidence
+Prove at minimum:
+- Authenticate index/detail remain collector-scoped; other collector SUB ref is privacy-safe
+- shell Authenticate active state across index/create/edit/review/show/payment-return as appropriate
+- index/empty state CTA and no obsolete Back-to-account
+- draft/submitted/awaiting_item/received/cancelled user-facing wording remains truthful
+- downstream result cases: awaiting examination, failed/inconclusive, passed-not-certified, certified-pending-grant, claimable, registered-to-you remain distinct/truthful
+- payment-disabled submitted state does not claim payment availability; browser success return does not claim confirmation
+- claim CTA appears only under existing claimable semantics
+- physical return pending/in-transit/returned wording remains separate from auth/cert/ownership result
+- declared-vs-authenticated distinction remains visible
+- Profile private/public sharing hierarchy preserves publish/unpublish/handle/avatar routes and eligibility
+- unpublished profile/handle does not advertise a resolvable public link
+- Account retains password/logout/privacy actions but removes redundant navigation-hub role
+- anonymization Danger zone and confirmation path remain explicit
+- guest/pseudonymized/staff sessions fail closed under existing guards
+- GET pages produce zero provenance/current-state mutation
+- no internal numeric ids, grant/QR tokens, storage paths, staff refs/reasons, other-collector identity, provider secrets leak
+- ~360px responsive evidence
+- existing External Paid Auth Slices 3–6, profile CP-1/3/5, password/privacy, Collector Experience and shell tests remain green
+- full `tests/Feature/Sca` gate passes.
+
+## Delivery discipline
+- Branch from exact production `ffef6dedfdd21d865c73bb809bf81c917b367dda`. If main moved, STOP.
+- **No migration.**
+- Prefer collector views/CSS/tests only.
+- If changing a controller for read-only presentation composition, document why existing safe DTO/state was insufficient and prove no writer/authorization change.
+- Do not alter domain services merely to improve labels.
+- Record exact changed files, focused/full tests, responsive evidence, privacy/no-leak and zero-mutation proof.
+- Push candidate only. **Do not merge/deploy. STOP for ChatGPT pre-merge audit.**
+
+## Initiative boundary
+This is intended as the **final Collector Experience / UI 2.0 slice**. After it is deployed and independently closed, do not invent Slice 4 automatically. Reassess the product roadmap; likely next architecture audit is Market Reference Slice 2.
 
 
 <!-- Prior status (pre-merge PASS gate for candidate dba6c4d) retained below for traceability. -->
