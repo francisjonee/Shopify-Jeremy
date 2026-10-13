@@ -1,6 +1,8 @@
 # NEXT TASK
 
-**STATUS: COLLECTOR EXPERIENCE / UI 2.0 — SLICE 2 PROMOTED. Architecture audit completed against production `e20e549948ecbf5c967d48a7444275280dafb97c`, migration 138. Build a premium, mobile-first My Collection + Eyewear Detail experience over EXISTING capabilities only. No new domain behavior, schema, marketplace, valuation logic, or provenance semantics. Slice 1 is CLOSED and must not be reopened.**
+**STATUS: COLLECTOR EXPERIENCE / UI 2.0 — SLICE 2 CANDIDATE PUSHED, AWAITING ChatGPT PRE-MERGE AUDIT. Branch `feat/sca-collector-ui2-slice2`, base `e20e549`/migration 138, candidate SHA `dba6c4d7b83b674615f461d081f64d9c07e2077d` (1 ahead/0 behind, 4 files, NO migration, no controller/service change). Presentation-hierarchy redesign: My Collection browse-first (eyewear grid focus; CP-6 group-chip switcher kept; create/rename/reorder/delete moved into a secondary "Manage collections" <details>; "Back to account" removed) + Eyewear Detail asset-first (gallery/brand/model/ref hero; current Market Reference surfaced near the asset with advisory wording; Passport/Transfer primary; safety lost/stolen/recovered separated from Transfer; CP-4 visibility + CP-6 organize relocated secondary). All routes/CSRF/DTOs/authorization/mutation semantics unchanged; zero new writers. Focused 12 passed; full `tests/Feature/Sca` 1347 passed / 1 skipped / 0 failed. Prod untouched: FP `d15a5cbd`, counts `3/3/4/4/5/2/1/1/7`, migration 138. Evidence: `docs/SCA-COLLECTOR-UI2-SLICE2-IMPLEMENTATION.md`. Slice 1 CLOSED (not reopened). DO NOT merge/deploy/start another initiative — STOP for pre-merge audit.**
+
+<!-- Prior status (Slice 2 promotion) retained below for traceability. -->
 
 ## Architecture audit findings
 Production already has strong collector capabilities but their presentation hierarchy is fragmented.
