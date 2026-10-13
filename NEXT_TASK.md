@@ -1,6 +1,69 @@
 # NEXT TASK
 
-**STATUS: COLLECTOR EXPERIENCE / UI 2.0 — SLICE 1 CANDIDATE PUSHED, AWAITING ChatGPT PRE-MERGE AUDIT. Branch `feat/sca-collector-ui2-slice1`, base `9cf7272`/migration 138, candidate SHA `b69824f712ede30c159c444b7ca41946f05b7332` (1 ahead/0 behind, 7 files, NO migration). Mobile-first authenticated collector shell (persistent Home/Collection/Authenticate/Profile/Account nav, CSS-only, guest/public pages excluded) + Collector Home dashboard at `/collector` (route moved into collector.auth; guest→login, disabled/pseudonymized fail-closed). Bounded read-only dashboard over existing readers (collection stats + recent preview via authorized image route + truthful submission summary + publication state; pending-transfer tile omitted — no safe read); zero domain/provenance mutation; privacy/CSRF/throttle/guards preserved; item-detail preserved. Focused 17 passed; full `tests/Feature/Sca` 1331 passed / 1 skipped / 0 failed. Prod untouched: FP `d15a5cbd`, counts `3/3/4/4/5/2/1/1/7`, migration 138. Evidence: `docs/SCA-COLLECTOR-UI2-SLICE1-IMPLEMENTATION.md`. Transactional Email (Postmark) remains PARKED/Phase-0-BLOCKED; backups parked. DO NOT merge/deploy/start another initiative — STOP for pre-merge audit.**
+**STATUS: COLLECTOR EXPERIENCE / UI 2.0 — SLICE 1 PRE-MERGE AUDIT FAIL R1 (narrow truthfulness defect). Candidate `b69824f712ede30c159c444b7ca41946f05b7332` is NOT approved for merge/deploy. Production remains `9cf72728248cf3e36d0525de4520d69717dacd5d` / migration 138. Preserve all accepted shell/Home/security/privacy work; remediate only the submission-progress projection + proof below.**
+
+## ChatGPT independent audit
+Verified actual GitHub candidate:
+- exact base `9cf72728248cf3e36d0525de4520d69717dacd5d`
+- exactly **1 ahead / 0 behind**
+- exactly 7 expected presentation/read-model/test files
+- no migration
+- authenticated shell/route guard boundaries intact
+- guest auth pages remain without authenticated nav
+- active nav grouping is coherent for Home/Collection/transfer/status/Submissions/Profile/Account
+- dashboard collection data reuses canonical current-owner catalog/stats; catalog itself is bounded to page size 24 before Home slices to 4
+- preview uses authorized image/detail routes and no raw storage path
+- publication state is collector-scoped
+- dashboard is read-only; no observed provenance/current-state writer introduced
+- accepted candidate report: focused 17 pass; full SCA 1331 pass / 1 skip / 0 fail.
+
+Do NOT reopen these accepted areas in R1.
+
+## R1 blocker — Home's “In progress” submission count becomes false after physical receipt
+`CollectorDashboardService::ACTIVE_SUBMISSION_STATUSES` is:
+`['draft', 'submitted', 'awaiting_item']`.
+
+The Home view renders that count under the consumer-facing label **“In progress.”**
+
+But the canonical `SubmissionService` deliberately makes `received` terminal only for the submission-state machine; later External Paid Authentication slices keep the submission status at `received` while the bound item proceeds through authentication, certification, grant/claim, and physical-return handling. Slice 6 explicitly preserves submission status `received` and tracks return separately.
+
+Therefore “terminal in SubmissionService” does NOT mean “authentication work complete” to the collector. A received frame can still be actively under examination / passed-not-certified / certified-pending-grant / claimable / return-pending, while the new Home dashboard reports it as not in progress. Example: one collector submission at `received`, bound item awaiting examination → Home shows Total=1, In progress=0. That is materially misleading.
+
+The promotion required a **truthful meaningful active/pending summary** and prohibited invented provider/payment state.
+
+## Required R1 remediation
+Do not solve this by merely adding `received` blindly to a constant without defining the user-facing meaning.
+
+Choose one coherent projection and document it:
+1. Prefer a collector-facing **“Needs attention / In progress / Completed”** summary derived from existing submission + bound-item/result/return state, reusing the already-established safe result semantics where practical; OR
+2. If Slice 1 should stay intentionally simpler, change the metric/label to something whose semantics are exactly true from the canonical submission status (for example a narrowly named pre-receipt metric), and ensure received work is not presented as completed/inactive by implication.
+
+Whichever approach is chosen:
+- no new authoritative state/table/migration
+- no payment/provider invention
+- collector-scoped only
+- no extra PII/internal ids
+- no mutation
+- keep the dashboard bounded
+- preserve all existing domain workflows.
+
+### Mandatory R1 tests
+Add focused proof covering at least:
+- draft/submitted/awaiting_item semantics
+- a `received` submission with bound item **awaiting examination**
+- a received item **passed but not certified**
+- a received item **certified / claimable or registered-to-you** as applicable to the chosen projection
+- failed/inconclusive + return state where relevant to the chosen labels
+- cancelled submission
+- another collector's submissions never affect counts
+- dashboard GET remains zero-mutation.
+
+The assertions must test the **user-visible label/count semantics**, not only a private constant.
+
+Re-run focused Collector Experience/AppPolish and full `tests/Feature/Sca`.
+
+Push remediation candidate only. **Do not merge/deploy. STOP for ChatGPT R1 re-audit.**
+
 
 <!-- Prior status (Collector UI 2.0 Slice 1 promotion) retained below for traceability. -->
 
