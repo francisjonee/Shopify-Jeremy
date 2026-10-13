@@ -1,51 +1,47 @@
 # NEXT TASK
 
-**STATUS: COLLECTOR EXPERIENCE / UI 2.0 — SLICE 3 DEPLOYED TO PRODUCTION — AWAITING ChatGPT INDEPENDENT POST-DEPLOYMENT AUDIT. Slice 3 NOT closed; Collector UI 2.0 NOT closed; no other initiative started.** (Pre-merge re-audit PASS / deploy-gate approval retained in the "ChatGPT pre-merge re-audit — PASS" section below.)
+**STATUS: COLLECTOR EXPERIENCE / UI 2.0 — SLICE 3 CLOSED + LIVE. COLLECTOR EXPERIENCE / UI 2.0 INITIATIVE CLOSED. ChatGPT independent post-deployment audit PASS. Production/main/deployed = `6ca15958844dace74f7d087a10a3355a6497dd00`, migration 138. Do not begin another initiative until the next scope is architecture-audited and explicitly promoted.**
 
-## Deployment result (awaiting post-deploy audit)
-| | |
-|---|---|
-| Governance deploy approval | `7c6909e3b316552a0498986af10b6d34b2e0ccf6` |
-| Approved candidate | `a19f4721cc7d21229b2f23c380392ca0fc63cb86` |
-| Audited baseline (unmoved pre-merge) | `ffef6dedfdd21d865c73bb809bf81c917b367dda` |
-| **MERGE_SHA = ORIGIN_MAIN = DEPLOYED_HEAD** | **`6ca15958844dace74f7d087a10a3355a6497dd00`** |
-| Candidate→merge tree | byte-identical (no unreviewed delta) |
-| Migration | 138 (PRE/POST; "Nothing to migrate"; 0 pending) |
-| Deployed-tree full gate | 1367 passed / 1 skipped / 0 failed (7235 assertions) |
-| PRE==POST provenance FP | `d15a5cbd…`, counts `3/3/4/4/5/2/1/1/7` (unchanged) |
-| Health | `/admin/login` 200; guest `/collector[/submissions|/profile|/account]` → 302 /collector/login |
-| Dormancy/no-drift | Stripe dormant (STRIPE_ENABLED unset, STRIPE_SECRET absent); MAIL_MAILER=log; SHOPIFY_SCOPES=read_orders; Caddy/DNS/provider/infra unchanged |
+## Slice 3 post-deployment audit — PASS
+ChatGPT independently verified:
+- approved candidate: `a19f4721cc7d21229b2f23c380392ca0fc63cb86`
+- production merge/main/deployed: `6ca15958844dace74f7d087a10a3355a6497dd00`
+- GitHub candidate→deployed compare is **1 ahead / 0 behind** and **files=[]**: deployed merge tree is content-identical to the exact approved candidate
+- merge commit explicitly identifies approved Slice-3 candidate and governance approval; no unrelated implementation delta
+- deployment evidence records full exact deployed-tree SCA gate **1367 passed / 1 skipped / 0 failed (7235 assertions)**
+- migration remains **138**, `Nothing to migrate`, 0 pending; no schema change
+- PRE/POST provenance fingerprint unchanged: `d15a5cbdfb8df52ba65628b276533cfe`
+- canonical counts unchanged: `3/3/4/4/5/2/1/1/7`
+- production health: `/admin/login → 200`; app/database containers healthy
+- guest `/collector`, `/collector/submissions`, `/collector/profile`, and `/collector/account` fail closed to `/collector/login`; no production collector/session was fabricated
+- Stripe remains dormant: `STRIPE_ENABLED` unset/default false and `STRIPE_SECRET` absent
+- mail remains `MAIL_MAILER=log`
+- Shopify OAuth remains `SHOPIFY_SCOPES=read_orders`
+- no Caddy/DNS/provider/infrastructure drift.
 
-Evidence: `docs/SCA-COLLECTOR-UI2-SLICE3-DEPLOY-RESULT.md`. **STOP for ChatGPT independent post-deployment audit; do not declare Slice 3 or Collector UI 2.0 closed; do not begin Market Reference Slice 2 or any other initiative.**
+## Slice 3 closed capability
+Production collector UX now includes:
+- lifecycle-first Authenticate/submission journey over the existing canonical submission/authentication/certification/claim/return semantics
+- truthful collector-facing submission stages without fabricating downstream state
+- explicit declared-vs-authenticated distinction
+- payment remains provider-truthful/dormant and browser return never establishes payment
+- failed/inconclusive, passed-not-certified, certified-pending-grant, claimable and registered-to-you remain distinct
+- physical return remains operationally separate from authentication/certification/ownership
+- private-profile-first Profile experience with a clearly separated optional Public sharing area
+- correct unpublished publication/handle behavior with no advertised resolvable public URLs
+- security-focused Account experience with password/logout and isolated anonymization Danger zone
+- redundant pre-shell navigation removed while existing security/privacy/domain behavior remains unchanged.
 
----
+## Collector Experience / UI 2.0 — initiative closure
+All intentionally scoped collector UX slices are now production-live:
+1. **Slice 1 — Collector Home + persistent authenticated shell:** CLOSED + LIVE.
+2. **Slice 2 — My Collection + Eyewear Detail:** CLOSED + LIVE.
+3. **Slice 3 — Authenticate/Submissions + Profile + Account:** CLOSED + LIVE.
 
-## ChatGPT pre-merge re-audit — PASS
-Independent GitHub audit verified:
-- candidate remains exactly **1 ahead / 0 behind** production baseline `ffef6dedfdd21d865c73bb809bf81c917b367dda`
-- scope remains the accepted 6 collector presentation views + `CollectorUi3Test.php`; no migration/controller/service/route/DTO/config/domain-writer change
-- the amended candidate supersedes `8ea5094...`; production presentation code remains the already-audited Slice-3 implementation and R1 remediation is test/evidence-only
-- **R1-A closed:** test `a7b` creates a real finalized `inconclusive` authentication, verifies DB canonical result is actually `inconclusive`, then proves collector presentation maps it to non-passing with no claim/certified/passed/ready-to-add implication
-- **R1-B closed:** test `b2b` uses existing services for publish → set handle → unpublish, verifies publication row persists unpublished with reserved handle, proves neither permanent public URL nor friendly `/u/{handle}` URL is emitted, retains truthful reserved-handle copy and publish control, and proves the GET mutates neither publication nor collector account state
-- no existing test was weakened or modified
-- governance evidence reports focused `CollectorUi3Test` **20 passed / 194 assertions**
-- full `tests/Feature/Sca` gate **1367 passed / 1 skipped / 0 failed (7235 assertions)**
-- production reported untouched: migration 138, provenance fingerprint/counts unchanged, Stripe dormant and no provider/infrastructure changes.
+The Collector Experience / UI 2.0 initiative is therefore **CLOSED**. Do not invent Slice 4 automatically.
 
-## Approved deployment gate
-Claude may now:
-1. Merge **only** approved candidate `a19f472...` into current production main. Resolve and record the full SHA before merge. If main moved from audited baseline `ffef6de...`, STOP and return to ChatGPT.
-2. Prove candidate→merge content identity (merge commit only; no unreviewed file delta).
-3. Deploy the resulting merge SHA using the established controlled production procedure.
-4. Confirm migration remains **138**; no migration is expected/permitted.
-5. Run full `tests/Feature/Sca` gate on the exact merge/deployed tree and report exact pass/skip/fail/assertion totals.
-6. Verify production health and collector guest fail-closed boundaries; do not fabricate a production collector/session merely for smoke testing.
-7. Record PRE/POST provenance fingerprint and canonical counts and prove unchanged.
-8. Confirm Stripe remains dormant, mail remains `log`, Shopify OAuth remains `read_orders`, and no Caddy/DNS/provider/infrastructure drift.
-9. Record exact `MERGE_SHA`, `ORIGIN_MAIN`, `DEPLOYED_HEAD` and governance deployment evidence.
-10. **STOP for ChatGPT post-deployment audit. Do not declare Slice 3 or Collector UI 2.0 closed and do not start another initiative.**
-
-Only an independent post-deployment PASS closes Slice 3 and the Collector Experience / UI 2.0 initiative.
+## Next-step gate
+No new initiative is authorized by this closure. Before implementation resumes, ChatGPT must reassess roadmap priority and architecture-audit the chosen next initiative. Market Reference Slice 2 is a likely candidate, but is **not promoted by this closure**.
 
 
 <!-- Prior status (pre-merge PASS gate for candidate dba6c4d) retained below for traceability. -->
