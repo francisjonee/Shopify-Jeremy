@@ -1,19 +1,26 @@
 # SCA Collector Experience / UI 2.0 — Slice 3 Implementation Evidence (pre-merge)
 
-**Status:** CANDIDATE pushed — awaiting ChatGPT pre-merge audit. NOT merged, NOT deployed. Final collector UX slice: Authenticate/Submissions + Profile + Account presentation & journey-coherence redesign over EXISTING capabilities. **No migration**, no controller/service/route/DTO change, no new domain behavior, no Stripe activation.
+**Status:** R1 REMEDIATION candidate pushed — awaiting ChatGPT pre-merge RE-AUDIT. NOT merged, NOT deployed. Final collector UX slice: Authenticate/Submissions + Profile + Account presentation & journey-coherence redesign over EXISTING capabilities. **No migration**, no controller/service/route/DTO change, no new domain behavior, no Stripe activation. R1 was test/evidence-completeness only — two edge-case proofs added, zero production-code change.
 
 | | |
 |---|---|
 | Governance promotion | `d285d2e621f82142eb48347e1b351a260c42c496` |
+| Pre-merge audit R1 (FAIL, test/evidence only) | `72a92e5d81aa1500d29cb65b69e72d2773e8f14c` |
 | Implementation branch | `feat/sca-collector-ui2-slice3` (1 ahead / 0 behind base) |
 | Exact production base SHA | `ffef6dedfdd21d865c73bb809bf81c917b367dda` (migration 138) |
-| Candidate SHA | `8ea5094519281c61a2b288aff9f96eecd1975fc8` |
+| **Candidate SHA (R1)** | **`a19f4721cc7d21229b2f23c380392ca0fc63cb86`** (amended single commit; supersedes `8ea5094`) |
 | Merge base vs base SHA | exactly `ffef6dedfdd21d865c73bb809bf81c917b367dda` |
 | Migration | **none** (138 unchanged) |
-| Changed files vs base | 7 (576 insertions, 98 deletions) |
-| Focused tests | `CollectorUi3Test` **18 passed / 171 assertions** |
-| Full `tests/Feature/Sca` | **1365 passed / 1 skipped / 0 failed** (7212 assertions) |
+| Changed files vs base | 7 (634 insertions, 98 deletions) — same 6 views + the one test file (only the test grew) |
+| Focused tests | `CollectorUi3Test` **20 passed / 194 assertions** |
+| Full `tests/Feature/Sca` | **1367 passed / 1 skipped / 0 failed** (7235 assertions) |
 | Production provenance FP (unchanged) | `d15a5cbdfb8df52ba65628b276533cfe`, counts `3/3/4/4/5/2/1/1/7`, migration 138 |
+
+## R1 remediation (test/evidence-only — no production Blade/behavior change)
+ChatGPT R1 (`72a92e5`) accepted the implementation architecture and flagged two missing edge-case proofs. Both are added to `CollectorUi3Test`; no production code changed (verified: the 6 view files are byte-identical to the `8ea5094` candidate; only `CollectorUi3Test.php` grew).
+
+- **R1-A — finalized INCONCLUSIVE authentication** (`a7b`). A real `inconclusive` finalized authentication (canonical result; `chk_auth_result CHECK (result IN ('passed','failed','inconclusive'))`) is driven through the same helper as `failed`. Proven: detail asserts the item's finalized result is genuinely `inconclusive`, renders "did not pass", exposes **no** claim action, and shows **no** "ready to add to your collection" / "Authenticated & certified" / "Authentication passed" implication. This confirms the existing canonical reader intentionally maps finalized failed **or** inconclusive into the safe `not_passed` presentation — no domain change.
+- **R1-B — unpublished-but-existing publication + handle** (`b2b`). Built via existing services: `publish` → `setHandle('ada-reserved')` → `unpublish`. Sanity-asserted the publication row persists, `is_published=false`, handle retained. On a private-Profile GET: presented as private; publish control remains available (display name set); the handle remains displayed/reserved with truthful copy ("…work again once your public profile is published"); **no** permanent public-show URL and **no** friendly `/u/{handle}` URL is emitted as resolvable; the published-only "Public link" row / Unpublish control are absent; and the GET mutates neither the publication nor the account row. This closes the CP-5 gap that `b2` (no publication row) did not cover — a proof gap, not a semantics change.
 
 ## Changed files (7)
 - `app/packages/Sca/Collector/src/Resources/views/submissions/index.blade.php` — Authenticate index: lifecycle-first.
@@ -59,19 +66,19 @@ Collector guard + active-account boundary (guest/disabled/pseudonymized/staff fa
 | shell Authenticate active across index/create/edit/review/show/pay-return | a1, a5 |
 | index/empty CTA + no obsolete Back-to-account | a1, a2 |
 | draft/submitted/awaiting_item/received/cancelled wording truthful | a3 |
-| downstream result cases distinct/truthful (awaiting exam, failed, passed-not-cert, certified-pending-grant, claimable, registered-to-you) | a7 |
+| downstream result cases distinct/truthful (awaiting exam, failed, **inconclusive**, passed-not-cert, certified-pending-grant, claimable, registered-to-you) | a7, **a7b (inconclusive)** |
 | payment-disabled submitted doesn't claim availability; browser return doesn't claim confirmation | a8 |
 | claim CTA only under claimable | a7 |
 | return pending/in-transit/returned separate from auth/cert/ownership | a9 (+ existing SubmissionReturnTest) |
 | declared-vs-authenticated visible | a6 |
 | Profile private/public hierarchy preserves publish/unpublish/handle/avatar routes + eligibility | b1, b3 |
-| unpublished profile/handle not advertised resolvable | b2 |
+| unpublished profile/handle not advertised resolvable | b2 (no publication row), **b2b (existing publication + handle, unpublished)** |
 | Account retains password/logout/privacy, removes hub-nav role | c1 |
 | anonymization Danger zone + confirmation explicit | c1 (+ existing CollectorPrivacyTest) |
 | guest/pseudonymized/staff fail closed | c2 (+ existing CollectorExperienceTest ce11, CollectorSubmissionUxTest u2) |
 | GET zero provenance/current-state mutation | a11, b4 |
 | no internal id / grant / QR token / storage path / staff ref / other-collector identity / provider secret leak | d1 |
-| existing External Paid Auth 3–6, profile CP-1/3/5, password/privacy, Collector Experience + shell green + full gate | full `tests/Feature/Sca` 1365 passed / 1 skipped / 0 failed |
+| existing External Paid Auth 3–6, profile CP-1/3/5, password/privacy, Collector Experience + shell green + full gate | full `tests/Feature/Sca` 1367 passed / 1 skipped / 0 failed |
 
 ## Existing-test change
 `CollectorPasswordTest` lines 171/182 assert the account page contains "Account security". The redesigned Account card heading is named **"Account security"** precisely so those existing security assertions (and their `assertSeeInOrder` of Account security → Change password → Danger zone → anonymize) remain green with **no test modification**. No existing test file was edited in this slice.
@@ -79,4 +86,4 @@ Collector guard + active-account boundary (guest/disabled/pseudonymized/staff fa
 ## Production-untouched proof
 All work ran on the disposable `sca_domain_test` DB only. The live tree is restored to `main@ffef6de`, vendor re-pruned `--no-dev`; prod DB migration **138**, provenance FP `d15a5cbd…` / counts `3/3/4/4/5/2/1/1/7` unchanged; no schema change; health 200. No Caddy/DNS/Shopify OAuth/Stripe/SMTP/infrastructure change.
 
-**STOP — awaiting ChatGPT pre-merge audit of candidate `8ea5094`. Do not merge or deploy; do not start another initiative.**
+**STOP — awaiting ChatGPT pre-merge RE-AUDIT of R1 candidate `a19f472`. Do not merge or deploy; do not start another initiative.**

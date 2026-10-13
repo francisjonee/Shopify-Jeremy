@@ -1,6 +1,29 @@
 # NEXT TASK
 
-**STATUS: COLLECTOR EXPERIENCE / UI 2.0 — SLICE 3 PRE-MERGE AUDIT FAIL (R1 — TEST/EVIDENCE COMPLETENESS ONLY). Candidate `8ea5094519281c61a2b288aff9f96eecd1975fc8` is NOT approved for merge/deploy. Implementation scope and presentation architecture are otherwise acceptable. Remediate the two mandatory edge-case proofs below on the SAME branch, rerun focused + full SCA gates, push a new candidate, and STOP for ChatGPT re-audit.**
+**STATUS: COLLECTOR EXPERIENCE / UI 2.0 — SLICE 3 R1 REMEDIATION PUSHED — AWAITING ChatGPT PRE-MERGE RE-AUDIT. NOT merged, NOT deployed.**
+
+## R1 remediation candidate (awaiting re-audit)
+| | |
+|---|---|
+| Prior R1 FAIL (test/evidence only) | `72a92e5d81aa1500d29cb65b69e72d2773e8f14c` |
+| Base | `ffef6dedfdd21d865c73bb809bf81c917b367dda` (migration 138) |
+| **R1 candidate SHA** | **`a19f4721cc7d21229b2f23c380392ca0fc63cb86`** (amended single commit; supersedes `8ea5094`, 1 ahead / 0 behind) |
+| Changed files | 7 (same 6 collector views, byte-identical to 8ea5094; only `CollectorUi3Test.php` grew) |
+| Focused tests | `CollectorUi3Test` 20 passed / 194 assertions |
+| Full `tests/Feature/Sca` | 1367 passed / 1 skipped / 0 failed (7235 assertions) |
+| Prod FP (unchanged) | `d15a5cbd…`, counts `3/3/4/4/5/2/1/1/7`, migration 138 |
+
+Both R1 edge cases added as **test/evidence-only** proofs — no production Blade/behavior change (the 6 views are byte-identical to the prior candidate):
+- **R1-A** `a7b` — finalized INCONCLUSIVE authentication renders not-passed, no claim, no certified/ready-to-add implication (canonical reader maps failed OR inconclusive → `not_passed`).
+- **R1-B** `b2b` — publish → set handle → unpublish → private-Profile GET: private/unpublished; publish stays available; handle displayed/reserved with truthful "works again once published" copy; NO resolvable public-show or `/u/{handle}` URL; GET zero-mutation.
+
+Evidence updated in `docs/SCA-COLLECTOR-UI2-SLICE3-IMPLEMENTATION.md`. **STOP for ChatGPT pre-merge re-audit; do not merge/deploy/start another initiative.**
+
+---
+
+<!-- Prior R1 FAIL brief retained below for traceability. -->
+
+**STATUS (R1 FAIL): COLLECTOR EXPERIENCE / UI 2.0 — SLICE 3 PRE-MERGE AUDIT FAIL (R1 — TEST/EVIDENCE COMPLETENESS ONLY). Candidate `8ea5094519281c61a2b288aff9f96eecd1975fc8` is NOT approved for merge/deploy. Implementation scope and presentation architecture are otherwise acceptable. Remediate the two mandatory edge-case proofs below on the SAME branch, rerun focused + full SCA gates, push a new candidate, and STOP for ChatGPT re-audit.**
 
 ## ChatGPT audit facts
 - exact base `ffef6dedfdd21d865c73bb809bf81c917b367dda`
