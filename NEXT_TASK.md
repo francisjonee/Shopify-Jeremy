@@ -1,6 +1,24 @@
 # NEXT TASK
 
-**STATUS: COLLECTOR EXPERIENCE / UI 2.0 — SLICE 3 PRE-MERGE RE-AUDIT PASS. R1 is CLOSED. Exact candidate `a19f472...` is APPROVED for controlled merge/deployment only. Production baseline remains `ffef6dedfdd21d865c73bb809bf81c917b367dda`, migration 138. Slice 3 is NOT CLOSED until ChatGPT independently audits post-deployment evidence. Do not start another initiative.**
+**STATUS: COLLECTOR EXPERIENCE / UI 2.0 — SLICE 3 DEPLOYED TO PRODUCTION — AWAITING ChatGPT INDEPENDENT POST-DEPLOYMENT AUDIT. Slice 3 NOT closed; Collector UI 2.0 NOT closed; no other initiative started.** (Pre-merge re-audit PASS / deploy-gate approval retained in the "ChatGPT pre-merge re-audit — PASS" section below.)
+
+## Deployment result (awaiting post-deploy audit)
+| | |
+|---|---|
+| Governance deploy approval | `7c6909e3b316552a0498986af10b6d34b2e0ccf6` |
+| Approved candidate | `a19f4721cc7d21229b2f23c380392ca0fc63cb86` |
+| Audited baseline (unmoved pre-merge) | `ffef6dedfdd21d865c73bb809bf81c917b367dda` |
+| **MERGE_SHA = ORIGIN_MAIN = DEPLOYED_HEAD** | **`6ca15958844dace74f7d087a10a3355a6497dd00`** |
+| Candidate→merge tree | byte-identical (no unreviewed delta) |
+| Migration | 138 (PRE/POST; "Nothing to migrate"; 0 pending) |
+| Deployed-tree full gate | 1367 passed / 1 skipped / 0 failed (7235 assertions) |
+| PRE==POST provenance FP | `d15a5cbd…`, counts `3/3/4/4/5/2/1/1/7` (unchanged) |
+| Health | `/admin/login` 200; guest `/collector[/submissions|/profile|/account]` → 302 /collector/login |
+| Dormancy/no-drift | Stripe dormant (STRIPE_ENABLED unset, STRIPE_SECRET absent); MAIL_MAILER=log; SHOPIFY_SCOPES=read_orders; Caddy/DNS/provider/infra unchanged |
+
+Evidence: `docs/SCA-COLLECTOR-UI2-SLICE3-DEPLOY-RESULT.md`. **STOP for ChatGPT independent post-deployment audit; do not declare Slice 3 or Collector UI 2.0 closed; do not begin Market Reference Slice 2 or any other initiative.**
+
+---
 
 ## ChatGPT pre-merge re-audit — PASS
 Independent GitHub audit verified:
