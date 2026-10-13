@@ -1,47 +1,123 @@
 # NEXT TASK
 
-**STATUS: COLLECTOR EXPERIENCE / UI 2.0 — SLICE 3 CLOSED + LIVE. COLLECTOR EXPERIENCE / UI 2.0 INITIATIVE CLOSED. ChatGPT independent post-deployment audit PASS. Production/main/deployed = `6ca15958844dace74f7d087a10a3355a6497dd00`, migration 138. Do not begin another initiative until the next scope is architecture-audited and explicitly promoted.**
+**STATUS: SCA MARKET REFERENCE / VALUE HISTORY — SLICE 2 PROMOTED. Production baseline is `6ca15958844dace74f7d087a10a3355a6497dd00`, migration 138. Build the collector-facing historical value timeline over the EXISTING append-only Market Reference ledger. This is a read/presentation expansion only: no marketplace, no automated valuation, no public value exposure, no provenance mutation. Push candidate and STOP for ChatGPT pre-merge audit.**
 
-## Slice 3 post-deployment audit — PASS
-ChatGPT independently verified:
-- approved candidate: `a19f4721cc7d21229b2f23c380392ca0fc63cb86`
-- production merge/main/deployed: `6ca15958844dace74f7d087a10a3355a6497dd00`
-- GitHub candidate→deployed compare is **1 ahead / 0 behind** and **files=[]**: deployed merge tree is content-identical to the exact approved candidate
-- merge commit explicitly identifies approved Slice-3 candidate and governance approval; no unrelated implementation delta
-- deployment evidence records full exact deployed-tree SCA gate **1367 passed / 1 skipped / 0 failed (7235 assertions)**
-- migration remains **138**, `Nothing to migrate`, 0 pending; no schema change
-- PRE/POST provenance fingerprint unchanged: `d15a5cbdfb8df52ba65628b276533cfe`
-- canonical counts unchanged: `3/3/4/4/5/2/1/1/7`
-- production health: `/admin/login → 200`; app/database containers healthy
-- guest `/collector`, `/collector/submissions`, `/collector/profile`, and `/collector/account` fail closed to `/collector/login`; no production collector/session was fabricated
-- Stripe remains dormant: `STRIPE_ENABLED` unset/default false and `STRIPE_SECRET` absent
-- mail remains `MAIL_MAILER=log`
-- Shopify OAuth remains `SHOPIFY_SCOPES=read_orders`
-- no Caddy/DNS/provider/infrastructure drift.
+## Architecture audit conclusion
+Slice 1 already has the hard domain foundation:
+- append-only `sca_market_reference_events`
+- canonical `MarketReferenceService` with record/supersede/void fold
+- staff current + full audit history
+- current-owner-safe current reference
+- an existing owner-safe `collectorHistory()` projection for historical record/supersede observations
+- public Passport/profile/collection/certificate/QR surfaces deliberately exclude Market Reference.
 
-## Slice 3 closed capability
-Production collector UX now includes:
-- lifecycle-first Authenticate/submission journey over the existing canonical submission/authentication/certification/claim/return semantics
-- truthful collector-facing submission stages without fabricating downstream state
-- explicit declared-vs-authenticated distinction
-- payment remains provider-truthful/dormant and browser return never establishes payment
-- failed/inconclusive, passed-not-certified, certified-pending-grant, claimable and registered-to-you remain distinct
-- physical return remains operationally separate from authentication/certification/ownership
-- private-profile-first Profile experience with a clearly separated optional Public sharing area
-- correct unpublished publication/handle behavior with no advertised resolvable public URLs
-- security-focused Account experience with password/logout and isolated anonymization Danger zone
-- redundant pre-shell navigation removed while existing security/privacy/domain behavior remains unchanged.
+The collector currently consumes only the CURRENT reference through `CollectionService::marketReferenceForOwnedItem()`. The historical owner-safe projection exists but is not wired into the collector detail experience. Slice 2 therefore closes a real product gap without inventing another valuation system.
 
-## Collector Experience / UI 2.0 — initiative closure
-All intentionally scoped collector UX slices are now production-live:
-1. **Slice 1 — Collector Home + persistent authenticated shell:** CLOSED + LIVE.
-2. **Slice 2 — My Collection + Eyewear Detail:** CLOSED + LIVE.
-3. **Slice 3 — Authenticate/Submissions + Profile + Account:** CLOSED + LIVE.
+Marketplace/resale is deliberately NOT part of this slice. Marketplace has materially larger transaction, listing, seller-authority, adverse-status, transfer, payment and dispute architecture and must be audited separately later.
 
-The Collector Experience / UI 2.0 initiative is therefore **CLOSED**. Do not invent Slice 4 automatically.
+## Slice 2 goal
+On an eyewear item the authenticated collector CURRENTLY owns, show a clear **Market Reference history** beneath/adjacent to the existing current advisory reference so the collector can understand how SCA's recorded market observations changed over time.
 
-## Next-step gate
-No new initiative is authorized by this closure. Before implementation resumes, ChatGPT must reassess roadmap priority and architecture-audit the chosen next initiative. Market Reference Slice 2 is a likely candidate, but is **not promoted by this closure**.
+The feature must remain advisory evidence, never an appraisal guarantee, sale offer, asking price, listing price, or automated valuation.
+
+## Required architecture
+
+### 1. One canonical owner-safe history reader
+Use/extend `MarketReferenceService` as the canonical fold/privacy boundary. Do NOT query the ledger ad hoc from Blade.
+
+The collector history DTO must expose only:
+- currency
+- formatted/format-ready low/high range
+- as-of date
+- basis label/value
+- safe source summary only if explicitly justified for collector history
+- a truthful current/historical marker if needed for presentation.
+
+It must NEVER expose:
+- event/internal IDs
+- actor/staff refs
+- supersede/void reasons
+- predecessor IDs
+- source_reference unless architecture explicitly proves it is collector-safe (default: keep excluded)
+- DB timestamps as operational audit data
+- any Shopify/payment/provider/token data.
+
+If distinguishing the current observation from prior observations requires internal event IDs, use them internally inside the canonical service and strip them before returning the collector DTO. Do not infer “current” by comparing value fields because a fresh record after a void may legitimately repeat an earlier value.
+
+### 2. Truthful void semantics
+A void means **there is no current Market Reference**. Historical observations may still be shown as past evidence, but none may be visually or textually represented as current.
+
+Required cases:
+- record only → one current observation
+- record → supersede → latest successor current, predecessor historical
+- record → supersede → void → no current; both observations historical
+- record → void → fresh record → fresh record current; pre-void record historical
+- repeated equivalent values across separate post-void chains must not confuse current identity.
+
+### 3. Collector authorization
+History is available only to the authenticated CURRENT owner using the same canonical ownership boundary as item detail/current Market Reference.
+- non-owner → privacy-safe denial/no confirmation
+- historical owner → no access after transfer
+- guest/staff collector guard boundaries unchanged
+- adverse registry status does not rewrite historical market evidence; follow the existing item-detail authorization/status presentation rather than inventing new ownership semantics.
+
+### 4. Collector UX
+Integrate into the existing Slice-2 Eyewear Detail hierarchy. Preserve the current Market Reference near the asset.
+
+Add a secondary **Value history / Market Reference history** disclosure/section that:
+- is easy to understand on mobile
+- orders observations deterministically, newest first for collector reading
+- clearly labels Current vs Historical where a current reference exists
+- when current is voided, says there is **no current Market Reference** while retaining prior observations as historical evidence
+- retains the existing advisory/non-guarantee wording
+- never implies appreciation, investment return, guaranteed resale value, or a sale price
+- does not expose staff correction/void rationale.
+
+Do not redesign My Collection, Profile, Account, Authenticate, public profile, Passport, or staff Market Reference UI in this slice.
+
+### 5. Optional change indicator — only if semantically safe
+A numeric change/delta may be shown ONLY between adjacent observations of the SAME currency and only if it can be derived without floats or misleading cross-currency comparison. If there is any ambiguity, omit delta entirely. Do not add FX conversion.
+
+### 6. No schema unless STOP
+This slice is expected to need **no migration**. Existing ledger contains the required history.
+
+If implementation concludes a schema change or new authoritative state is necessary, STOP and return to ChatGPT with the architectural reason before implementing it.
+
+## Invariants that MUST NOT change
+- Market Reference remains non-provenance advisory evidence.
+- Existing append-only ledger lifecycle and DB constraints/triggers.
+- Staff record/supersede/void behavior and ACL.
+- current-reference semantics.
+- ownership, authentication, certification, QR, claim, transfer, service history, registry and Shopify state.
+- public Passport/profile/public collection/certificate PDF remain value-free.
+- Stripe/mail/provider/infra unchanged.
+- no automated external market lookup, scraping, AI valuation or marketplace behavior.
+
+## Mandatory tests/evidence
+At minimum prove:
+1. current owner sees owner-safe history.
+2. non-owner and former owner cannot obtain history.
+3. record-only current marker.
+4. supersede marks only latest current and prior historical.
+5. void yields NO current while retaining historical observations.
+6. fresh record after void becomes the only current observation.
+7. repeated equivalent value in a later chain does not cause identity confusion.
+8. newest-first deterministic presentation, including equal timestamp ordering by id internally.
+9. no actor/staff ref, reason, predecessor/internal event id, source_reference, token, Shopify/provider data leaks.
+10. public Passport/public profile/public collection/certificate/QR remain unchanged/value-free.
+11. collector history GET/item detail is zero mutation.
+12. existing Slice-1 Market Reference tests and Collector UI tests remain green.
+13. full `tests/Feature/Sca` gate passes.
+14. no migration; production baseline remains migration 138.
+
+## Delivery discipline
+- Branch from exact production baseline `6ca15958844dace74f7d087a10a3355a6497dd00`. If main moved, STOP.
+- Prefer narrowly scoped changes in `MarketReferenceService`, `CollectionService`, collector item-detail view, and dedicated tests only.
+- Do not alter staff writer semantics merely to support presentation.
+- Do not weaken existing tests.
+- Record exact changed files, focused tests, full SCA totals, privacy proof, zero-mutation proof and no-migration proof.
+- Push candidate only.
+- **Do not merge/deploy. STOP for ChatGPT pre-merge audit.**
 
 
 <!-- Prior status (pre-merge PASS gate for candidate dba6c4d) retained below for traceability. -->
