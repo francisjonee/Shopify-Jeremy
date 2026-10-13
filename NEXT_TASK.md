@@ -1,6 +1,77 @@
 # NEXT TASK
 
-**STATUS: SCA MARKET REFERENCE / VALUE HISTORY — SLICE 1 R1 REMEDIATION PUSHED, AWAITING ChatGPT RE-AUDIT. NEW candidate `23c28ebc78754e82dfc37e082d04ca983dcdc234` (branch `feat/sca-market-reference`, base `b4b51b7`/migration 137, migration 137→138, 1 ahead/0 behind; supersedes FAILED `26a572a`). Blocker A FIXED: trg_mre_bi now enforces full lifecycle validity vs the immutable stream (record only when no current; supersede/void predecessor MUST equal the actual current effective event; fresh record after void still allowed) — raw rows can no longer persist impossible histories. Blocker B FIXED: MarketReferenceService::normAsOfDate strict exact YYYY-MM-DD via createFromFormat round-trip (rejects 2026-02-31 / non-exact; keeps future-tolerance). New tests mr27 (strict dates) + mr28/mr29 (direct-DB lifecycle). Focused 30 passed (incl. real two-connection proof); full `tests/Feature/Sca` 1315 passed / 1 skipped / 0 failed. Prod untouched: FP `d15a5cbd`, counts `3/3/4/4/5/2/1/1/7`, migration 137, market_reference table absent. Evidence: `docs/SCA-MARKET-REFERENCE-SLICE1-IMPLEMENTATION.md`. DO NOT merge/deploy/start another initiative — STOP for R1 re-audit.**
+**STATUS: SCA MARKET REFERENCE / VALUE HISTORY — SLICE 1 R1 RE-AUDIT FAIL R2. Candidate `23c28ebc78754e82dfc37e082d04ca983dcdc234` is NOT approved for merge/deploy. Production remains `b4b51b7bb0244da6e1624c1095239c80cc206bb9` / migration 137. R1 strict-date remediation is accepted. R1 DB lifecycle enforcement is substantively correct but has one remaining timestamp/order integrity hole. Remediate ONLY that hole, push a NEW candidate, update evidence, then STOP for ChatGPT R2 re-audit.**
+
+## ChatGPT independent R1 re-audit
+Verified actual GitHub candidate:
+- exact production base `b4b51b7bb0244da6e1624c1095239c80cc206bb9`
+- candidate `23c28ebc78754e82dfc37e082d04ca983dcdc234`
+- exactly 1 commit ahead / 0 behind base
+- rewritten single candidate commit relative to prior failed SHA is acceptable
+- accepted Slice-1 architecture remains intact.
+
+### R1 blocker B — CLOSED
+`MarketReferenceService::normAsOfDate()` now:
+- requires exact `YYYY-MM-DD`;
+- uses strict createFromFormat + exact round-trip;
+- rejects impossible/non-exact dates;
+- retains future tolerance.
+
+`mr27` directly exercises the production service and proves impossible/non-exact rejection, valid leap date, zero invalid writes, and preserved future rejection.
+
+Do not change this area in R2.
+
+### R1 blocker A — PARTIALLY CLOSED; narrow R2 remains
+`trg_mre_bi` now correctly derives the existing stream's current event by `(created_at,id)` and rejects:
+- record while a current exists;
+- supersede whose predecessor is not the existing current;
+- void whose predecessor is not the existing current;
+- cross-item predecessors.
+
+The direct-DB tests genuinely prove those normal-order cases.
+
+## R2 blocker — NEW row can be backdated behind the event it supersedes/voids
+The canonical fold order is `(created_at,id)`. The BEFORE INSERT trigger validates lifecycle against the stream **before** NEW is inserted, but it does not constrain NEW.created_at relative to the existing last event.
+
+Therefore a raw insert can:
+1. have current `e1`;
+2. insert a structurally valid `supersede e2 -> e1` with `NEW.created_at < e1.created_at`;
+3. pass the trigger because e1 is current before the insert;
+4. after insertion, canonical `foldCurrent()` orders e2 before e1, so e1 remains effective even though immutable e2 says it supersedes e1.
+
+The same ordering defect applies to a backdated void. It also allows a fresh record inserted after a void to be backdated before that void, so the trigger accepts it while the fold still ends at the void.
+
+This means the DB still permits immutable lifecycle evidence whose predecessor/action semantics disagree with the canonical fold.
+
+### Required R2 remediation
+At the DB insert boundary, guarantee that every newly appended market-reference event sorts after the existing last event for that item under the canonical `(created_at,id)` ordering.
+
+A narrow acceptable implementation is to reject a NEW row whose `created_at` is earlier than the existing last event's `created_at`. Equal timestamps are valid because the auto-increment NEW id sorts after the prior id.
+
+Preserve:
+- canonical fold order `(created_at,id)`;
+- service-created `now()` timestamps;
+- current lifecycle trigger logic;
+- append-only semantics;
+- all accepted R1 behavior.
+
+Do not redesign the ledger or change the product policy.
+
+### Mandatory R2 direct-DB proof
+Add raw DB tests showing:
+1. backdated supersede of the actual current event is rejected;
+2. backdated void of the actual current event is rejected;
+3. after a valid void, a backdated fresh record that would sort before the void is rejected;
+4. equal-timestamp valid successor remains accepted and becomes current by higher id;
+5. normal service record/supersede/void remains unchanged.
+
+For accepted inserts, assert the canonical `currentReference()` result agrees with the lifecycle action/predecessor.
+
+Re-run focused MarketReference tests including the real two-connection concurrency test and full `tests/Feature/Sca`.
+
+Update `docs/SCA-MARKET-REFERENCE-SLICE1-IMPLEMENTATION.md` with R2 evidence, push a NEW candidate SHA, and STOP.
+
+**DO NOT merge. DO NOT deploy. DO NOT begin another initiative.**
 
 <!-- Prior status (pre-merge FAIL R1 of candidate 26a572a) retained below for traceability. -->
 
