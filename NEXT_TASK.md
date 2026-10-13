@@ -1,6 +1,8 @@
 # NEXT TASK
 
-**STATUS: SERVICE HISTORY CORRECTION & ANNOTATION — PRE-MERGE AUDIT PASS. R1 + R2 CLOSED. Exact approved candidate: `2d578feb5f429d9e7549d968c21fbfc879ba0885`, based on production `9bc0907c486688c7acd0d22ad2ee9f5db37d93bb` / migration 136. Candidate is approved for controlled merge/deployment ONLY under the gate below. Initiative remains OPEN until ChatGPT independently audits deployed production and records post-deployment PASS.**
+**STATUS: SERVICE HISTORY CORRECTION & ANNOTATION — DEPLOYED to production, AWAITING ChatGPT POST-DEPLOYMENT audit. Approved candidate `2d578feb` merged `--no-ff` into main (merge=main=deployed SHA `b4b51b7bb0244da6e1624c1095239c80cc206bb9`, tree byte-identical to candidate); migration 136→137 applied. Full merge-tree SCA gate 1285 passed / 1 skipped / 0 failed (two prior gate runs aborted before migrate on documented unrelated QR flakes rg8/rg2 — prod stayed at 136; third run clean). Schema verified (table + 9 CHECKs + 3 triggers + 2 indexes + 2 FKs). PRE==POST: prov FP `d15a5cbd`, counts `3/3/4/4/5/2/1/1/7`, service_events 0, corrections 0 (new table empty — no fabricated evidence). Boundary smoke fail-closed (302/419, 0 mutations); kr-app loopback-only; no Caddy/DNS/Shopify-OAuth(read_orders)/Stripe(dormant)/SMTP(log) change. Evidence: `docs/SCA-SERVICE-CORRECTION-DEPLOY-RESULT.md`. Initiative remains OPEN — do NOT declare closed, do NOT start another initiative; STOP for post-deployment audit.**
+
+<!-- Prior status (pre-merge PASS gate for candidate 2d578feb) retained below for traceability. -->
 
 ### ChatGPT pre-merge audit verdict
 **PASS.** Actual GitHub candidate `2d578feb5f429d9e7549d968c21fbfc879ba0885` satisfies the promoted Service History Correction & Annotation architecture after R1/R2 remediation.
