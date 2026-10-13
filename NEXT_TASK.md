@@ -1,6 +1,40 @@
 # NEXT TASK
 
-**STATUS: COLLECTOR EXPERIENCE / UI 2.0 — SLICE 2 DEPLOYED to production, AWAITING ChatGPT POST-DEPLOYMENT audit. Approved candidate `dba6c4d` merged `--no-ff` into main. MERGE_SHA=ORIGIN_MAIN=DEPLOYED_HEAD=`ffef6dedfdd21d865c73bb809bf81c917b367dda` (tree byte-identical to candidate). No migration (stays 138; `Nothing to migrate`). Full merge-tree SCA gate 1347 passed / 1 skipped / 0 failed (7041 assertions, clean first run). PRE==POST: prov FP `d15a5cbd`, counts `3/3/4/4/5/2/1/1/7`, migration 138. Smoke: /admin/login 200, guest /collector + /collector/collection → /collector/login (shell boundary); authenticated index/detail + shell proven by the deployed gate. No Caddy/DNS/Shopify-OAuth(read_orders)/Stripe(dormant)/SMTP(log) drift; kr-app loopback-only; sr-caddy not recreated. Evidence: `docs/SCA-COLLECTOR-UI2-SLICE2-DEPLOY-RESULT.md`. Slice 2 NOT declared closed; do NOT start another initiative; STOP for post-deployment audit.**
+**STATUS: COLLECTOR EXPERIENCE / UI 2.0 — SLICE 2 CLOSED + LIVE. ChatGPT independent post-deployment audit PASS. Production/main/deployed = `ffef6dedfdd21d865c73bb809bf81c917b367dda`, migration 138. Do not begin another initiative until the next scope is architecture-audited and explicitly promoted.**
+
+## Post-deployment audit — PASS
+ChatGPT independently verified:
+- approved candidate: `dba6c4d7b83b674615f461d081f64d9c07e2077d`
+- production merge/main/deployed: `ffef6dedfdd21d865c73bb809bf81c917b367dda`
+- GitHub candidate→deployed compare is **1 ahead / 0 behind** and **files=[]**: deployed merge tree is content-identical to the exact approved candidate
+- merge commit message identifies the approved Slice-2 candidate and governance approval; no unrelated implementation delta
+- deployment evidence records full exact merge-tree SCA gate **1347 passed / 1 skipped / 0 failed (7041 assertions)**, clean first run
+- migration remains **138**, `Nothing to migrate`; no schema change
+- PRE/POST provenance fingerprint unchanged: `d15a5cbdfb8df52ba65628b276533cfe`
+- canonical counts unchanged: `3/3/4/4/5/2/1/1/7`
+- production smoke: `/admin/login → 200`; guest `/collector` and `/collector/collection` fail closed to `/collector/login`
+- authenticated Collection index/detail + Slice-1 shell behavior are covered by the exact deployed merge-tree gate without fabricating production collector/session data
+- app remains loopback-only; no Caddy/DNS drift
+- Shopify OAuth remains `read_orders`
+- mail remains `log`
+- Stripe remains dormant
+- no provider/infrastructure drift.
+
+## Closed Slice-2 capability
+Collector Experience / UI 2.0 Slice 2 is production-live:
+- My Collection is browse-first with responsive asset cards and preserved search/filter/sort/private-group context
+- collection administration is secondary under Manage collections
+- Eyewear Detail is asset-first: gallery + brand/model + SCA ref + current trusted state lead
+- current owner-safe Market Reference is surfaced near the asset with advisory/non-guarantee semantics
+- Passport and normal Transfer actions remain eligibility-bound
+- Lost/Stolen/Recovered safety controls are visually separated from ordinary ownership actions
+- public-profile visibility and private organization are secondary item controls
+- owner/privacy/image/document/provenance/domain invariants remain unchanged.
+
+**SLICE 2 IS CLOSED.**
+
+No Slice 3 or other initiative is authorized by this closure. The next step is an architecture audit/priority decision before writing another implementation task.
+
 
 <!-- Prior status (pre-merge PASS gate for candidate dba6c4d) retained below for traceability. -->
 
