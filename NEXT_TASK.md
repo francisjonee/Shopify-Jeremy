@@ -1,6 +1,9 @@
 # NEXT TASK
 
-**STATUS: POST-SERVICE-CORRECTION ARCHITECTURE AUDIT COMPLETE — PROMOTED: SCA MARKET REFERENCE / VALUE HISTORY — SLICE 1. Implement on a NEW branch from exact production baseline `b4b51b7bb0244da6e1624c1095239c80cc206bb9` / migration 137. Do not merge/deploy. STOP for ChatGPT pre-merge audit.**
+**STATUS: SCA MARKET REFERENCE / VALUE HISTORY — SLICE 1 CANDIDATE PUSHED, AWAITING ChatGPT PRE-MERGE AUDIT. Branch `feat/sca-market-reference`, base `b4b51b7`/migration 137, candidate SHA `26a572a4c60e8a0820de24ca62582df38389a6c9`, migration 137→138 (one commit ahead, 17 files). Append-only advisory NON-provenance Market Reference ledger (record/supersede/void; integer minor-unit range; USD/PHP; basis enum; as-of; deterministic one-current fold; item-state lock + optimistic STALE; dedicated ACL sca.eyewear.market_reference.manage; staff + current-owner only; public Passport/profile/collection/cert/QR excluded). Focused 27 passed (incl. real two-connection proof); full `tests/Feature/Sca` 1312 passed / 1 skipped / 0 failed. Prod untouched: FP `d15a5cbd`, counts `3/3/4/4/5/2/1/1/7`, migration 137, market_reference table absent. Evidence: `docs/SCA-MARKET-REFERENCE-SLICE1-IMPLEMENTATION.md`. DO NOT merge/deploy/begin automated pricing/public value/resale/another initiative — STOP for pre-merge audit.**
+
+<!-- Promotion spec for Slice 1 (implemented by candidate 26a572a) retained below. -->
+### Promoted: SCA MARKET REFERENCE / VALUE HISTORY — SLICE 1 (base b4b51b7 / migration 137)
 
 ## Architecture audit conclusion
 Production currently has **no valuation / appraisal / market-price subsystem**. Existing boundaries already establish the correct placement:
