@@ -1,6 +1,8 @@
 # NEXT TASK
 
-**STATUS: COLLECTOR EXPERIENCE / UI 2.0 — SLICE 2 PRE-MERGE AUDIT PASS. Candidate `dba6c4d7b83b674615f461d081f64d9c07e2077d` is APPROVED for controlled merge/deployment only. Production baseline audited: `e20e549948ecbf5c967d48a7444275280dafb97c`, migration 138. Slice 2 is NOT CLOSED until ChatGPT independently audits post-deployment evidence. Do not start another initiative.**
+**STATUS: COLLECTOR EXPERIENCE / UI 2.0 — SLICE 2 DEPLOYED to production, AWAITING ChatGPT POST-DEPLOYMENT audit. Approved candidate `dba6c4d` merged `--no-ff` into main. MERGE_SHA=ORIGIN_MAIN=DEPLOYED_HEAD=`ffef6dedfdd21d865c73bb809bf81c917b367dda` (tree byte-identical to candidate). No migration (stays 138; `Nothing to migrate`). Full merge-tree SCA gate 1347 passed / 1 skipped / 0 failed (7041 assertions, clean first run). PRE==POST: prov FP `d15a5cbd`, counts `3/3/4/4/5/2/1/1/7`, migration 138. Smoke: /admin/login 200, guest /collector + /collector/collection → /collector/login (shell boundary); authenticated index/detail + shell proven by the deployed gate. No Caddy/DNS/Shopify-OAuth(read_orders)/Stripe(dormant)/SMTP(log) drift; kr-app loopback-only; sr-caddy not recreated. Evidence: `docs/SCA-COLLECTOR-UI2-SLICE2-DEPLOY-RESULT.md`. Slice 2 NOT declared closed; do NOT start another initiative; STOP for post-deployment audit.**
+
+<!-- Prior status (pre-merge PASS gate for candidate dba6c4d) retained below for traceability. -->
 
 ## ChatGPT pre-merge audit verdict — PASS
 Independent GitHub audit verified:
