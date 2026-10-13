@@ -1,6 +1,49 @@
 # NEXT TASK
 
-**STATUS: SCA MARKET REFERENCE / VALUE HISTORY — SLICE 1 DEPLOYED to production, AWAITING ChatGPT POST-DEPLOYMENT audit. Approved candidate `d880e12` merged `--no-ff` into main (merge=main=deployed SHA `9cf72728248cf3e36d0525de4520d69717dacd5d`, tree byte-identical to candidate); migration 137→138 applied. Full merge-tree SCA gate 1320 passed / 1 skipped / 0 failed (clean first run, no flakes). Schema verified: sca_market_reference_events + 9 CHECKs + 3 triggers (no_update/no_delete + trg_mre_bi same-item/lifecycle/monotonic BEFORE INSERT) + 3 FKs (item + 2 self) + indexes. PRE==POST: prov FP `d15a5cbd`, counts `3/3/4/4/5/2/1/1/7`, service_events 0, service_corrections 0; new ledger present with 0 rows (no fabricated evidence). Boundary smoke fail-closed (302/419, 0 rows); kr-app loopback-only; no Caddy/DNS/Shopify-OAuth(read_orders)/Stripe(dormant)/SMTP(log) change. Evidence: `docs/SCA-MARKET-REFERENCE-SLICE1-DEPLOY-RESULT.md`. Slice 1 remains OPEN — do NOT declare closed, do NOT start automated pricing/public value/resale/another initiative; STOP for post-deployment audit.**
+**STATUS: SCA MARKET REFERENCE / VALUE HISTORY — SLICE 1 POST-DEPLOYMENT AUDIT PASS / CLOSED + LIVE.**
+
+## ChatGPT independent post-deployment audit
+**PASS — Slice 1 is CLOSED and LIVE.**
+
+Authoritative production state:
+- approved candidate: `d880e128e0713d60e42a2d821206cf663c09be43`
+- merge = main = deployed: `9cf72728248cf3e36d0525de4520d69717dacd5d`
+- production migration: **138**
+- candidate→deployed compare: exactly **1 merge commit ahead / 0 behind / files=[]**; deployed tree is content-identical to the exact pre-merge-approved candidate
+- exact merge-tree SCA gate: **1320 passed / 1 skipped / 0 failed**, clean first run
+- deployment evidence: `docs/SCA-MARKET-REFERENCE-SLICE1-DEPLOY-RESULT.md`
+
+Production schema evidence accepted:
+- `sca_market_reference_events` present
+- 9 CHECK constraints
+- 3 triggers: append-only UPDATE/DELETE + BEFORE INSERT same-item predecessor/lifecycle/monotonic append order
+- expected item + two self RESTRICT FKs
+- expected indexes
+- ledger contains **0 rows** after safe smoke; no fabricated production Market Reference evidence.
+
+PRE→POST invariants accepted:
+- provenance fingerprint unchanged: `d15a5cbdfb8df52ba65628b276533cfe`
+- canonical counts unchanged: `3/3/4/4/5/2/1/1/7`
+- service events 0→0
+- service corrections 0→0
+- no unexpected ownership/current-state/authentication/certification/PDF/snapshot/QR/status/claim/transfer/Shopify/collector/service mutation.
+
+Production boundary/integration evidence accepted:
+- app/admin healthy
+- Market Reference routes registered
+- unauthenticated GET staff-gated 302→login
+- unauthenticated POST fails CSRF 419
+- smoke leaves ledger at 0 rows
+- kr-app remains loopback-only
+- no Caddy/DNS change
+- Shopify OAuth remains `read_orders`
+- Stripe remains dormant
+- mail remains `log`.
+
+### Closure invariant
+Market Reference is live as an **append-only advisory non-provenance domain**, private to authorized staff/current owner in Slice 1. It is not authentication/certification evidence, not guaranteed sale value, and not a provenance/current-state writer.
+
+**Do not further modify Slice 1 unless a separately audited defect/remediation is opened. Do not automatically start automated pricing, public value exposure, resale/marketplace, analytics, notifications, SMTP activation, backup work, or another initiative from this closure. The next initiative must be separately selected and architecture-audited before promotion.**
 
 <!-- Prior status (pre-merge PASS gate for candidate d880e12) retained below for traceability. -->
 
