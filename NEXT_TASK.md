@@ -1,6 +1,8 @@
 # NEXT TASK
 
-**STATUS: SCA MARKET REFERENCE / VALUE HISTORY — SLICE 1 PRE-MERGE AUDIT PASS. R1 + R2 CLOSED. Exact approved candidate: `d880e128e0713d60e42a2d821206cf663c09be43`, based on production `b4b51b7bb0244da6e1624c1095239c80cc206bb9` / migration 137. Candidate is approved for controlled merge/deployment ONLY under the gate below. Initiative remains OPEN until ChatGPT independently audits deployed production and records post-deployment PASS.**
+**STATUS: SCA MARKET REFERENCE / VALUE HISTORY — SLICE 1 DEPLOYED to production, AWAITING ChatGPT POST-DEPLOYMENT audit. Approved candidate `d880e12` merged `--no-ff` into main (merge=main=deployed SHA `9cf72728248cf3e36d0525de4520d69717dacd5d`, tree byte-identical to candidate); migration 137→138 applied. Full merge-tree SCA gate 1320 passed / 1 skipped / 0 failed (clean first run, no flakes). Schema verified: sca_market_reference_events + 9 CHECKs + 3 triggers (no_update/no_delete + trg_mre_bi same-item/lifecycle/monotonic BEFORE INSERT) + 3 FKs (item + 2 self) + indexes. PRE==POST: prov FP `d15a5cbd`, counts `3/3/4/4/5/2/1/1/7`, service_events 0, service_corrections 0; new ledger present with 0 rows (no fabricated evidence). Boundary smoke fail-closed (302/419, 0 rows); kr-app loopback-only; no Caddy/DNS/Shopify-OAuth(read_orders)/Stripe(dormant)/SMTP(log) change. Evidence: `docs/SCA-MARKET-REFERENCE-SLICE1-DEPLOY-RESULT.md`. Slice 1 remains OPEN — do NOT declare closed, do NOT start automated pricing/public value/resale/another initiative; STOP for post-deployment audit.**
+
+<!-- Prior status (pre-merge PASS gate for candidate d880e12) retained below for traceability. -->
 
 ## ChatGPT pre-merge audit verdict
 **PASS.**
