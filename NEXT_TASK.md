@@ -1,43 +1,173 @@
 # NEXT TASK
 
-**STATUS: SERVICE HISTORY CORRECTION & ANNOTATION — POST-DEPLOYMENT AUDIT PASS / CLOSED.**
+**STATUS: POST-SERVICE-CORRECTION ARCHITECTURE AUDIT COMPLETE — PROMOTED: SCA MARKET REFERENCE / VALUE HISTORY — SLICE 1. Implement on a NEW branch from exact production baseline `b4b51b7bb0244da6e1624c1095239c80cc206bb9` / migration 137. Do not merge/deploy. STOP for ChatGPT pre-merge audit.**
 
-ChatGPT independently audited the deployed production result against the exact pre-merge-approved candidate.
+## Architecture audit conclusion
+Production currently has **no valuation / appraisal / market-price subsystem**. Existing boundaries already establish the correct placement:
+- identity metadata belongs to `sca_eyewear_items` plus governed metadata-correction evidence;
+- certification snapshots freeze certificate render facts and must remain valuation-neutral;
+- My Collection membership derives only from canonical current ownership;
+- public Passport uses an explicit privacy allowlist;
+- presentation/catalog state is deliberately separate from provenance.
 
-### Authoritative closure
-- Approved candidate: `2d578feb5f429d9e7549d968c21fbfc879ba0885`
-- Production base before deployment: `9bc0907c486688c7acd0d22ad2ee9f5db37d93bb`
-- Merge = main = deployed: `b4b51b7bb0244da6e1624c1095239c80cc206bb9`
-- Production migration: **137**
-- Deployment evidence: `docs/SCA-SERVICE-CORRECTION-DEPLOY-RESULT.md`
-- Governance deployment evidence commit: `947a88b`
+Therefore market/value information MUST be a separate append-only, non-provenance domain. Do **not** add mutable `estimated_value` columns to `sca_eyewear_items`; do not derive value from certification/authentication; do not mutate certificate PDF/snapshots; do not treat value as proof of authenticity, ownership, title, or guaranteed sale price.
 
-### Independent post-deployment findings
-**PASS.**
-- GitHub candidate→deployed comparison is exactly 1 commit ahead / 0 behind with **files=[]**: merge tree is content-identical to approved candidate.
-- Deployed commit is the expected auditable merge of the approved Service History Correction candidate.
-- Exact merge-tree full SCA gate recorded as **1285 passed / 1 skipped / 0 failed**. Two earlier runs aborted before migration on known unrelated QR flakes; evidence confirms production remained at migration 136 until the clean gate.
-- Migration **136→137** applied.
-- Production schema evidence matches approved migration: `sca_service_event_corrections` present with 9 CHECK constraints, 3 triggers, 2 secondary indexes + PK, and 2 RESTRICT FKs.
-- New correction ledger contained **0 rows** after deploy; no fabricated production evidence.
-- `sca_service_events` remained **0→0**.
-- Reproducible provenance fingerprint remained byte-identical: `d15a5cbdfb8df52ba65628b276533cfe`.
-- Canonical provenance counts remained `3/3/4/4/5/2/1/1/7`.
-- Production-safe route/auth/CSRF smoke was fail-closed and created zero correction rows.
-- kr-app remains loopback-only.
-- No Caddy/DNS change.
-- Shopify OAuth remains `read_orders`.
-- Stripe remains dormant.
-- Mail remains `log`.
-- `ServiceService::record()` and `ProjectionService::rebuild()` remained outside this slice.
-- Core invariant preserved: original service events remain permanent evidence; correction/annotation/void are append-only overlay evidence and do not mutate provenance/current-state ledgers.
+### Product policy for Slice 1
+Name the feature **Market Reference** (not “official appraisal” and not “AI valuation”).
 
-### Closure decision
-**SCA Service History Correction & Annotation is CLOSED and LIVE in production.**
+A Market Reference is a dated staff-curated estimate/reference for one eyewear item. It may be based on documented market observations/comparables or another staff-entered basis, but SCA does not guarantee a future sale price.
 
-Do not perform further work on this initiative unless a separately audited defect/remediation is opened.
+**Slice 1 visibility:** staff + CURRENT canonical owner only. **No public Passport exposure, no CP-3/CP-4 public profile exposure, no certificate/PDF exposure, no marketplace/resale integration.** Public exposure is a later separately audited decision.
 
-**Do not automatically begin another initiative. The next product initiative must first be selected and architecture-audited before implementation is promoted.**
+### Core invariant
+**Market Reference is advisory non-provenance evidence. Recording, superseding, correcting, or voiding a Market Reference MUST NOT mutate item identity, authentication, certification/snapshot/PDF, QR, ownership, claim/transfer, registry status, service history, Shopify sale links, collector account state, or `sca_item_current_state`.**
+
+## Required Slice 1 model
+Expected migration: **137→138**.
+
+Create one dedicated append-only ledger, e.g. `sca_market_reference_events`. Do not create a mutable current-value column/table that becomes a second authority.
+
+Each immutable event is bound to exactly one eyewear item and represents one of:
+- `record` — a new market-reference observation;
+- `supersede` — a new observation replacing the previously-current observation while preserving all history;
+- `void` — terminally removes an erroneous current observation from effective display without deleting it.
+
+Do not implement in-place UPDATE/DELETE. DB triggers must block UPDATE/DELETE.
+
+### Market Reference fields
+For a record/supersede, store bounded structured data:
+- `currency` — ISO-style 3-letter uppercase code; Slice 1 allowlist at minimum USD and PHP. Prefer a small explicit application/DB allowlist rather than arbitrary text.
+- `low_amount_minor` — non-negative integer minor units.
+- `high_amount_minor` — non-negative integer minor units; MUST be >= low.
+- `as_of_date` — date of the market observation, not future beyond a small clock-tolerance policy.
+- `basis` — bounded enum. Use a conservative allowlist such as `comparable_sales`, `market_observation`, `documented_appraisal`, `other`.
+- `source_summary` — bounded staff-entered explanation of evidence/basis. Required for record/supersede.
+- optional `source_reference` — bounded human-readable citation/reference. Do not fetch arbitrary URLs, scrape providers, or call external pricing APIs in Slice 1.
+- `reason` — required for supersede/void, explaining why the prior effective observation is being replaced/voided.
+- `actor_staff_ref` — server-derived only.
+- immutable `created_at`.
+- explicit predecessor linkage for supersede/void (e.g. `supersedes_event_id` / `voids_event_id`) bound to the same item.
+
+Do not store floats/decimals as the authoritative amount. Use integer minor units. Validate reasonable upper bounds to prevent overflow/nonsense.
+
+### Effective-history semantics
+Implement ONE canonical MarketReferenceService as sole writer + canonical reader.
+- deterministic order by `(created_at,id)`;
+- at most one effective current reference per item;
+- first event must be `record`;
+- `supersede` must target the current effective event and atomically makes the new observation current;
+- `void` must target the current effective event and leaves no current reference;
+- no supersede/void of a historical/non-current target;
+- after void, a later fresh `record` MAY start a new reference chain; history remains auditable;
+- duplicate/replay/stale submissions fail closed and do not create ambiguous current state.
+
+Use the established item serialization boundary: lock `sca_item_current_state` FOR UPDATE, resolve item and current reference under lock, and use an optimistic freshness token (event count or exact current event identity) from the staff confirmation screen. Concurrent writes must deterministically yield one winner and one STALE/rejection, not two currents.
+
+DB integrity must enforce same-item predecessor linkage and append-only behavior. Prefer CHECKs/triggers so malformed raw rows cannot create impossible event types/ranges/currency/binding.
+
+### Staff workflow
+Add a dedicated ACL, e.g. `sca.eyewear.market_reference.manage`, separate from ordinary item view/catalog/metadata permissions.
+
+On staff item detail:
+- show current Market Reference, if any;
+- show full chronological audit history;
+- show currency + low/high range + as-of date + basis + source summary/reference;
+- show actor/time/reason for supersede/void;
+- provide explicit Record / Supersede / Void controls only to the dedicated ACL;
+- no generic edit/delete UI;
+- POST mutation must be staff-authenticated, CSRF-protected and reasonably throttled;
+- target item/event IDs resolved/revalidated server-side; no client-supplied actor.
+
+Use clear language: **“Market Reference”** and a short disclaimer such as “Informational estimate based on recorded market evidence; not a guarantee of sale price.” Do not label ordinary records “appraisals.” `documented_appraisal` basis may be displayed as “Documented appraisal” only when staff explicitly selected that basis.
+
+### Collector workflow
+Current canonical owner may see the **effective current Market Reference** on the private My Collection item detail:
+- range, currency, as-of date, basis, and a safe source summary;
+- clear informational/non-guarantee wording;
+- optional safe history of prior reference ranges/dates may be included if it contains no staff/internal audit data.
+
+Collector MUST NOT receive:
+- actor/staff refs;
+- correction/void reasons;
+- internal DB ids/predecessor ids;
+- other collectors;
+- Shopify data;
+- raw security tokens;
+- staff-only source details if a separate staff-only source field is used.
+
+Previous owner/non-owner/unauthenticated user gets no Market Reference through collector routes.
+
+### Public/privacy boundary
+Slice 1 MUST leave unchanged:
+- public Passport;
+- public collector profile / public collection;
+- certificate PDF;
+- QR payload/resolution.
+
+Add explicit regression tests proving market value text/amounts do not appear on those public surfaces.
+
+### No automatic pricing in Slice 1
+Do NOT:
+- call AI to invent a value;
+- scrape marketplaces;
+- integrate eBay/StockX/other providers;
+- infer price from brand/model alone;
+- copy Shopify order price into Market Reference automatically;
+- compute value from authentication grade as an authoritative formula.
+
+Those require a later data-source/reliability architecture audit.
+
+## Fail-closed requirements
+- missing/wrong item or predecessor → zero write;
+- invalid/stale current reference token → STALE/zero write;
+- invalid currency/range/date/basis/text → zero write;
+- low > high → zero write;
+- negative/overflow amount → zero write;
+- supersede/void non-current historical event → zero write;
+- first event supersede/void → zero write;
+- exact duplicate/no-op supersede → NOOP/zero write;
+- DB failure → no partial rows;
+- direct UPDATE/DELETE blocked;
+- cross-item predecessor binding blocked at DB boundary;
+- zero mutation of all provenance/current-state domains.
+
+## Mandatory tests
+1. first record creates one immutable reference and becomes current.
+2. record validates integer minor units and renders currency correctly.
+3. low > high, negative, overflow, bad currency/basis/date/text fail closed.
+4. supersede appends new evidence; original byte-identical; new reference current.
+5. supersede chronology deterministic and predecessor exact.
+6. exact duplicate/no-op supersede rejected.
+7. void current reference appends evidence and removes effective current display; original/history retained.
+8. cannot supersede/void historical non-current target.
+9. after void, fresh record can start a new chain without rewriting history.
+10. wrong-item/cross-item predecessor rejected in service AND DB.
+11. optimistic stale token rejects concurrent second writer with zero partial state.
+12. real two-connection concurrency proof using production service.
+13. actor is server-derived/authenticated staff.
+14. dedicated ACL: view-only/catalog/metadata staff cannot mutate market references.
+15. staff history shows actor/time/reason and full evidence.
+16. current owner sees safe current reference; previous/non-owner/unauth denied.
+17. collector output leaks no staff refs/reasons/internal ids/security/Shopify data.
+18. public Passport contains no market reference/value.
+19. public profile/public collection contain no market reference/value.
+20. certificate PDF/snapshot and QR remain unchanged.
+21. DB UPDATE/DELETE ledger rows blocked.
+22. malformed raw rows / cross-item predecessor / impossible disposition-range combinations blocked at DB boundary.
+23. zero mutation of ownership/current-state/auth/cert/QR/status/claim/transfer/service/Shopify; reproduce provenance fingerprint/count gate.
+24. existing metadata, certification, collector, passport, service-history tests remain green.
+25. full `tests/Feature/Sca` green.
+
+## Delivery contract
+- NEW branch from exact production `b4b51b7bb0244da6e1624c1095239c80cc206bb9`.
+- Expected migration 137→138.
+- One substantial implementation slice; do not split into microtasks unless a real architecture blocker is discovered.
+- Add focused Market Reference + real concurrency tests.
+- Run relevant regressions + full `tests/Feature/Sca`.
+- Produce governance implementation evidence mapping schema, event semantics, DB constraints/triggers, ACL/routes, concurrency, staff/collector/public privacy, tests and zero-provenance proof.
+- Push candidate + governance evidence.
+- **DO NOT merge. DO NOT deploy. DO NOT begin automated pricing, public value exposure, resale/marketplace, or another initiative.**
+- STOP for ChatGPT pre-merge audit.
 
 <!-- Prior status (pre-merge PASS gate for candidate 2d578feb) retained below for traceability. -->
 
