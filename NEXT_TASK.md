@@ -1,6 +1,8 @@
 # NEXT TASK
 
-**STATUS: COLLECTOR EXPERIENCE / UI 2.0 — SLICE 1 PRE-MERGE AUDIT FAIL R1 (narrow truthfulness defect). Candidate `b69824f712ede30c159c444b7ca41946f05b7332` is NOT approved for merge/deploy. Production remains `9cf72728248cf3e36d0525de4520d69717dacd5d` / migration 138. Preserve all accepted shell/Home/security/privacy work; remediate only the submission-progress projection + proof below.**
+**STATUS: COLLECTOR EXPERIENCE / UI 2.0 — SLICE 1 R1 REMEDIATION PUSHED, AWAITING ChatGPT RE-AUDIT. NEW candidate `0c8628d352f9a0fb843774bff5281bc808a9248c` (branch `feat/sca-collector-ui2-slice1`, base `9cf7272`/migration 138, NO migration, 1 ahead/0 behind; supersedes FAILED `b69824f`). R1 fix = truthful submission-progress summary: projected only from canonical submission status into exactly-true labels — "Awaiting receipt by SCA" (draft/submitted/awaiting_item) + "Received & being processed" (received, shown as its OWN active category, never completed/inactive); cancelled only in total. No downstream/result/payment invention, no new state. All accepted shell/Home/nav/privacy/image/route/domain work unchanged. New tests ce12 (status matrix) / ce13 (received active across bound-item stages) / ce14 (received+failed still processing) / ce15 (cross-collector scoping); ce8 relabeled. Focused 21 passed; full `tests/Feature/Sca` 1335 passed / 1 skipped / 0 failed. Prod untouched: FP `d15a5cbd`, counts `3/3/4/4/5/2/1/1/7`, migration 138. Evidence: `docs/SCA-COLLECTOR-UI2-SLICE1-IMPLEMENTATION.md`. DO NOT merge/deploy/start another initiative — STOP for R1 re-audit.**
+
+<!-- Prior status (pre-merge FAIL R1 of candidate b69824f) retained below for traceability. -->
 
 ## ChatGPT independent audit
 Verified actual GitHub candidate:

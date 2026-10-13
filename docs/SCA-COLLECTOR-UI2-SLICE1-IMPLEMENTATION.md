@@ -1,18 +1,38 @@
-# SCA Collector Experience / UI 2.0 — Slice 1 Implementation Evidence (pre-merge)
+# SCA Collector Experience / UI 2.0 — Slice 1 Implementation Evidence (pre-merge, R1)
 
-**Status:** CANDIDATE pushed — awaiting ChatGPT pre-merge audit. NOT merged, NOT deployed. Presentation / navigation / read-model only; **no migration**, no new domain capability.
+**Status:** R1 REMEDIATION pushed — awaiting ChatGPT re-audit. NOT merged, NOT deployed. Presentation / navigation / read-model only; **no migration**, no new domain capability.
 
 | | |
 |---|---|
 | Governance promotion | `6e8cf9fd72c1c7d46b9091df679071bcd09696d9` |
+| Pre-merge audit (FAIL R1) | `5a04ae1062702b7e458784f882f2c6464cbb1d8c` |
 | Implementation branch | `feat/sca-collector-ui2-slice1` (one commit ahead of base, 0 behind) |
 | Exact production base SHA | `9cf72728248cf3e36d0525de4520d69717dacd5d` (migration 138) |
-| Candidate SHA | `b69824f712ede30c159c444b7ca41946f05b7332` |
+| Prior candidate (FAILED R1) | `b69824f712ede30c159c444b7ca41946f05b7332` |
+| **NEW candidate SHA** | **`0c8628d352f9a0fb843774bff5281bc808a9248c`** |
 | Migration | **none** (138 unchanged — read-model/presentation only) |
-| Changed files vs base | 7 (493 insertions, 16 deletions) |
-| Focused tests | `CollectorExperienceTest` 11 + `AppPolishTest` 6 (p6 updated) → **17 passed** |
-| Full `tests/Feature/Sca` | **1331 passed / 1 skipped / 0 failed** |
+| Focused tests | `CollectorExperienceTest` 15 + `AppPolishTest` 6 (p6 updated) → **21 passed** |
+| Full `tests/Feature/Sca` | **1335 passed / 1 skipped / 0 failed** |
 | Production provenance FP (unchanged) | `d15a5cbdfb8df52ba65628b276533cfe`, counts `3/3/4/4/5/2/1/1/7`, migration 138 |
+
+## R1 remediation — truthful submission-progress summary (only this changed)
+The accepted shell / Home architecture / navigation / ownership scoping / privacy / images / routes / domain behavior are **unchanged**. The sole fix is Home's user-visible submission metric.
+
+**Defect:** the metric labelled "In progress" counted only `draft/submitted/awaiting_item`. But `received` is terminal only in the submission *state machine* — the bound item still proceeds through authentication / certification / claim / return after physical receipt. So a `received` submission (e.g. awaiting examination) was reported as not-in-progress — materially misleading.
+
+**Fix (Option 2 — labels exactly true from canonical submission status; no downstream/result/payment invention, no new state):** the projection now exposes two active categories plus the total:
+- **"Awaiting receipt by SCA"** = `draft` + `submitted` + `awaiting_item` (pre-receipt).
+- **"Received & being processed"** = `received` — shown as its **own active category**, never as completed/inactive.
+- **"Total submissions"** = all; `cancelled` is only part of the total and is never labelled "completed".
+
+So a `received` submission is always presented as actively being processed regardless of the bound item's downstream stage, and nothing implies completion. `CollectorDashboardService` returns `{total, pre_receipt, received}`; the Home view renders the three truthful lines.
+
+**R1 tests (assert user-visible label/count semantics, not just a constant):**
+- `ce12` — full status matrix: draft/submitted/awaiting_item → pre_receipt; received → received; cancelled in neither (only total).
+- `ce13` — a `received` submission with the collector's bound-item work at each downstream stage (awaiting examination / passed-not-certified / certified) stays counted as "Received & being processed"; the page never shows Completed/Finished/Done.
+- `ce14` — a `received` submission with a failed/inconclusive authentication is still "received & being processed", not completed.
+- `ce15` — another collector's submissions never affect counts.
+- `ce8` updated to the new labels/keys; `ce10` keeps zero-mutation.
 
 ## What changed (7 files)
 - `packages/Sca/Collector/src/Resources/views/layout.blade.php` — authenticated primary nav (Home/Collection/Authenticate/Profile/Account): desktop pill bar + mobile fixed bottom tab bar (CSS only, no JS), active section via `aria-current` derived from the route name, visible keyboard focus, body bottom-padding on mobile; rendered **only** under the `collector` guard.
@@ -60,4 +80,4 @@ Mobile-first ~360px→desktop with no horizontal shell/dashboard overflow (mobil
 ## Production-untouched proof
 Live tree restored to `main@9cf7272`, vendor `--no-dev`, `/admin/login → 200`. Prod DB migration 138 (`…create_sca_market_reference_events`), provenance FP `d15a5cbd…` / counts `3/3/4/4/5/2/1/1/7` unchanged; no schema change (no migration added). All work ran on the disposable `sca_domain_test` DB only.
 
-**STOP — awaiting ChatGPT pre-merge audit of candidate `b69824f`. Do not merge or deploy; do not start another initiative.**
+**STOP — awaiting ChatGPT R1 re-audit of candidate `0c8628d`. Do not merge or deploy; do not start another initiative.**
