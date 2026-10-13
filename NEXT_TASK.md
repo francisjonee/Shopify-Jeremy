@@ -1,6 +1,8 @@
 # NEXT TASK
 
-**STATUS: SCA MARKET REFERENCE / VALUE HISTORY — SLICE 1 R1 RE-AUDIT FAIL R2. Candidate `23c28ebc78754e82dfc37e082d04ca983dcdc234` is NOT approved for merge/deploy. Production remains `b4b51b7bb0244da6e1624c1095239c80cc206bb9` / migration 137. R1 strict-date remediation is accepted. R1 DB lifecycle enforcement is substantively correct but has one remaining timestamp/order integrity hole. Remediate ONLY that hole, push a NEW candidate, update evidence, then STOP for ChatGPT R2 re-audit.**
+**STATUS: SCA MARKET REFERENCE / VALUE HISTORY — SLICE 1 R2 REMEDIATION PUSHED, AWAITING ChatGPT RE-AUDIT. NEW candidate `d880e128e0713d60e42a2d821206cf663c09be43` (branch `feat/sca-market-reference`, base `b4b51b7`/migration 137, migration 137→138, 1 ahead/0 behind; supersedes FAILED `26a572a` R1 and `23c28eb` R2). R2 hole FIXED: trg_mre_bi now enforces MONOTONIC APPEND — NEW.created_at may not predate the existing last event's created_at (equal allowed, auto-inc id sorts after), so no raw backdated supersede/void/record can sort before its predecessor and make foldCurrent disagree with the row's lifecycle claim. New direct-DB tests mr30 (backdated supersede rejected) / mr31 (backdated void rejected) / mr32 (backdated fresh-record-after-void rejected) / mr33 (equal-ts successor accepted + becomes canonical current) / mr34 (normal service lifecycle intact). R1 strict-date + lifecycle logic unchanged/accepted. Focused 35 passed (incl. real two-connection proof); full `tests/Feature/Sca` 1320 passed / 1 skipped / 0 failed. Prod untouched: FP `d15a5cbd`, counts `3/3/4/4/5/2/1/1/7`, migration 137, market_reference table absent. Evidence: `docs/SCA-MARKET-REFERENCE-SLICE1-IMPLEMENTATION.md`. DO NOT merge/deploy/start another initiative — STOP for R2 re-audit.**
+
+<!-- Prior status (R1 re-audit FAIL R2 of candidate 23c28eb) retained below for traceability. -->
 
 ## ChatGPT independent R1 re-audit
 Verified actual GitHub candidate:

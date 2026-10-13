@@ -1,20 +1,28 @@
-# SCA Market Reference / Value History — Slice 1 Implementation Evidence (pre-merge, R1)
+# SCA Market Reference / Value History — Slice 1 Implementation Evidence (pre-merge, R2)
 
-**Status:** R1 REMEDIATION pushed — awaiting ChatGPT re-audit. NOT merged, NOT deployed.
+**Status:** R2 REMEDIATION pushed — awaiting ChatGPT re-audit. NOT merged, NOT deployed.
 
 | | |
 |---|---|
 | Governance promotion | `6d8d6fecece750d78e6070d5a7251373871dcc1e` |
 | Pre-merge audit (FAIL R1) | `9226f48aa392e4bed045f53f54031a30d606165f` |
+| R1 re-audit (FAIL R2) | `7fc6a30636803415100bae400ba9fd7fcee95372` |
 | Implementation branch | `feat/sca-market-reference` (one commit ahead of base) |
 | Exact production base SHA | `b4b51b7bb0244da6e1624c1095239c80cc206bb9` (migration 137) |
-| Prior candidate (FAILED R1) | `26a572a4c60e8a0820de24ca62582df38389a6c9` |
-| **NEW candidate SHA** | **`23c28ebc78754e82dfc37e082d04ca983dcdc234`** |
+| Prior candidates (superseded) | `26a572a…` (FAIL R1), `23c28eb…` (FAIL R2) |
+| **NEW candidate SHA** | **`d880e128e0713d60e42a2d821206cf663c09be43`** |
 | Expected migration | 137 → **138** (`2026_10_19_000001_create_sca_market_reference_events`) |
-| Focused tests | `MarketReferenceTest` 29 + `MarketReferenceConcurrencyTest` 1 → **30 passed** |
-| Full `tests/Feature/Sca` | **1315 passed / 1 skipped / 0 failed** |
+| Focused tests | `MarketReferenceTest` 34 + `MarketReferenceConcurrencyTest` 1 → **35 passed** |
+| Full `tests/Feature/Sca` | **1320 passed / 1 skipped / 0 failed** |
 | Production provenance FP (unchanged) | `d15a5cbdfb8df52ba65628b276533cfe`, counts `3/3/4/4/5/2/1/1/7` |
 | Production schema | migration 137, `sca_market_reference_events` absent (Slice 1 un-deployed) |
+
+## R2 remediation (one narrow ordering hole; nothing else changed)
+R1's strict-date fix is accepted/closed and the lifecycle trigger is otherwise accepted. The remaining hole: the fold orders by `(created_at,id)` but the BEFORE INSERT trigger validated lifecycle against the stream **before** NEW without constraining `NEW.created_at`, so a raw **backdated** supersede/void (or a fresh record after a void) could pass lifecycle yet sort before its predecessor — making `foldCurrent()` disagree with the immutable row's lifecycle claim.
+
+**Fix — monotonic append at the DB boundary.** `trg_mre_bi` now also reads the existing last event's `created_at` and rejects any `NEW.created_at` earlier than it: `IF last_created IS NOT NULL AND NEW.created_at < last_created THEN SIGNAL '45000'`. Equal timestamps remain valid because the auto-increment NEW id sorts after the prior id under `(created_at,id)`. This applies to every disposition, so no immutable event can be backdated behind the event it supersedes/voids. The canonical fold order, service `now()` timestamps, the R1 lifecycle logic, append-only semantics and all accepted R1 behavior are preserved.
+
+**New direct-DB tests:** `mr30` backdated current supersede rejected (45000, current unchanged); `mr31` backdated current void rejected; `mr32` backdated fresh record after a void rejected (void stands); `mr33` equal-timestamp valid successor accepted and — asserted via `currentReference()` — becomes the canonical current by higher id; `mr34` normal service record→supersede→void composes and the canonical current agrees with the final action.
 
 ## R1 remediation (two narrow blockers; nothing else redesigned)
 
@@ -57,4 +65,4 @@ Live tree restored to `main@b4b51b7`, vendor `--no-dev`, `/admin/login → 200`.
 ## Boundaries honored
 No Krayin core edits. No Caddy / DNS / Shopify OAuth / Stripe / SMTP changes. No AI/marketplace/external pricing, no public value exposure, no resale. `ServiceService::record` / `ProjectionService::rebuild` / certification / QR paths unchanged.
 
-**STOP — awaiting ChatGPT R1 re-audit of candidate `23c28eb`. Do not merge or deploy.**
+**STOP — awaiting ChatGPT R2 re-audit of candidate `d880e12`. Do not merge or deploy.**
