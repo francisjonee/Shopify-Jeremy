@@ -1,6 +1,8 @@
 # NEXT TASK
 
-**STATUS: COLLECTOR EXPERIENCE / UI 2.0 — SLICE 1 PRE-MERGE AUDIT PASS. Exact approved candidate: `0c8628d352f9a0fb843774bff5281bc808a9248c`. Approved for controlled merge + deployment only. Production remains `9cf72728248cf3e36d0525de4520d69717dacd5d` / migration 138 until deployment succeeds. Do not begin another initiative.**
+**STATUS: COLLECTOR EXPERIENCE / UI 2.0 — SLICE 1 DEPLOYED to production, AWAITING ChatGPT POST-DEPLOYMENT audit. Approved candidate `0c8628d` merged `--no-ff` into main (merge=main=deployed SHA `e20e549948ecbf5c967d48a7444275280dafb97c`, tree byte-identical to candidate). No migration (stays 138; `Nothing to migrate`). Full merge-tree SCA gate 1335 passed / 1 skipped / 0 failed (clean first run). PRE==POST: prov FP `d15a5cbd`, counts `3/3/4/4/5/2/1/1/7`, migration 138. Smoke: /admin/login 200, guest /collector → /collector/login, collector.home route live (authenticated Home proven by ce2 in the deployed gate). No Caddy/DNS/Shopify-OAuth(read_orders)/Stripe(dormant)/SMTP(log) drift; kr-app loopback-only; sr-caddy not recreated. Evidence: `docs/SCA-COLLECTOR-UI2-SLICE1-DEPLOY-RESULT.md`. Slice 1 NOT declared closed; do NOT begin Slice 2 or another initiative; STOP for post-deployment audit.**
+
+<!-- Prior status (pre-merge PASS gate for candidate 0c8628d) retained below for traceability. -->
 
 ## ChatGPT R1 re-audit — PASS
 Independently verified actual GitHub candidate `0c8628d352f9a0fb843774bff5281bc808a9248c`:
