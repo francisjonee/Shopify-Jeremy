@@ -1,71 +1,33 @@
 # NEXT TASK
 
-**STATUS: COLLECTOR EXPERIENCE / UI 2.0 — SLICE 3 R1 REMEDIATION PUSHED — AWAITING ChatGPT PRE-MERGE RE-AUDIT. NOT merged, NOT deployed.**
+**STATUS: COLLECTOR EXPERIENCE / UI 2.0 — SLICE 3 PRE-MERGE RE-AUDIT PASS. R1 is CLOSED. Exact candidate `a19f472...` is APPROVED for controlled merge/deployment only. Production baseline remains `ffef6dedfdd21d865c73bb809bf81c917b367dda`, migration 138. Slice 3 is NOT CLOSED until ChatGPT independently audits post-deployment evidence. Do not start another initiative.**
 
-## R1 remediation candidate (awaiting re-audit)
-| | |
-|---|---|
-| Prior R1 FAIL (test/evidence only) | `72a92e5d81aa1500d29cb65b69e72d2773e8f14c` |
-| Base | `ffef6dedfdd21d865c73bb809bf81c917b367dda` (migration 138) |
-| **R1 candidate SHA** | **`a19f4721cc7d21229b2f23c380392ca0fc63cb86`** (amended single commit; supersedes `8ea5094`, 1 ahead / 0 behind) |
-| Changed files | 7 (same 6 collector views, byte-identical to 8ea5094; only `CollectorUi3Test.php` grew) |
-| Focused tests | `CollectorUi3Test` 20 passed / 194 assertions |
-| Full `tests/Feature/Sca` | 1367 passed / 1 skipped / 0 failed (7235 assertions) |
-| Prod FP (unchanged) | `d15a5cbd…`, counts `3/3/4/4/5/2/1/1/7`, migration 138 |
+## ChatGPT pre-merge re-audit — PASS
+Independent GitHub audit verified:
+- candidate remains exactly **1 ahead / 0 behind** production baseline `ffef6dedfdd21d865c73bb809bf81c917b367dda`
+- scope remains the accepted 6 collector presentation views + `CollectorUi3Test.php`; no migration/controller/service/route/DTO/config/domain-writer change
+- the amended candidate supersedes `8ea5094...`; production presentation code remains the already-audited Slice-3 implementation and R1 remediation is test/evidence-only
+- **R1-A closed:** test `a7b` creates a real finalized `inconclusive` authentication, verifies DB canonical result is actually `inconclusive`, then proves collector presentation maps it to non-passing with no claim/certified/passed/ready-to-add implication
+- **R1-B closed:** test `b2b` uses existing services for publish → set handle → unpublish, verifies publication row persists unpublished with reserved handle, proves neither permanent public URL nor friendly `/u/{handle}` URL is emitted, retains truthful reserved-handle copy and publish control, and proves the GET mutates neither publication nor collector account state
+- no existing test was weakened or modified
+- governance evidence reports focused `CollectorUi3Test` **20 passed / 194 assertions**
+- full `tests/Feature/Sca` gate **1367 passed / 1 skipped / 0 failed (7235 assertions)**
+- production reported untouched: migration 138, provenance fingerprint/counts unchanged, Stripe dormant and no provider/infrastructure changes.
 
-Both R1 edge cases added as **test/evidence-only** proofs — no production Blade/behavior change (the 6 views are byte-identical to the prior candidate):
-- **R1-A** `a7b` — finalized INCONCLUSIVE authentication renders not-passed, no claim, no certified/ready-to-add implication (canonical reader maps failed OR inconclusive → `not_passed`).
-- **R1-B** `b2b` — publish → set handle → unpublish → private-Profile GET: private/unpublished; publish stays available; handle displayed/reserved with truthful "works again once published" copy; NO resolvable public-show or `/u/{handle}` URL; GET zero-mutation.
+## Approved deployment gate
+Claude may now:
+1. Merge **only** approved candidate `a19f472...` into current production main. Resolve and record the full SHA before merge. If main moved from audited baseline `ffef6de...`, STOP and return to ChatGPT.
+2. Prove candidate→merge content identity (merge commit only; no unreviewed file delta).
+3. Deploy the resulting merge SHA using the established controlled production procedure.
+4. Confirm migration remains **138**; no migration is expected/permitted.
+5. Run full `tests/Feature/Sca` gate on the exact merge/deployed tree and report exact pass/skip/fail/assertion totals.
+6. Verify production health and collector guest fail-closed boundaries; do not fabricate a production collector/session merely for smoke testing.
+7. Record PRE/POST provenance fingerprint and canonical counts and prove unchanged.
+8. Confirm Stripe remains dormant, mail remains `log`, Shopify OAuth remains `read_orders`, and no Caddy/DNS/provider/infrastructure drift.
+9. Record exact `MERGE_SHA`, `ORIGIN_MAIN`, `DEPLOYED_HEAD` and governance deployment evidence.
+10. **STOP for ChatGPT post-deployment audit. Do not declare Slice 3 or Collector UI 2.0 closed and do not start another initiative.**
 
-Evidence updated in `docs/SCA-COLLECTOR-UI2-SLICE3-IMPLEMENTATION.md`. **STOP for ChatGPT pre-merge re-audit; do not merge/deploy/start another initiative.**
-
----
-
-<!-- Prior R1 FAIL brief retained below for traceability. -->
-
-**STATUS (R1 FAIL): COLLECTOR EXPERIENCE / UI 2.0 — SLICE 3 PRE-MERGE AUDIT FAIL (R1 — TEST/EVIDENCE COMPLETENESS ONLY). Candidate `8ea5094519281c61a2b288aff9f96eecd1975fc8` is NOT approved for merge/deploy. Implementation scope and presentation architecture are otherwise acceptable. Remediate the two mandatory edge-case proofs below on the SAME branch, rerun focused + full SCA gates, push a new candidate, and STOP for ChatGPT re-audit.**
-
-## ChatGPT audit facts
-- exact base `ffef6dedfdd21d865c73bb809bf81c917b367dda`
-- candidate is 1 ahead / 0 behind
-- exactly 7 declared files changed: 6 collector views + new `CollectorUi3Test.php`
-- no migration/controller/service/route/DTO/config/domain-writer change
-- Authenticate/Profile/Account restructuring is consistent with the promoted Slice-3 architecture
-- payment remains dormant; claim/result/return switches preserve existing domain behavior
-- no existing test file was weakened or modified
-- reported focused 18/171 and full 1365/1-skip/0-fail gates are noted.
-
-## R1-A — directly prove INCONCLUSIVE authentication
-The promoted mandatory contract explicitly requires failed/inconclusive result behavior to remain truthful. New test `a7` instantiates `failed` only, while implementation evidence says “Failed/inconclusive renders did not pass.”
-
-Add a real `inconclusive` finalized authentication case through the same canonical test helper/workflow and prove:
-- collector detail renders the non-passing/not-certified outcome truthfully
-- no claim action
-- no “ready to add to your collection” / certified implication.
-
-Do not change domain behavior: the existing canonical reader intentionally maps finalized failed OR inconclusive into the safe `not_passed` presentation state.
-
-## R1-B — directly prove UNPUBLISHED EXISTING PUBLICATION + HANDLE
-Current `b2` covers a collector with **no publication row at all**. It does not cover the CP-5 edge state called out by the architecture: a publication identity exists, a handle exists/reserved, but the profile is currently unpublished.
-
-Create the state through the existing public-profile/handle services (e.g. publish → set handle → unpublish), then GET the private Profile and prove:
-- profile is presented as private/unpublished
-- NO permanent public-link URL is advertised as currently resolvable
-- NO friendly `/u/{handle}` URL is advertised as currently resolvable
-- the handle may remain displayed/reserved and its existing copy truthfully says its link will work again once published
-- publish control remains available under existing eligibility
-- no mutation occurs from the GET.
-
-This is a proof gap, not a request to alter CP-3/CP-5 semantics.
-
-## Remediation discipline
-- Stay on `feat/sca-collector-ui2-slice3`; base remains exact production `ffef6de...`.
-- Prefer **test/evidence-only** changes. If production Blade must change to make either proof pass, STOP and explain the discovered behavioral defect before changing it.
-- No migration, controller/service/route/DTO/config/provider/infrastructure change.
-- Update `docs/SCA-COLLECTOR-UI2-SLICE3-IMPLEMENTATION.md` with R1 evidence and exact new candidate SHA.
-- Rerun `CollectorUi3Test` and full `tests/Feature/Sca`; report exact totals.
-- Push new candidate only.
-- **Do not merge/deploy. STOP for ChatGPT pre-merge re-audit.**
+Only an independent post-deployment PASS closes Slice 3 and the Collector Experience / UI 2.0 initiative.
 
 
 <!-- Prior status (pre-merge PASS gate for candidate dba6c4d) retained below for traceability. -->
