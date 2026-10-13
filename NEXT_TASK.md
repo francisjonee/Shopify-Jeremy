@@ -1,56 +1,54 @@
 # NEXT TASK
 
-**STATUS: SERVICE HISTORY CORRECTION & ANNOTATION — R2 REMEDIATION PUSHED, AWAITING ChatGPT RE-AUDIT. NEW candidate `2d578feb5f429d9e7549d968c21fbfc879ba0885` (branch `feat/sca-service-correction`, base `9bc0907`/migr 136→137; supersedes FAILED `18aba7c` R1 and `57672b05` R2). R2 blocker fixed — four DB CHECK constraints enforce sparse-row self-consistency (corrected value only when its changes_<field> flag is set; flagged required type/date must be non-null; nullable notes/grade may flag with NULL = explicit clear; non-correct rows carry no corrected payload). Added direct-insert rejection tests (sc38/sc39) + flagged-NULL-clear acceptance (sc40) + explicit grade-clear-to-NULL through the service (sc41). R1 application semantics unchanged. Focused 42 passed; full `tests/Feature/Sca` 1285 passed / 1 skipped / 0 failed. Prod untouched: FP `d15a5cbd`, counts `3/3/4/4/5/2/1/1/7`, migration 136, no correction table. Evidence: `docs/SCA-SERVICE-CORRECTION-IMPLEMENTATION.md`. DO NOT merge/deploy — STOP for R2 re-audit.**
+**STATUS: SERVICE HISTORY CORRECTION & ANNOTATION — PRE-MERGE AUDIT PASS. R1 + R2 CLOSED. Exact approved candidate: `2d578feb5f429d9e7549d968c21fbfc879ba0885`, based on production `9bc0907c486688c7acd0d22ad2ee9f5db37d93bb` / migration 136. Candidate is approved for controlled merge/deployment ONLY under the gate below. Initiative remains OPEN until ChatGPT independently audits deployed production and records post-deployment PASS.**
 
-<!-- Prior status (R1 re-audit FAIL R2 of candidate 57672b05) retained below for traceability. -->
+### ChatGPT pre-merge audit verdict
+**PASS.** Actual GitHub candidate `2d578feb5f429d9e7549d968c21fbfc879ba0885` satisfies the promoted Service History Correction & Annotation architecture after R1/R2 remediation.
 
-### ChatGPT R1 re-audit result
-**R1 is substantively fixed.** Verified in actual GitHub candidate:
-- candidate is exactly 1 commit ahead / 0 behind production base `9bc0907...`
-- per-field `changes_*` flags make correction intent sparse
-- flag=1 + nullable corrected value supports explicit NULL
-- controller builds changes only from explicit per-field intent
-- service drops selected-but-equal fields and rejects all-NOOP
-- sparse fold composes fields in `(created_at,id)` order
-- chronology carries field-level old→new + actor/time/reason
-- staff UI renders changed fields, actor, reason, time
-- collector projection excludes staff audit metadata
-- existing lock/STALE/void/ACL/privacy/provenance boundaries remain intact
-- tests directly inspect stored row sparsity for notes-only, grade-only, mixed, composition, same-field-later-wins, NOOP, chronology.
+Verified:
+- exactly 1 commit ahead / 0 behind production base `9bc0907...`
+- scoped 15-file slice; no unrelated initiative
+- migration 136→137 creates dedicated append-only `sca_service_event_corrections`
+- original `sca_service_events` remains immutable and untouched
+- sparse factual evidence uses explicit per-field change flags
+- nullable notes/grade support unambiguous explicit clear via flag=1 + NULL
+- non-nullable service_type/occurred_at require a value when flagged
+- DB CHECKs now enforce sparse-row self-consistency; contradictory raw rows fail closed
+- non-correct rows cannot carry corrected factual payload
+- DB cross-item trigger + service exact item/event binding prevent rebinding
+- correction ledger UPDATE/DELETE blocked
+- deterministic fold applies only flagged fields in `(created_at,id)` order
+- selected-but-equal values are omitted; all-NOOP rejects
+- staff chronology renders exact changed fields old→new plus actor/time/reason
+- item current-state `FOR UPDATE` serialization + correction-count token provide STALE protection
+- real two-connection concurrency proof remains present
+- terminal void behavior preserved
+- dedicated `sca.eyewear.service.correct` ACL, admin auth/CSRF/throttle boundary preserved
+- collector path is a privacy projection over the same canonical fold; voided events and staff-only audit data excluded
+- public passport remains service-free
+- `ServiceService::record()` and `ProjectionService::rebuild()` unchanged
+- zero intended ownership/current-state/authentication/certification/QR/status/claim/transfer/Shopify mutation
+- R2 raw-DB tests prove unflagged payload rejection, required flagged values, and valid nullable clears
+- explicit condition-grade clear-to-NULL is proven through production controller/service
+- reported focused result: 42 passed
+- reported full SCA result: 1285 passed / 1 skipped / 0 failed.
 
-### R2 merge blocker — DB does not enforce sparse-row self-consistency
-The migration currently enforces:
-- valid disposition
-- valid corrected type/grade values when non-null
-- `correct` has at least one `changes_*` flag
-- non-`correct` has no `changes_*` flags.
+### Controlled merge/deployment gate
+Claude may now merge/deploy **only this exact approved candidate** `2d578feb5f429d9e7549d968c21fbfc879ba0885`.
 
-But it does **not** enforce the key immutable-ledger invariant that a corrected value may exist only when its corresponding `changes_*` flag is true.
+Before merge/deploy:
+1. Reconfirm production/main baseline is still `9bc0907c486688c7acd0d22ad2ee9f5db37d93bb`; if main/production moved, STOP for ChatGPT.
+2. Reconfirm approved candidate is exactly 1 ahead / 0 behind baseline and candidate tree is unchanged.
+3. Merge with a normal auditable merge commit; after merge, prove candidate→merge tree has **zero changed files**. Any content drift = STOP.
+4. Run the exact merge tree full `tests/Feature/Sca` gate before production migration. Known unrelated low-ID document-classification flake may be rerun only under the established policy; any real failure = STOP before migrate.
+5. Capture PRE production migration number, provenance fingerprint/counts, service-event count, and confirm correction table absent.
+6. Apply migration 137 once. Verify table, all CHECK constraints, append-only triggers, cross-item trigger and indexes exist.
+7. Run production-safe health/boundary smoke only; do not fabricate or mutate real service/correction evidence merely to demonstrate the feature.
+8. Capture POST provenance fingerprint/counts and service-event count; they must be byte/count identical to PRE. New correction table should contain 0 rows immediately after deploy unless a real authorized staff action occurs independently.
+9. Confirm no Caddy/DNS/Shopify OAuth/Stripe/SMTP changes; Stripe remains dormant and mail remains current production configuration.
+10. Record exact merge SHA, main SHA, deployed SHA, migration 137, exact merge-tree test result, schema evidence, PRE/POST invariants and health/boundary results in a governance deployment evidence document.
 
-For example, a direct/raw insert can persist:
-- `disposition='correct', changes_notes=0, changes_service_type=1, corrected_notes='hidden contradictory evidence'`
-or an annotate/void row can carry non-null `corrected_*` payload while all flags are false.
-
-The canonical fold ignores unflagged values, so effective presentation stays correct, but the append-only evidence row itself becomes internally contradictory and can never be repaired because UPDATE/DELETE are intentionally blocked. For an immutable audit ledger, sparse semantics must be enforced at the DB boundary, not only by `ServiceCorrectionService`.
-
-### Required R2 remediation — narrow
-1. Add DB CHECK constraints (or equivalent insert-time DB enforcement) so for each corrected field:
-   - if `changes_<field>=0`, `corrected_<field>` MUST be NULL
-   - if `changes_service_type=1`, `corrected_service_type` MUST be non-null and valid
-   - if `changes_occurred_at=1`, `corrected_occurred_at` MUST be non-null
-   - nullable fields `condition_grade_after` and `notes` may have flag=1 with value NULL to represent explicit clear.
-2. Non-`correct` rows must therefore be unable to carry any `corrected_*` payload. Preserve the existing no-flags check.
-3. Do not redesign the service/UI/fold; R1 semantics are accepted.
-4. Add DB-level tests using direct inserts proving contradictory sparse rows are rejected:
-   - unflagged non-null corrected notes rejected
-   - unflagged non-null corrected grade/type/date rejected (can be parameterized)
-   - flagged service_type with NULL rejected
-   - flagged occurred_at with NULL rejected
-   - flag=1 + NULL for nullable notes/grade remains accepted.
-5. Complete the previously mandatory explicit-clear proof for **condition_grade_after**. Current `sc12_explicit_clear_to_null_distinct_from_unchanged` proves notes clear-to-NULL but does not actually clear grade. Add a real grade-clear assertion through the production correction service/controller and verify `changes_condition_grade_after=1`, stored corrected grade NULL, and effective grade NULL.
-6. Re-run focused ServiceCorrection + real concurrency tests and full `tests/Feature/Sca`.
-
-Everything else in candidate `57672b05...` is accepted for this re-audit. Do not broaden R2. Do not merge. Do not deploy. Do not start another initiative. Push a NEW candidate and STOP.
+**STOP after deployment evidence. Do not declare the initiative closed. Do not start another initiative. Return to ChatGPT for independent post-deployment audit.**
 
 Updated 2026-10-13.
 
