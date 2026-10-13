@@ -1,6 +1,85 @@
 # NEXT TASK
 
-**STATUS: TRANSACTIONAL EMAIL / POSTMARK — PHASE 0 PREFLIGHT COMPLETE; BLOCKED ON EXTERNAL PREREQUISITES. No activation performed; production mail remains `MAIL_MAILER=log` (unchanged). Production baseline `9cf72728248cf3e36d0525de4520d69717dacd5d` / migration 138 untouched (no code/DNS/config/Caddy/Shopify/Stripe/schema change). BLOCKERS: (1) no Postmark account/Transactional-stream SMTP token; (2) no verified sender (from=placeholder no-reply@localhost, send subdomain has no DKIM/Return-Path); (3) DNS authority unavailable — domain resolves to GoDaddy/Secureserver NS (ns55/ns56.domaincontrol.com, DMARC rua@onsecureserver.net), NOT Namecheap, and no GoDaddy DNS creds here; (4) no authorized test inbox/test collector. READY: egress to smtp.postmarkapp.com:587 CONNECTED, Symfony esmtp+openssl available, APP_URL canonical HTTPS, TLS verify on, config not cached, send subdomain clean + no MX conflict + relaxed DMARC. Evidence: `docs/SCA-TRANSACTIONAL-EMAIL-ACTIVATION-RESULT.md` (precise owner action list, no secrets). STOP for ChatGPT activation audit + owner provisioning; Phase 1 will NOT begin and SMTP will NOT activate until prerequisites supplied. Do not start another initiative.**
+**STATUS: COLLECTOR EXPERIENCE / UI 2.0 — ARCHITECTURE AUDIT COMPLETE; SLICE 1 PROMOTED. Production baseline `9cf72728248cf3e36d0525de4520d69717dacd5d`, migration 138. Build a coherent mobile-first collector shell + home dashboard over EXISTING capabilities. This is presentation/navigation/read-model work: do not redesign domain workflows, create new provenance behavior, or reopen accepted security/privacy invariants. Transactional Email and backups remain PARKED.**
+
+## Architecture audit findings
+The collector domain is already broad: account/security, private/public profile + handle/avatar, My Collection, rich item detail/gallery/passport, certification/authentication/ownership/transfer/service histories, private collection groups, public-item visibility, lost/stolen/recovered, transfer, documents, external-auth submissions/payment/claim, and current-owner Market Reference.
+
+The experience layer has not caught up:
+- `/collector` is a pure redirect rather than a collector home.
+- The shared layout is fundamentally a narrow ~420px form shell; only item detail opts into a wider layout.
+- There is no persistent authenticated primary navigation. Discovery relies heavily on contextual text links among Account/Profile/My Collection/Submissions.
+- Account currently doubles as a landing/navigation page while also containing password and irreversible privacy controls.
+- Profile is long and mixes identity, stats, editing, avatar, publication and handle management in one vertical form.
+- Submission list is functional but isolated from a unified collector overview.
+- Item detail is already the strongest experience and should be preserved/refined rather than rebuilt.
+- Existing route/controller authorization and privacy boundaries are strong; UI work must not weaken them.
+
+## Slice 1 goal
+Create a **mobile-first Collector Home + shared authenticated application shell** that makes the already-built product understandable and reachable. Do NOT add new domain capabilities in this slice.
+
+Target information architecture:
+- **Home** — new authenticated `/collector` dashboard.
+- **Collection** — existing My Collection.
+- **Authenticate** — existing submissions area / new-submission entry.
+- **Profile** — existing collector profile.
+- **Account** — existing security/privacy settings.
+
+Desktop: compact persistent top/side navigation appropriate to the existing SCA visual language.
+Mobile: touch-friendly persistent navigation/header with no horizontal overflow; key actions reachable without hunting through text links. Do not introduce a JS framework solely for navigation.
+
+## Home dashboard read model
+Build a dedicated, bounded dashboard projection from existing canonical/read services; no new authoritative tables.
+Show only truthful collector-scoped information already authorized elsewhere:
+- greeting/display identity
+- owned-item count, certified count, distinct brands (reuse existing profile stats semantics)
+- a small recent/current collection preview with image only through existing authorized image route and links to canonical item detail
+- external authentication submission summary: meaningful active/pending states + link to submissions; do not invent payment/provider state
+- pending ownership-transfer attention only if existing workflow/read model can expose it safely
+- profile/publication state summary + link to Profile
+- primary actions: View collection / Submit eyewear.
+Do not fabricate an activity feed by querying unrelated audit/provenance tables in this slice.
+
+## Shell/navigation requirements
+1. Guest auth pages (login/register/forgot/reset) remain simple and must NOT expose authenticated navigation.
+2. Authenticated shell gets consistent nav and active-state semantics across Home, Collection/detail, Submissions, Profile and Account.
+3. `GET /collector`: guest behavior remains redirect-to-login; authenticated collector now renders Home rather than redirecting to Collection.
+4. Preserve existing route names where possible; add only the minimum home route/controller/view/read-model changes.
+5. Account stops acting as the primary navigation hub; keep password/security/privacy behavior intact.
+6. Preserve every CSRF/throttle/collector-guard/current-owner/opaque-ref/privacy rule.
+7. No staff/admin navigation or Krayin chrome.
+8. No public-profile/public-passport redesign in Slice 1.
+9. No changes to transfer/status/submission/payment/claim/provenance mutation semantics.
+10. No Market Reference expansion, automated pricing, marketplace/resale, notifications, analytics, SMTP, Stripe activation or backup work.
+
+## Responsive/accessibility quality gate
+- Design for ~360px mobile through desktop; no horizontal overflow in shell/dashboard.
+- Visible keyboard focus; semantic nav; current page indicated beyond color alone; adequate touch targets.
+- Preserve readable labels/errors/status messages and form semantics.
+- Avoid hiding security/destructive controls behind ambiguous icons.
+- Images must have useful alt/fallback behavior and retain current authorization/no-store behavior.
+- No raw storage paths/internal IDs/secrets/PII leakage.
+
+## Mandatory tests
+Add focused Collector Experience tests proving at minimum:
+- guest `/collector` still reaches sign-in safely; authenticated `/collector` renders Home.
+- authenticated nav appears on Home/Collection/item/Submissions/Profile/Account; guest auth pages do not receive it.
+- active navigation state is correct for child/detail routes.
+- dashboard stats are collector-scoped and reuse canonical semantics.
+- collection preview cannot leak previous/non-owner items; images use authorized routes.
+- submission summary is collector-scoped and truthful.
+- dashboard GET causes zero provenance/current-state/domain mutation.
+- disabled/pseudonymized/unauthenticated boundary behavior remains fail-closed.
+- existing item-detail, collection, profile, submission, transfer/status and auth tests remain green.
+- full `tests/Feature/Sca` gate passes.
+
+## Delivery discipline
+- Branch from exact production `9cf72728248cf3e36d0525de4520d69717dacd5d`. If main moved, STOP.
+- Prefer no migration. If implementation believes schema is required, STOP and return architecture rationale before adding one.
+- Keep changes inside collector presentation/read-model/test surfaces unless a narrowly necessary shared presentation helper is justified.
+- Record changed files, focused/full test results, screenshots or viewport evidence if available, and zero-domain-mutation proof in a task report.
+- Push candidate only. **Do not merge/deploy. STOP for ChatGPT pre-merge audit.**
+
 
 <!-- Prior status (controlled activation promotion) retained below for traceability. -->
 
