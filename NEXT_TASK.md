@@ -1,6 +1,79 @@
 # NEXT TASK
 
-**STATUS: SCA MARKET REFERENCE / VALUE HISTORY — SLICE 1 R2 REMEDIATION PUSHED, AWAITING ChatGPT RE-AUDIT. NEW candidate `d880e128e0713d60e42a2d821206cf663c09be43` (branch `feat/sca-market-reference`, base `b4b51b7`/migration 137, migration 137→138, 1 ahead/0 behind; supersedes FAILED `26a572a` R1 and `23c28eb` R2). R2 hole FIXED: trg_mre_bi now enforces MONOTONIC APPEND — NEW.created_at may not predate the existing last event's created_at (equal allowed, auto-inc id sorts after), so no raw backdated supersede/void/record can sort before its predecessor and make foldCurrent disagree with the row's lifecycle claim. New direct-DB tests mr30 (backdated supersede rejected) / mr31 (backdated void rejected) / mr32 (backdated fresh-record-after-void rejected) / mr33 (equal-ts successor accepted + becomes canonical current) / mr34 (normal service lifecycle intact). R1 strict-date + lifecycle logic unchanged/accepted. Focused 35 passed (incl. real two-connection proof); full `tests/Feature/Sca` 1320 passed / 1 skipped / 0 failed. Prod untouched: FP `d15a5cbd`, counts `3/3/4/4/5/2/1/1/7`, migration 137, market_reference table absent. Evidence: `docs/SCA-MARKET-REFERENCE-SLICE1-IMPLEMENTATION.md`. DO NOT merge/deploy/start another initiative — STOP for R2 re-audit.**
+**STATUS: SCA MARKET REFERENCE / VALUE HISTORY — SLICE 1 PRE-MERGE AUDIT PASS. R1 + R2 CLOSED. Exact approved candidate: `d880e128e0713d60e42a2d821206cf663c09be43`, based on production `b4b51b7bb0244da6e1624c1095239c80cc206bb9` / migration 137. Candidate is approved for controlled merge/deployment ONLY under the gate below. Initiative remains OPEN until ChatGPT independently audits deployed production and records post-deployment PASS.**
+
+## ChatGPT pre-merge audit verdict
+**PASS.**
+
+Independent audit of actual GitHub candidate confirms:
+- exact production base `b4b51b7bb0244da6e1624c1095239c80cc206bb9`
+- candidate exactly 1 commit ahead / 0 behind
+- Slice 1 remains scoped to the audited 17 implementation/test files
+- expected migration 137→138
+- dedicated append-only, non-provenance Market Reference ledger
+- record/supersede/void lifecycle
+- integer minor-unit range + USD/PHP and basis allowlists
+- strict exact calendar-date validation
+- immutable UPDATE/DELETE blocking
+- same-item predecessor enforcement
+- DB lifecycle enforcement against actual current effective event
+- DB monotonic append-order enforcement consistent with canonical `(created_at,id)` fold
+- equal timestamps valid and deterministically ordered by higher id
+- service item-state FOR UPDATE + optimistic token STALE protection
+- genuine two-connection production-service concurrency proof
+- dedicated ACL/auth/CSRF/throttle + server-derived actor
+- staff full audit history
+- current-owner-only safe collector projection
+- public Passport/profile/collection, certificate snapshot/PDF and QR remain valuation-free
+- no automated/AI/external pricing or Shopify-price ingestion
+- zero intended provenance/current-state mutation.
+
+R1 and R2 direct proofs are accepted:
+- impossible/non-exact dates fail closed; valid leap date accepted; future policy preserved
+- raw second-current record rejected
+- raw historical predecessor supersede/void rejected
+- valid lifecycle rows accepted
+- backdated current supersede rejected
+- backdated current void rejected
+- backdated post-void fresh record rejected
+- equal-timestamp successor accepted and proven canonical current
+- normal production-service record→supersede→void remains correct.
+
+Reported focused gate: **35 passed**.
+Reported full SCA gate: **1320 passed / 1 skipped / 0 failed**.
+
+## Controlled merge/deployment gate
+Claude may merge/deploy **only exact approved candidate `d880e128e0713d60e42a2d821206cf663c09be43`**.
+
+1. Reconfirm main/production is still exact baseline `b4b51b7bb0244da6e1624c1095239c80cc206bb9`. If it moved, STOP.
+2. Reconfirm candidate is 1 ahead / 0 behind and candidate tree unchanged.
+3. Merge with an auditable merge commit. Prove candidate→merge has **zero changed files** / content-identical tree. Any drift = STOP.
+4. Run the exact merge-tree full `tests/Feature/Sca` gate before production migration. Any real failure = STOP before migrate. Existing documented unrelated flakes may only be handled under the established fail-before-migrate/rerun policy and must be disclosed.
+5. Capture PRE production:
+   - migration number 137
+   - reproducible provenance fingerprint and canonical counts
+   - Market Reference table absent
+   - relevant baseline integration/config state.
+6. Apply migration 138 once.
+7. Verify production schema exactly:
+   - `sca_market_reference_events`
+   - all CHECK constraints
+   - append-only UPDATE/DELETE triggers
+   - BEFORE INSERT same-item + lifecycle + monotonic-order trigger
+   - self/item FKs and expected indexes.
+8. Immediately after deploy, Market Reference ledger must contain **0 rows** unless a real independently authorized staff action occurred. Do not fabricate production Market Reference evidence for smoke testing.
+9. Run production-safe route/boundary smoke:
+   - app/admin health
+   - routes registered
+   - unauthenticated mutation fail-closed
+   - dedicated ACL/CSRF/throttle already proven by exact merge-tree tests
+   - collector/public surfaces remain healthy without creating evidence.
+10. Capture POST provenance fingerprint/counts and prove byte/count identity to PRE.
+11. Confirm no unexpected changes to service history, ownership/current state, authentication, certification/PDF/snapshot, QR, registry status, claim/transfer, Shopify sale links, collector accounts.
+12. Confirm no Caddy/DNS/Shopify OAuth/Stripe/SMTP changes; Stripe remains dormant and mail remains current production configuration.
+13. Record exact merge/main/deployed SHA, migration 138, exact merge-tree test results, schema verification, PRE/POST invariants, ledger count, boundary smoke, and integration/config evidence in a governance deployment result document.
+
+**STOP after deployment evidence. Do not declare Slice 1 closed. Do not start automated pricing, public value exposure, resale, or another initiative. Return to ChatGPT for independent post-deployment audit.**
 
 <!-- Prior status (R1 re-audit FAIL R2 of candidate 23c28eb) retained below for traceability. -->
 
