@@ -1,6 +1,27 @@
 # NEXT TASK
 
-**STATUS: SCA MARKET REFERENCE / VALUE HISTORY — SLICE 2 PROMOTED. Production baseline is `6ca15958844dace74f7d087a10a3355a6497dd00`, migration 138. Build the collector-facing historical value timeline over the EXISTING append-only Market Reference ledger. This is a read/presentation expansion only: no marketplace, no automated valuation, no public value exposure, no provenance mutation. Push candidate and STOP for ChatGPT pre-merge audit.**
+**STATUS: SCA MARKET REFERENCE / VALUE HISTORY — SLICE 2 CANDIDATE PUSHED — AWAITING ChatGPT PRE-MERGE AUDIT. NOT merged, NOT deployed.**
+
+## Candidate under audit
+| | |
+|---|---|
+| Governance promotion | `ad637cf400d88ffdd730082908c0db515e667f13` |
+| Branch | `feat/sca-market-reference-slice2` (1 ahead / 0 behind) |
+| Production base SHA | `6ca15958844dace74f7d087a10a3355a6497dd00` (migration 138) |
+| Candidate SHA | `9e8453e2bad54ed24ef22a151c881e539b9dc8be` |
+| Migration | none (138 unchanged) |
+| Changed files | 5 (MarketReferenceService, CollectionService, CollectionController, collection/show.blade, new MarketReferenceHistoryTest), 463 ins / 12 del |
+| Focused tests | `MarketReferenceHistoryTest` 13 passed / 73 assertions |
+| Full `tests/Feature/Sca` | 1380 passed / 1 skipped / 0 failed (7308 assertions) |
+| Prod provenance FP (unchanged) | `d15a5cbd…`, counts `3/3/4/4/5/2/1/1/7`, migration 138 |
+
+Read/presentation expansion over the existing append-only ledger: owner-safe value history on Eyewear Detail (secondary "Value history" disclosure next to the current reference; newest-first; Current/Historical text labels by canonical fold event id; "no current Market Reference" after void; advisory-only, no delta/FX/appreciation/resale). No migration, no new authoritative state, no marketplace, no provenance mutation, no public value exposure. Evidence: `docs/SCA-MARKET-REFERENCE-SLICE2-IMPLEMENTATION.md`. **STOP for ChatGPT pre-merge audit; do not merge/deploy/start another initiative.**
+
+---
+
+<!-- Promotion brief retained below for traceability. -->
+
+**STATUS (promotion): SCA MARKET REFERENCE / VALUE HISTORY — SLICE 2 PROMOTED. Production baseline is `6ca15958844dace74f7d087a10a3355a6497dd00`, migration 138. Build the collector-facing historical value timeline over the EXISTING append-only Market Reference ledger. This is a read/presentation expansion only: no marketplace, no automated valuation, no public value exposure, no provenance mutation. Push candidate and STOP for ChatGPT pre-merge audit.**
 
 ## Architecture audit conclusion
 Slice 1 already has the hard domain foundation:
