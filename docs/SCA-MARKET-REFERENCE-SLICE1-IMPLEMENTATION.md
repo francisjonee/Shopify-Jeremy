@@ -1,19 +1,32 @@
-# SCA Market Reference / Value History — Slice 1 Implementation Evidence (pre-merge)
+# SCA Market Reference / Value History — Slice 1 Implementation Evidence (pre-merge, R1)
 
-**Status:** CANDIDATE pushed — awaiting ChatGPT pre-merge audit. NOT merged, NOT deployed.
+**Status:** R1 REMEDIATION pushed — awaiting ChatGPT re-audit. NOT merged, NOT deployed.
 
 | | |
 |---|---|
 | Governance promotion | `6d8d6fecece750d78e6070d5a7251373871dcc1e` |
+| Pre-merge audit (FAIL R1) | `9226f48aa392e4bed045f53f54031a30d606165f` |
 | Implementation branch | `feat/sca-market-reference` (one commit ahead of base) |
 | Exact production base SHA | `b4b51b7bb0244da6e1624c1095239c80cc206bb9` (migration 137) |
-| Candidate SHA | `26a572a4c60e8a0820de24ca62582df38389a6c9` |
+| Prior candidate (FAILED R1) | `26a572a4c60e8a0820de24ca62582df38389a6c9` |
+| **NEW candidate SHA** | **`23c28ebc78754e82dfc37e082d04ca983dcdc234`** |
 | Expected migration | 137 → **138** (`2026_10_19_000001_create_sca_market_reference_events`) |
-| Changed files vs base | 17 (1852 insertions, 1 deletion) |
-| Focused tests | `MarketReferenceTest` 26 + `MarketReferenceConcurrencyTest` 1 → **27 passed** |
-| Full `tests/Feature/Sca` | **1312 passed / 1 skipped / 0 failed** |
+| Focused tests | `MarketReferenceTest` 29 + `MarketReferenceConcurrencyTest` 1 → **30 passed** |
+| Full `tests/Feature/Sca` | **1315 passed / 1 skipped / 0 failed** |
 | Production provenance FP (unchanged) | `d15a5cbdfb8df52ba65628b276533cfe`, counts `3/3/4/4/5/2/1/1/7` |
 | Production schema | migration 137, `sca_market_reference_events` absent (Slice 1 un-deployed) |
+
+## R1 remediation (two narrow blockers; nothing else redesigned)
+
+**Blocker A — DB-level lifecycle enforcement.** `trg_mre_bi` (BEFORE INSERT) now enforces, in addition to same-item predecessor integrity, full lifecycle validity against the existing immutable stream for `NEW.eyewear_item_id`. It computes the current effective event exactly as `MarketReferenceService::foldCurrent()` does — the LAST event by `(created_at,id)` when it is a record/supersede, else NULL (a trailing void clears current) — then:
+- `record` → allowed only when there is no current effective event (first ever, or after a valid void);
+- `supersede` → `supersedes_event_id` MUST equal the current effective event;
+- `void` → `voids_event_id` MUST equal the current effective event.
+So a raw insert can no longer persist `record→record` while current, or supersede/void of a historical (non-current) same-item event. The production service's lock+token logic is unchanged; this is defense-in-depth for raw/malformed rows. New direct-DB tests: `mr28` (second-record-while-current, supersede-of-historical, void-of-historical all rejected `45000`), `mr29` (valid current supersede + fresh record after void still accepted).
+
+**Blocker B — strict calendar dates.** `MarketReferenceService::normAsOfDate()` now requires exact `^\d{4}-\d{2}-\d{2}$`, parses with `Carbon::createFromFormat('!Y-m-d', …)`, and rejects via a round-trip check so impossible dates (`2026-02-31`, `2026-13-01`, `2026-09-31`) and non-exact parseable forms (`2026-2-3`, `2026/09/01`, `2026-09-01T00:00:00`, `yesterday`) fail `INVALID` with zero write; valid leap/calendar dates (`2024-02-29`) accepted; the existing future-tolerance rejection is preserved. New service test `mr27` covers all cases.
+
+Both the real two-connection concurrency proof (`cc_mr1`) and the full suite remain green after remediation.
 
 ## Core invariant upheld
 Market Reference is advisory, append-only, NON-provenance evidence. record/supersede/void mutate NO item identity, authentication, certification/snapshot/PDF, QR, ownership, claim/transfer, registry status, service history, Shopify sale links, collector accounts, or `sca_item_current_state`. No mutable `estimated_value` column on `sca_eyewear_items`. No AI/marketplace/external/auto-Shopify pricing. Slice 1 visibility = staff + current canonical owner only.
@@ -44,4 +57,4 @@ Live tree restored to `main@b4b51b7`, vendor `--no-dev`, `/admin/login → 200`.
 ## Boundaries honored
 No Krayin core edits. No Caddy / DNS / Shopify OAuth / Stripe / SMTP changes. No AI/marketplace/external pricing, no public value exposure, no resale. `ServiceService::record` / `ProjectionService::rebuild` / certification / QR paths unchanged.
 
-**STOP — awaiting ChatGPT pre-merge audit of candidate `26a572a`. Do not merge or deploy.**
+**STOP — awaiting ChatGPT R1 re-audit of candidate `23c28eb`. Do not merge or deploy.**

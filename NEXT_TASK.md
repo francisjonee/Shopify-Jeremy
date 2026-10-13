@@ -1,6 +1,8 @@
 # NEXT TASK
 
-**STATUS: SCA MARKET REFERENCE / VALUE HISTORY — SLICE 1 PRE-MERGE AUDIT FAIL R1. Candidate `26a572a4c60e8a0820de24ca62582df38389a6c9` is NOT approved for merge/deploy. Production remains `b4b51b7bb0244da6e1624c1095239c80cc206bb9` / migration 137. Remediate only the two canonical-integrity defects below, push a NEW candidate, update governance evidence, then STOP for ChatGPT re-audit.**
+**STATUS: SCA MARKET REFERENCE / VALUE HISTORY — SLICE 1 R1 REMEDIATION PUSHED, AWAITING ChatGPT RE-AUDIT. NEW candidate `23c28ebc78754e82dfc37e082d04ca983dcdc234` (branch `feat/sca-market-reference`, base `b4b51b7`/migration 137, migration 137→138, 1 ahead/0 behind; supersedes FAILED `26a572a`). Blocker A FIXED: trg_mre_bi now enforces full lifecycle validity vs the immutable stream (record only when no current; supersede/void predecessor MUST equal the actual current effective event; fresh record after void still allowed) — raw rows can no longer persist impossible histories. Blocker B FIXED: MarketReferenceService::normAsOfDate strict exact YYYY-MM-DD via createFromFormat round-trip (rejects 2026-02-31 / non-exact; keeps future-tolerance). New tests mr27 (strict dates) + mr28/mr29 (direct-DB lifecycle). Focused 30 passed (incl. real two-connection proof); full `tests/Feature/Sca` 1315 passed / 1 skipped / 0 failed. Prod untouched: FP `d15a5cbd`, counts `3/3/4/4/5/2/1/1/7`, migration 137, market_reference table absent. Evidence: `docs/SCA-MARKET-REFERENCE-SLICE1-IMPLEMENTATION.md`. DO NOT merge/deploy/start another initiative — STOP for R1 re-audit.**
+
+<!-- Prior status (pre-merge FAIL R1 of candidate 26a572a) retained below for traceability. -->
 
 ## ChatGPT independent pre-merge audit
 Actual GitHub candidate verified:
