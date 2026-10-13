@@ -1,38 +1,133 @@
 # NEXT TASK
 
-**STATUS: COLLECTOR EXPERIENCE / UI 2.0 — SLICE 1 CLOSED + LIVE. ChatGPT independent post-deployment audit PASS. Production/main/deployed = `e20e549948ecbf5c967d48a7444275280dafb97c`, migration 138. Do not begin another initiative until the owner selects/approves the next slice.**
+**STATUS: COLLECTOR EXPERIENCE / UI 2.0 — SLICE 2 PROMOTED. Architecture audit completed against production `e20e549948ecbf5c967d48a7444275280dafb97c`, migration 138. Build a premium, mobile-first My Collection + Eyewear Detail experience over EXISTING capabilities only. No new domain behavior, schema, marketplace, valuation logic, or provenance semantics. Slice 1 is CLOSED and must not be reopened.**
 
-## Post-deployment audit — PASS
-ChatGPT independently verified:
-- deployed merge commit `e20e549948ecbf5c967d48a7444275280dafb97c` is exactly one merge commit ahead of approved candidate `0c8628d352f9a0fb843774bff5281bc808a9248c`
-- GitHub compare candidate→deployed reports **files=[]**, proving the deployed merge tree is content-identical to the exact approved candidate
-- merge message identifies the approved candidate and governance approval; no unrelated candidate delta
-- governance deployment evidence records full merge-tree gate **1335 passed / 1 skipped / 0 failed**, clean first run
-- migration remains **138**, `Nothing to migrate`
-- provenance fingerprint remained `d15a5cbdfb8df52ba65628b276533cfe`
-- canonical counts remained `3/3/4/4/5/2/1/1/7`
-- production smoke: `/admin/login → 200`; guest `/collector → 302 /collector/login`; authenticated Home rendering proven on exact deployed merge tree by ce2 without fabricating production data
-- app remains loopback-only behind existing edge; no Caddy/DNS change
-- Shopify OAuth remains `read_orders`
-- mail remains `log`
-- Stripe remains dormant
-- no schema/provider/infrastructure drift.
+## Architecture audit findings
+Production already has strong collector capabilities but their presentation hierarchy is fragmented.
 
-## Closed Slice 1 capability
-Collector Experience / UI 2.0 Slice 1 is now production-live:
-- real authenticated Collector Home at `/collector`
-- persistent mobile-first authenticated navigation: Home / Collection / Authenticate / Profile / Account
-- bounded collector-scoped collection summary + recent preview
-- truthful submission summary:
-  - draft/submitted/awaiting_item = Awaiting receipt by SCA
-  - received = Received & being processed
-  - cancelled only contributes to total
-- public-profile publication summary
-- existing authorization/privacy/provenance/domain behavior preserved.
+### My Collection today
+Already correct/capable:
+- canonical current-owner-only catalog
+- stats: registered/certified/brands
+- GET-only search/filter/sort with allowlisted service semantics
+- private collection groups with create/rename/delete/reorder
+- cards with authorized images, brand/model/ref/SKU/year/condition/certification/registry warning
+- pagination and safe empty/filter states.
 
-**SLICE 1 IS CLOSED.**
+UX debt:
+- private-group **management forms dominate the top of the catalog** before the eyewear itself
+- collection browsing and collection administration are visually mixed
+- controls are dense on mobile
+- cards are functional but should align with the new premium collector shell/Home hierarchy
+- obsolete “Back to account” remains despite persistent Slice-1 navigation.
 
-No Slice 2 scope is authorized by this closure. Before implementation, ChatGPT should architecture-audit the live collector experience and choose the next substantial UX slice with the owner.
+### Eyewear Detail today
+Already exposes owner-safe:
+- authorized image gallery
+- SCA ref + metadata/specifications
+- authenticity status / condition / auth date
+- certification current/history
+- public Passport access
+- public documents/downloads
+- ownership/transfer history
+- service history + corrections/annotations
+- current Market Reference advisory value
+- public-profile visibility control
+- private collection organization
+- transfer ownership
+- lost/stolen/recovered controls
+- adverse registry warning.
+
+UX debt:
+- Public-profile visibility and Organize cards appear **before the item identity/gallery**, so secondary management precedes the product.
+- Market Reference is buried under History although it is a high-value current-item summary.
+- “Manage item” mixes normal transfer with safety/destructive lost/stolen controls.
+- important current facts are spread across five tabs and separate cards, making the item feel like an admin record rather than a collector asset.
+- many inline styles and dense rows reduce mobile hierarchy.
+- CSS-radio tabs are functional but should not hide the most important current state/value.
+- imagery/brand/model should lead the experience.
+
+## Slice 2 goal
+Redesign **My Collection + Eyewear Detail presentation hierarchy** so the collector experiences owned eyewear as a premium digital collection while preserving every existing service, route, authorization and mutation rule.
+
+This is primarily Blade/CSS/presentation composition. Reuse existing owner-safe DTOs/readers. Prefer **no controller/service changes** unless a narrowly necessary presentation composition is justified. **No migration.**
+
+## A. My Collection — browse first, manage second
+1. Keep the canonical current-owner catalog and all existing filters/sorts/pagination semantics.
+2. Make eyewear the visual focus: strong responsive image cards, brand/model primary, SCA reference secondary, concise certification/registry/condition state.
+3. Keep collection-group chips as the browsing switcher (All items + named groups).
+4. Move create/rename/reorder/delete collection administration into a clearly secondary **Manage collections** area/disclosure below or beside browsing; it must not precede/domininate the eyewear grid on normal use.
+5. Preserve active-group context and filter query behavior.
+6. Mobile ~360px: controls must stack/wrap cleanly; no horizontal overflow; card tap targets remain clear.
+7. Remove obsolete “Back to account” navigation; Slice-1 shell is authoritative.
+8. Do not add favorites/tags/new grouping semantics.
+
+## B. Eyewear Detail — asset-first hierarchy
+The first viewport should answer:
+**What is this? Is it authenticated/certified? Is it mine/currently safe? What is its current recorded market reference (if any)? What can I do next?**
+
+Required composition:
+1. **Asset hero**: gallery/image + brand/model + SCA ref + concise authenticity/certification/registry/ownership state. Preserve authorized image routes and gallery behavior.
+2. **Current Market Reference**: when present, surface the existing owner-safe current advisory range near the primary summary (not buried only in History), retaining as-of, basis/source summary where appropriate and the exact non-guarantee/advisory meaning. Do not invent value, appreciation, currency conversion, comparables or history.
+3. **Primary trusted actions**: Public Passport when eligible; normal ownership action such as Transfer may be reachable without hunting, but eligibility/authorization semantics remain unchanged.
+4. **Details/history sections**: Authentication, Certification, Documents, Ownership history, Service history remain available and readable. Reorganizing tabs/sections is allowed; data semantics are not.
+5. **Personal organization/sharing**: public-profile visibility and private-collection membership should be clearly secondary controls associated with the item, not cards that appear before identity.
+6. **Safety actions**: Lost/Stolen/Recovered and staff-managed adverse state must be visually separated from ordinary actions. Preserve confirmation pages and all existing adverse transfer restrictions.
+7. Do not duplicate the public Passport or certification PDF. Existing canonical routes remain authoritative.
+8. Do not expose frame serial, QR token, internal IDs, storage paths, staff refs/reasons, private docs, another collector identity or any new PII.
+
+## C. Interaction/accessibility requirements
+- Continue the Slice-1 authenticated shell; Collection stays active on catalog/detail/transfer/status child routes.
+- Mobile-first from ~360px through desktop; no horizontal overflow.
+- Useful image alt text/fallback behavior; gallery thumbnail controls expose selected state to assistive technology, not visual class alone.
+- Visible keyboard focus.
+- Sections/tabs must remain usable by keyboard. If JS is used for presentation, progressive fallback must leave all essential information/actions reachable.
+- Do not hide destructive/safety actions behind ambiguous icon-only controls.
+- Flash success/error/status remains prominent and readable.
+- Avoid introducing a frontend framework.
+
+## D. Domain/security invariants — MUST NOT CHANGE
+- current-owner authorization and privacy-safe 404
+- authorized/no-store image and document routes
+- public-profile item visibility semantics
+- private collection membership/order semantics
+- transfer workflow/token/eligibility semantics
+- lost/stolen/recovered workflow + adverse restrictions
+- authentication/certification/history semantics
+- Market Reference Slice-1 advisory semantics
+- Passport/QR/certificate semantics
+- CSRF/throttle/collector guard/opaque refs
+- zero new provenance/current-state writers.
+
+No Market Reference Slice 2, marketplace/resale, analytics, notifications, SMTP, Stripe activation, backups, staff UI or public-profile/passport redesign.
+
+## Mandatory tests / evidence
+Add a focused Collector UI Slice-2 presentation test suite (or extend CollectorExperience cleanly) proving at minimum:
+- catalog/detail remain current-owner scoped; previous/non-owner access remains safe
+- Collection shell active state remains correct on index/detail and transfer/status child pages
+- active private-group browse context and GET filters remain intact
+- catalog cards use authorized image routes and never emit storage paths/internal ids
+- detail hero renders owner-safe brand/model/ref and truthful current auth/cert/registry/ownership states
+- Market Reference appears prominently only when canonical owner-safe current reference exists; absent/voided reference is not fabricated; advisory wording remains
+- public Passport action only under existing eligibility
+- visibility and private-collection controls retain exact existing route/CSRF/eligibility behavior
+- transfer link/action hidden/blocked under the same adverse rules as before
+- lost/stolen/recovered confirmation workflow remains intact
+- documents remain owner-authorized/public-only
+- gallery uses authorized ordinal image routes and selected thumbnail state is accessible
+- no sensitive fields/QR token/storage path/staff refs leak into detail HTML
+- GET index/detail remains zero provenance/current-state mutation
+- ~360px responsive evidence (automated browser if available; otherwise deterministic markup/CSS assertions + documented manual viewport evidence)
+- existing CP-2/CP-4/CP-6, item-detail parity/gallery, transfer/status, Market Reference and Collector Experience tests remain green
+- full `tests/Feature/Sca` gate passes.
+
+## Delivery discipline
+- Branch from exact production `e20e549948ecbf5c967d48a7444275280dafb97c`. If main moved, STOP.
+- **No migration.** If schema/new authoritative state seems necessary, STOP and return architecture rationale.
+- Do not refactor domain services merely for aesthetics.
+- Keep changes narrowly in collector presentation/tests unless a presentation DTO composition change is justified and documented.
+- Record changed files, focused/full tests, responsive evidence, and zero-mutation/privacy proof in governance implementation evidence.
+- Push candidate only. **Do not merge/deploy. STOP for ChatGPT pre-merge audit.**
 
 
 <!-- Prior status (pre-merge PASS gate for candidate 0c8628d) retained below for traceability. -->
