@@ -1,6 +1,44 @@
 # NEXT TASK
 
-**STATUS: COLLECTOR EXPERIENCE / UI 2.0 — SLICE 1 R1 REMEDIATION PUSHED, AWAITING ChatGPT RE-AUDIT. NEW candidate `0c8628d352f9a0fb843774bff5281bc808a9248c` (branch `feat/sca-collector-ui2-slice1`, base `9cf7272`/migration 138, NO migration, 1 ahead/0 behind; supersedes FAILED `b69824f`). R1 fix = truthful submission-progress summary: projected only from canonical submission status into exactly-true labels — "Awaiting receipt by SCA" (draft/submitted/awaiting_item) + "Received & being processed" (received, shown as its OWN active category, never completed/inactive); cancelled only in total. No downstream/result/payment invention, no new state. All accepted shell/Home/nav/privacy/image/route/domain work unchanged. New tests ce12 (status matrix) / ce13 (received active across bound-item stages) / ce14 (received+failed still processing) / ce15 (cross-collector scoping); ce8 relabeled. Focused 21 passed; full `tests/Feature/Sca` 1335 passed / 1 skipped / 0 failed. Prod untouched: FP `d15a5cbd`, counts `3/3/4/4/5/2/1/1/7`, migration 138. Evidence: `docs/SCA-COLLECTOR-UI2-SLICE1-IMPLEMENTATION.md`. DO NOT merge/deploy/start another initiative — STOP for R1 re-audit.**
+**STATUS: COLLECTOR EXPERIENCE / UI 2.0 — SLICE 1 PRE-MERGE AUDIT PASS. Exact approved candidate: `0c8628d352f9a0fb843774bff5281bc808a9248c`. Approved for controlled merge + deployment only. Production remains `9cf72728248cf3e36d0525de4520d69717dacd5d` / migration 138 until deployment succeeds. Do not begin another initiative.**
+
+## ChatGPT R1 re-audit — PASS
+Independently verified actual GitHub candidate `0c8628d352f9a0fb843774bff5281bc808a9248c`:
+- exact production base `9cf72728248cf3e36d0525de4520d69717dacd5d`
+- exactly **1 ahead / 0 behind**
+- no migration
+- original accepted Slice-1 shell/Home/navigation/privacy/current-owner/image/route boundaries preserved
+- R1 submission summary is now derived only from canonical collector-scoped submission status:
+  - `draft|submitted|awaiting_item` → **Awaiting receipt by SCA**
+  - `received` → **Received & being processed**
+  - `cancelled` → total only; never represented as active or completed
+- no downstream authentication/payment/claim/return state is invented by the Home projection
+- a received frame remains represented as being processed regardless of awaiting-exam / passed-not-certified / certified / failed-auth examples
+- cross-collector submissions do not affect the summary
+- dashboard GET remains zero-mutation
+- accepted reported gate: focused 21 passed; full `tests/Feature/Sca` 1335 passed / 1 skipped / 0 failed.
+
+R1 is CLOSED. No further remediation required before merge.
+
+## Controlled merge + deployment gate
+Deploy **only** the exact approved candidate `0c8628d352f9a0fb843774bff5281bc808a9248c`.
+
+1. Merge the approved branch to `main`.
+2. Prove the merge tree is candidate-identical (merge commit only; no unexpected file/content delta from the approved candidate).
+3. Deploy the resulting exact `main` merge commit using the established production procedure.
+4. Confirm migration remains **138**; there is no migration in this slice.
+5. Run the focused CollectorExperience/AppPolish tests and the full `tests/Feature/Sca` gate on the deployed/merge tree.
+6. Confirm production health, including `/admin/login → 200`, collector guest `/collector` → sign-in, and an authenticated collector Home renders successfully.
+7. Verify canonical provenance fingerprint/counts are unchanged from pre-deploy baseline:
+   - fingerprint `d15a5cbdfb8df52ba65628b276533cfe`
+   - counts `3/3/4/4/5/2/1/1/7`
+8. Confirm no schema/provider/infrastructure drift: no Caddy/DNS/OAuth/SMTP/Stripe change.
+9. Record merge SHA, deployed SHA, test results, migration, fingerprint/counts and smoke results in governance evidence.
+
+If any gate fails, restore production to the pre-deploy baseline and STOP.
+
+After successful deployment, **STOP for ChatGPT independent post-deployment audit. Do not declare Slice 1 closed and do not begin Slice 2 or another initiative.**
+
 
 <!-- Prior status (pre-merge FAIL R1 of candidate b69824f) retained below for traceability. -->
 
