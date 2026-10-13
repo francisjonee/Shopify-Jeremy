@@ -1,6 +1,52 @@
 # NEXT TASK
 
-**STATUS: COLLECTOR EXPERIENCE / UI 2.0 — SLICE 2 CANDIDATE PUSHED, AWAITING ChatGPT PRE-MERGE AUDIT. Branch `feat/sca-collector-ui2-slice2`, base `e20e549`/migration 138, candidate SHA `dba6c4d7b83b674615f461d081f64d9c07e2077d` (1 ahead/0 behind, 4 files, NO migration, no controller/service change). Presentation-hierarchy redesign: My Collection browse-first (eyewear grid focus; CP-6 group-chip switcher kept; create/rename/reorder/delete moved into a secondary "Manage collections" <details>; "Back to account" removed) + Eyewear Detail asset-first (gallery/brand/model/ref hero; current Market Reference surfaced near the asset with advisory wording; Passport/Transfer primary; safety lost/stolen/recovered separated from Transfer; CP-4 visibility + CP-6 organize relocated secondary). All routes/CSRF/DTOs/authorization/mutation semantics unchanged; zero new writers. Focused 12 passed; full `tests/Feature/Sca` 1347 passed / 1 skipped / 0 failed. Prod untouched: FP `d15a5cbd`, counts `3/3/4/4/5/2/1/1/7`, migration 138. Evidence: `docs/SCA-COLLECTOR-UI2-SLICE2-IMPLEMENTATION.md`. Slice 1 CLOSED (not reopened). DO NOT merge/deploy/start another initiative — STOP for pre-merge audit.**
+**STATUS: COLLECTOR EXPERIENCE / UI 2.0 — SLICE 2 PRE-MERGE AUDIT PASS. Candidate `dba6c4d7b83b674615f461d081f64d9c07e2077d` is APPROVED for controlled merge/deployment only. Production baseline audited: `e20e549948ecbf5c967d48a7444275280dafb97c`, migration 138. Slice 2 is NOT CLOSED until ChatGPT independently audits post-deployment evidence. Do not start another initiative.**
+
+## ChatGPT pre-merge audit verdict — PASS
+Independent GitHub audit verified:
+- exact compare is **1 ahead / 0 behind**, merge base exactly `e20e549948ecbf5c967d48a7444275280dafb97c`
+- exactly four changed files:
+  - `collection/index.blade.php`
+  - `collection/show.blade.php`
+  - new `CollectorCollectionUi2Test.php`
+  - narrow assertion update in `CollectorItemDetailParityTest.php`
+- no migration, route, controller, service, DTO, domain writer, provider or infrastructure change
+- My Collection is browse-first; private collection administration is secondary; active group/filter context preserved
+- item detail is asset-first; adverse warning remains dominant; Market Reference uses the existing owner-safe DTO and retains advisory/non-guarantee semantics
+- Passport/transfer eligibility remains conditional; transfer remains absent while adverse
+- lost/stolen/recovered safety actions remain separated and continue through existing confirmation routes
+- CP-4 visibility and CP-6 organization keep their existing routes/CSRF/domain semantics
+- gallery remains owner-authorized and now exposes selected thumbnail state with `aria-pressed`; existing keyboard-focusable CSS-radio tabs and focus-visible treatment remain intact
+- sensitive frame serial/QR token/storage/staff/internal data remains excluded by existing + new regression coverage
+- GET catalog/detail zero-mutation coverage added
+- existing parity assertion change from old “Manage item” to “Transfer” + “Report a problem” is consistent with the promoted Slice-2 architecture
+- governance evidence reports focused 12/12 and full SCA gate 1347 passed / 1 skipped / 0 failed.
+
+## Approved deployment gate
+Claude may now:
+1. Merge **only** approved candidate `dba6c4d7b83b674615f461d081f64d9c07e2077d` into current production main. If main moved from audited baseline before merge, STOP and return to ChatGPT.
+2. Prove candidate→merge content identity (merge commit only / no unreviewed file delta).
+3. Deploy the resulting merge SHA using the established controlled production procedure.
+4. Confirm migration remains **138**; no migration is expected or permitted for this slice.
+5. Run the full `tests/Feature/Sca` production/merge-tree gate and report exact pass/skip/fail/assertion totals.
+6. Verify authenticated collector Collection index/detail and the Slice-1 shell boundary; include responsive/mobile evidence if available.
+7. Record PRE/POST provenance fingerprint + canonical counts and prove unchanged.
+8. Confirm no Caddy/DNS/Shopify OAuth/Stripe/SMTP/provider/infrastructure change.
+9. Record exact `MERGE_SHA`, `ORIGIN_MAIN`, and `DEPLOYED_HEAD` plus deployment evidence in governance.
+10. **STOP for ChatGPT post-deployment audit. Do not call Slice 2 closed and do not start another initiative.**
+
+## Post-deployment audit targets
+ChatGPT will independently verify:
+- deployed SHA and candidate-identical tree
+- migration 138
+- full SCA gate
+- collector shell/index/detail availability
+- owner/privacy/security boundaries
+- provenance fingerprint/counts unchanged
+- no unrelated infrastructure/provider change.
+
+**Only a post-deployment PASS closes Collector Experience / UI 2.0 Slice 2.**
+
 
 <!-- Prior status (Slice 2 promotion) retained below for traceability. -->
 
