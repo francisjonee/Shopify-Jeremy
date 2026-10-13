@@ -1,6 +1,27 @@
 # NEXT TASK
 
-**STATUS: COLLECTOR EXPERIENCE / UI 2.0 — SLICE 3 PROMOTED (FINAL COLLECTOR UX SLICE). Architecture audit completed against production `ffef6dedfdd21d865c73bb809bf81c917b367dda`, migration 138. Redesign Authenticate/Submissions + Profile + Account presentation over EXISTING capabilities. No new domain behavior, payment activation, profile/publication semantics, schema, provenance logic, or infrastructure. Slices 1–2 are CLOSED and must not be reopened.**
+**STATUS: COLLECTOR EXPERIENCE / UI 2.0 — SLICE 3 CANDIDATE PUSHED — AWAITING ChatGPT PRE-MERGE AUDIT. NOT merged, NOT deployed.**
+
+## Candidate under audit
+| | |
+|---|---|
+| Governance promotion | `d285d2e621f82142eb48347e1b351a260c42c496` |
+| Branch | `feat/sca-collector-ui2-slice3` (1 ahead / 0 behind) |
+| Production base SHA | `ffef6dedfdd21d865c73bb809bf81c917b367dda` (migration 138) |
+| Candidate SHA | `8ea5094519281c61a2b288aff9f96eecd1975fc8` |
+| Migration | none (138 unchanged) |
+| Changed files | 7 (6 collector views + new `CollectorUi3Test.php`), 576 insertions / 98 deletions |
+| Focused tests | `CollectorUi3Test` 18 passed / 171 assertions |
+| Full `tests/Feature/Sca` | 1365 passed / 1 skipped / 0 failed (7212 assertions) |
+| Prod provenance FP (unchanged) | `d15a5cbdfb8df52ba65628b276533cfe`, counts `3/3/4/4/5/2/1/1/7`, migration 138 |
+
+Evidence: `docs/SCA-COLLECTOR-UI2-SLICE3-IMPLEMENTATION.md`. Presentation & journey-coherence redesign only — no controller/service/route/DTO/migration change, no new domain behavior, no Stripe activation. No existing test file edited (the Account card is named "Account security" so `CollectorPasswordTest` stays green). **STOP for ChatGPT pre-merge audit; do not merge/deploy/start another initiative.**
+
+---
+
+<!-- Promotion brief retained below for traceability. -->
+
+**STATUS (promotion): COLLECTOR EXPERIENCE / UI 2.0 — SLICE 3 PROMOTED (FINAL COLLECTOR UX SLICE). Architecture audit completed against production `ffef6dedfdd21d865c73bb809bf81c917b367dda`, migration 138. Redesign Authenticate/Submissions + Profile + Account presentation over EXISTING capabilities. No new domain behavior, payment activation, profile/publication semantics, schema, provenance logic, or infrastructure. Slices 1–2 are CLOSED and must not be reopened.**
 
 ## Architecture audit conclusion
 A final collector UX slice is justified. Existing backend/domain behavior is already mature; remaining debt is presentation and journey coherence.
