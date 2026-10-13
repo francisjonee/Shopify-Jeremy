@@ -1,6 +1,39 @@
 # NEXT TASK
 
-**STATUS: COLLECTOR EXPERIENCE / UI 2.0 — SLICE 1 DEPLOYED to production, AWAITING ChatGPT POST-DEPLOYMENT audit. Approved candidate `0c8628d` merged `--no-ff` into main (merge=main=deployed SHA `e20e549948ecbf5c967d48a7444275280dafb97c`, tree byte-identical to candidate). No migration (stays 138; `Nothing to migrate`). Full merge-tree SCA gate 1335 passed / 1 skipped / 0 failed (clean first run). PRE==POST: prov FP `d15a5cbd`, counts `3/3/4/4/5/2/1/1/7`, migration 138. Smoke: /admin/login 200, guest /collector → /collector/login, collector.home route live (authenticated Home proven by ce2 in the deployed gate). No Caddy/DNS/Shopify-OAuth(read_orders)/Stripe(dormant)/SMTP(log) drift; kr-app loopback-only; sr-caddy not recreated. Evidence: `docs/SCA-COLLECTOR-UI2-SLICE1-DEPLOY-RESULT.md`. Slice 1 NOT declared closed; do NOT begin Slice 2 or another initiative; STOP for post-deployment audit.**
+**STATUS: COLLECTOR EXPERIENCE / UI 2.0 — SLICE 1 CLOSED + LIVE. ChatGPT independent post-deployment audit PASS. Production/main/deployed = `e20e549948ecbf5c967d48a7444275280dafb97c`, migration 138. Do not begin another initiative until the owner selects/approves the next slice.**
+
+## Post-deployment audit — PASS
+ChatGPT independently verified:
+- deployed merge commit `e20e549948ecbf5c967d48a7444275280dafb97c` is exactly one merge commit ahead of approved candidate `0c8628d352f9a0fb843774bff5281bc808a9248c`
+- GitHub compare candidate→deployed reports **files=[]**, proving the deployed merge tree is content-identical to the exact approved candidate
+- merge message identifies the approved candidate and governance approval; no unrelated candidate delta
+- governance deployment evidence records full merge-tree gate **1335 passed / 1 skipped / 0 failed**, clean first run
+- migration remains **138**, `Nothing to migrate`
+- provenance fingerprint remained `d15a5cbdfb8df52ba65628b276533cfe`
+- canonical counts remained `3/3/4/4/5/2/1/1/7`
+- production smoke: `/admin/login → 200`; guest `/collector → 302 /collector/login`; authenticated Home rendering proven on exact deployed merge tree by ce2 without fabricating production data
+- app remains loopback-only behind existing edge; no Caddy/DNS change
+- Shopify OAuth remains `read_orders`
+- mail remains `log`
+- Stripe remains dormant
+- no schema/provider/infrastructure drift.
+
+## Closed Slice 1 capability
+Collector Experience / UI 2.0 Slice 1 is now production-live:
+- real authenticated Collector Home at `/collector`
+- persistent mobile-first authenticated navigation: Home / Collection / Authenticate / Profile / Account
+- bounded collector-scoped collection summary + recent preview
+- truthful submission summary:
+  - draft/submitted/awaiting_item = Awaiting receipt by SCA
+  - received = Received & being processed
+  - cancelled only contributes to total
+- public-profile publication summary
+- existing authorization/privacy/provenance/domain behavior preserved.
+
+**SLICE 1 IS CLOSED.**
+
+No Slice 2 scope is authorized by this closure. Before implementation, ChatGPT should architecture-audit the live collector experience and choose the next substantial UX slice with the owner.
+
 
 <!-- Prior status (pre-merge PASS gate for candidate 0c8628d) retained below for traceability. -->
 
