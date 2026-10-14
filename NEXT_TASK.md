@@ -1,4 +1,17 @@
-# SCA BACKUP/DR REMEDIATION — INDEPENDENT PRE-MERGE PASS
+# SCA BACKUP/DR REMEDIATION — CODE-ONLY MERGE DONE; AWAITING INDEPENDENT POST-MERGE AUDIT
+
+**STATUS (2026-10-15):** Controlled code-only merge complete. Evidence in `docs/SCA-BACKUP-DR-MERGE-RESULT.md`.
+- Reconfirmed impl `origin/main` unmoved at `73b6c22` immediately pre-merge; candidate `ee3b014` 1 ahead/0 behind, merge-base `73b6c22`.
+- `--no-ff` merge → **MERGE_SHA = ORIGIN_MAIN = `6022b75c021069bde332b4a10cd5806ae9065aaf`** (pushed `73b6c22..6022b75`).
+- **Candidate ↔ merge byte-identical** (`git diff --quiet ee3b014..6022b75` ⇒ empty); baseline→merge = **exactly 2 backup scripts** (`backup-run.sh` +24/−1, `backup-verify-restore.sh` +7/−0; total +31/−1).
+- **NOT deployed; no production script installation, DB migration, live-data mutation, or pilot.** Running app stays `3b30a0f`/migration 138. The nightly backup on the running host is **NOT** claimed fixed merely because code merged — that needs separate operator verification/deploy.
+- **Off-host replication still unconfigured → production release remains NO-GO.** Owner-approved destination/credentials required before off-host publication.
+
+**STOP — awaiting ChatGPT independent POST-MERGE audit of `6022b75`. Do not deploy, install production scripts, run production migrations, modify production data, change infrastructure, conduct a pilot, or start another initiative.**
+
+---
+
+# (PRIOR) SCA BACKUP/DR REMEDIATION — INDEPENDENT PRE-MERGE PASS
 
 **LIMITED CODE-ONLY MERGE AUTHORIZATION.** Independently verified implementation main `73b6c22ff0b8397e2d6c7c06ea9cc325d7693732`, candidate `ee3b0145683796952e1c9000418b514c8cb634a7` 1 ahead/0 behind; exactly two scripts changed: `scripts/backup-run.sh` (+24/-1), `scripts/backup-verify-restore.sh` (+7/-0). Reviewed code and `docs/SCA-BACKUP-DR-REMEDIATION-RESULT.md`. Candidate correctly relocates temp workspace from tmpfs and adds space guard/cleanup. Claude reports fresh encrypted artifact and successful isolated restore; ChatGPT has not independently verified live-host state or executed tests. Note shred on SSD/COW may not guarantee physical erasure.
 
