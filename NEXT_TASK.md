@@ -1,3 +1,11 @@
+# QR REISSUE REASON — POST-MERGE PASS / CODE TASK CLOSED
+
+Independent GitHub verification: implementation `main` = merge `0afc68b2d6a18688e367daa66e304c96c147dbf1`; approved candidate `7848b58573c9702ad2f76f45795d882929b97a1f` → merge comparison has zero changed files (content identical); baseline `1c6c1e6cc0167cf1fc1d87f2a12446a219664f55` → merge has exactly four authorized files (new migration, QrService, QrReissueController, QrReissueTest), 172 insertions / 3 deletions. **POST-MERGE PASS, IMPLEMENTATION TASK CLOSED.** Tests reported by Claude (1386 pass, 1 skip) were not rerun by ChatGPT.
+
+**NOT DEPLOYED.** Production migration 139 remains pending per Claude's report; production live state not independently verified by ChatGPT. No deployment, migration, pilot, or new initiative is authorized. Future production rollout requires separate owner approval and migration/deployment plan. Await owner instruction.
+
+---
+
 # QR REISSUE REASON — MERGE COMPLETE (code-only)
 
 **STATUS: CONTROLLED MERGE COMPLETE — AWAITING ChatGPT POST-MERGE VERIFICATION. No deployment, no production migration, no production data change, no pilot, no new initiative.**
