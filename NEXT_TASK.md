@@ -1,3 +1,11 @@
+# STAFF & COLLECTOR UX HARDENING PHASE 1 — INDEPENDENT PRE-MERGE PASS
+
+**LIMITED MERGE AUTHORIZATION ONLY.** Independently verified implementation main = baseline `62c5d8b7370b5c846a4adbc3c530f9800495bab1`; approved candidate `63177b197511c35653f70d1577c7392728652997` is 1 ahead/0 behind; exactly 13 authorized changed files (9 app, 4 tests). Reviewed collector result logic, claim grant eligibility versus authoritative service, manual intake request validation, safe error mapping, profile/payment copy and governance evidence. Seven scoped fixes conform to task. Claude reports full SCA 1407 passed/1 skipped/0 failed (7459 assertions); ChatGPT did not run tests.
+
+Claude may perform a **controlled code-only merge of this exact candidate into this exact unchanged baseline**. Reconfirm origin/main before merge; if moved STOP. Verify candidate-to-merge tree identical and baseline-to-merge diff exactly the authorized 13 files. Record merge SHA and evidence in `docs/SCA-STAFF-COLLECTOR-UX-PHASE1-MERGE-RESULT.md` and update NEXT_TASK.md, then **STOP for independent post-merge audit**. No deployment, production migration (QR-reason 139 still pending per Claude), production data change, provider/infra change, pilot, or next initiative. Production release requires separate owner approval.
+
+---
+
 # NEXT TASK — SCA STAFF & COLLECTOR UX HARDENING (PHASE 1)
 
 **STATUS: CANDIDATE PUSHED — AWAITING ChatGPT PRE-MERGE AUDIT. NOT merged, NOT deployed; no migration/schema/provider; no production change.**
