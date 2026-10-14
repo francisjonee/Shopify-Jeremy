@@ -1,3 +1,31 @@
+# NEXT TASK — SCA STAFF & COLLECTOR UX HARDENING (PHASE 1)
+
+**STATUS: OWNER-AUTHORIZED CANDIDATE IMPLEMENTATION; STOP BEFORE MERGE.**
+
+Implementation repository: `francisjonee/francisjonee-sca-platform-private`. **Exact baseline `62c5d8b7370b5c846a4adbc3c530f9800495bab1`.** Reconfirm remote main matches baseline before work; if not, STOP and report. Create dedicated candidate branch; no direct commits to main.
+
+## Goal and bounded scope
+Address the seven previously audited staff/collector usability defects without changing provenance, certification, QR, ownership, payment, or permission semantics. **First inspect the actual routes, controllers, views, validators, service eligibility and existing tests; document evidence and exact paths before editing.** Implement only grounded corrections:
+
+1. **Collector profile link:** UI currently advertises friendly `/u/{handle}` while edge intentionally blocks `/u/*`. Show only a verified working canonical collector profile URL (or no clickable share URL if none is confirmed). Preserve edge restrictions, public privacy/visibility and existing routing; do not open `/u/*` or invent redirects.
+2. **Failed vs inconclusive:** Distinguish authentication results in staff/collector copy wherever currently conflated. Do not modify underlying result values or publish private authentication details.
+3. **Raw operator error codes:** Map known domain errors to safe actionable language at identified staff surfaces; log internal diagnostic detail server-side only if already supported and safe. Do not expose exceptions, tokens or identifiers in rendered UI; preserve HTTP error status and validation semantics.
+4. **Year validation mismatch:** Align help/error text with actual server-side year constraints; do not silently relax rules.
+5. **Manual intake brand/model:** Review actual workflow and enforce appropriate brand/model completeness for staff manual intake at request validation, with helpful errors and old-input preservation; **do not impose requirements on external/legacy/import pathways or rewrite existing items**. If field optionality is a deliberate domain rule, report conflict and propose narrowly rather than changing it unilaterally.
+6. **Claim action eligibility:** Hide/disable misleading staff/collector claim controls when existing service/registry eligibility rejects the action. Derive from the authoritative current eligibility logic; preserve service enforcement, adverse-status rules, permissions and no accidental grant.
+7. **External authentication payment copy:** Correct misleading Stripe/payment language to accurately distinguish manual staff progression from verified payment while Stripe is dormant. Do not imply a charge, receipt or verified payment; do not activate Stripe or change payment state machine.
+
+## Security, compatibility, and scope controls
+No new features, migrations, schema, public URL opening, collector privacy expansion, payment processing, Shopify/mail changes, ACL loosening, provenance mutation semantics, production edits, infrastructure changes or physical pilot. Keep fixes minimal, focused and accessible. Preserve escaping, CSRF, old input, actual HTTP 403/404, server-side validation, item/collector binding and no public leakage. Do not convert internal errors into false success.
+
+## Evidence and tests
+Create focused regression tests per changed behavior: broken link not advertised and canonical link correctness; failed/inconclusive differentiation; safe error messages; exact year constraints; manual intake missing brand/model validation without affecting external/legacy paths; claim control visibility vs service eligibility; honest payment copy. Include negative/security cases and existing workflows. Use disposable `sca_domain_test` hard guard for DB tests. Run focused and full `tests/Feature/Sca` suites; provide exact commands/counts, any skipped tests, and explain gaps. Review any impact on prior merged QR-reason and auth/cert safeguards; ensure no regression.
+
+## Delivery / STOP
+Commit and push candidate branch only. Record findings, exact changed files, base and candidate SHAs, before/after behavior, tests, risks, and any deliberately deferred item in `docs/SCA-STAFF-COLLECTOR-UX-PHASE1-RESULT.md` in governance repository. Update `NEXT_TASK.md` to awaiting independent ChatGPT pre-merge audit. **STOP BEFORE MERGE**; no deployment, production migration (QR-reason migration 139 remains pending), production data changes, pilot, or next initiative. If scope conflicts or cannot be safely bounded, stop and ask for review instead of broadening.
+
+---
+
 # AUTHENTICATION & CERTIFICATION SAFEGUARDS — POST-MERGE PASS / CODE TASK CLOSED
 
 Independent GitHub verification: implementation `main` = merge `62c5d8b7370b5c846a4adbc3c530f9800495bab1`; approved candidate `d21f08703051448ec9a77da741a74ac1daea858b` → merge has zero changed files (content identical); baseline `0afc68b2d6a18688e367daa66e304c96c147dbf1` → merge has exactly 12 authorized files (501 additions, 29 deletions). **POST-MERGE PASS; IMPLEMENTATION TASK CLOSED.** Claude reported full SCA 1397 passed/1 skipped/0 failed; ChatGPT did not rerun tests.
