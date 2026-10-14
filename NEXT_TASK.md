@@ -1,5 +1,26 @@
 # NEXT TASK
 
+**STATUS: SCA MARKET REFERENCE / VALUE HISTORY — SLICE 2 PRE-MERGE PASS.**
+
+Approved candidate: `9e8453e2bad54ed24ef22a151c881e539b9dc8be`
+Exact production base: `6ca15958844dace74f7d087a10a3355a6497dd00`
+Branch: `feat/sca-market-reference-slice2`
+Migration: 138 unchanged; 5 files, no schema/route/provider/infra change.
+
+ChatGPT independently inspected GitHub comparison, canonical MarketReferenceService reader, owner gate, controller/view and all 13 new tests. Exact base/merge-base confirmed (1 ahead, 0 behind). Event-id current marker, void semantics, owner/former-owner scoping, privacy projection and advisory UI PASS. Focused 13/73 and full 1380/7308 with 1 skip are **Claude-reported execution results**, supported by governance evidence, not independently rerun by ChatGPT. No identified pre-merge blocker.
+
+**DEPLOYMENT GATE — CLAUDE MAY PROCEED WITH CONTROLLED MERGE/DEPLOY OF EXACT APPROVED SHA ONLY.**
+1. Recheck origin/main equals exact base; if moved STOP.
+2. Merge approved candidate only; prove merge tree content-identical to candidate (empty diff).
+3. Run full SCA suite on merge tree; abort on any failure.
+4. Confirm no migration (138), production provenance fingerprint `d15a5cbdfb8df52ba65628b276533cfe` and canonical counts `3/3/4/4/5/2/1/1/7` unchanged before/after.
+5. Confirm guest/privacy smoke, public value-free boundary, app health, and no Caddy/DNS/OAuth/SMTP/Stripe drift.
+6. Write deployment evidence and STOP for independent ChatGPT post-deploy audit. Do not declare Slice 2 closed until that audit.
+
+---
+
+# NEXT TASK
+
 **STATUS: SCA MARKET REFERENCE / VALUE HISTORY — SLICE 2 CANDIDATE PUSHED — AWAITING ChatGPT PRE-MERGE AUDIT. NOT merged, NOT deployed.**
 
 ## Candidate under audit
