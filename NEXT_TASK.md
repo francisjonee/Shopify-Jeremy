@@ -1,18 +1,18 @@
 # NEXT TASK
 
-**STATUS: SCA QR rg8 TEST RELIABILITY CLOSED — INDEPENDENT POST-MERGE AUDIT PASS.**
+**STATUS: STAFF OPS & COLLECTOR EXPERIENCE AUDIT (READ-ONLY) DELIVERED — AWAITING ChatGPT INDEPENDENT REVIEW. No code/schema/config/infra/production change; no fixes implemented; no deployment; no pilot; no new initiative.**
 
-Independently checked implementation repository GitHub main = merge `1c6c1e6cc0167cf1fc1d87f2a12446a219664f55`. Approved candidate `1bc301eacc5b0d427a6f7e19e22ba201c3002216` → merge comparison: **files=[]**, 1 ahead / 0 behind (identical content). Approved baseline `9a7db357572600ddaeff8caa4fde5c1a8b6d273c` → merge comparison: exactly one modified file `app/tests/Feature/Sca/QrReissueTest.php` (+22/-3), 2 ahead / 0 behind; no production app changes. Reviewed governance merge evidence `docs/SCA-QR-RG8-TEST-RELIABILITY-MERGE-RESULT.md`, consistent. Test results (1380 passed, 1 skipped, 0 failed, 7310 assertions) are Claude-reported, not independently rerun. **No deployment or production mutation performed or authorized.** Running application code remains reported baseline `3b30a0f24323463c42dda58b476a453f58e49389`; migration 138 (not live-verified in this audit).
+Read-only audit of baseline `1c6c1e6cc0167cf1fc1d87f2a12446a219664f55` (deployed app `3b30a0f`, migration 138) across (1) staff intake/auth/cert/QR/custody, (2) collector registration/claims/My-Collection/transfer/privacy, (3) external submissions + staff processing, (4) public passport/errors/nav. Report: `docs/SCA-STAFF-COLLECTOR-OPS-AUDIT.md` (prioritized P1/P2/P3 + ON-HOLD + REAL-WORLD-TESTING-ONLY, exact `file:line` anchors, verification tags).
 
-**Initiative CLOSED.** Physical pilot remains on hold pending owner-approved exact frames, participants and window. No new development initiative promoted. STOP; do not merge, deploy, mutate production, run pilot, or start another initiative without new owner direction.
+P1 (pre-pilot, trust/audit-integrity): (1) QR reissue required reason collected but never stored (no param/column) — audit gap; (2) collector profile advertises a clickable `/u/{handle}` link while `/u/*` is edge-blocked (Phase A) → non-resolvable externally; (3) no collector notification anywhere in the submission lifecycle vs copy promising "we'll be in touch" → silent parked states; (4) certify + finalize-auth are irreversible yet single-click with no confirm interstitial (status/QR/corrections all require typed confirm). P2/P3 + intentional ON-HOLD (Stripe dormant, MAIL=log, /u edge, Shopify live-configured but stale "deferred" config comments) and real-world-only items (QR print scan, custody paper-chain, live Shopify/Stripe/email, mobile) enumerated in the report. **STOP — awaiting ChatGPT independent review; do not implement fixes, change code, deploy, mutate production, or start another initiative.**
 
 ---
 
-# NEXT TASK
+<!-- Prior status (QR rg8 CLOSED, independent post-merge audit PASS) retained below for traceability. -->
 
-**STATUS: QR rg8 TEST RELIABILITY — TEST-ONLY MERGE COMPLETE — AWAITING ChatGPT POST-MERGE VERIFICATION. No application deployment, production data change, pilot, or new initiative authorized.**
+**STATUS (rg8 CLOSED): SCA QR rg8 TEST RELIABILITY CLOSED — INDEPENDENT POST-MERGE AUDIT PASS.** GitHub main = merge `1c6c1e6cc0167cf1fc1d87f2a12446a219664f55`; candidate `1bc301e` → merge files=[] (identical); baseline `9a7db35` → merge one file `app/tests/Feature/Sca/QrReissueTest.php` (+22/-3), no production app changes; evidence `docs/SCA-QR-RG8-TEST-RELIABILITY-MERGE-RESULT.md`. Running app code remains `3b30a0f`, migration 138. Initiative CLOSED; physical pilot on hold pending owner approval.
 
-## Merge result (awaiting post-merge verification)
+## Merge result (rg8, post-merge audit PASS)
 | | |
 |---|---|
 | Pre-merge PASS | `14941ed90463bdbcfcc2e255ea81fc31366e6cc3` |
