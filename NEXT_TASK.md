@@ -1,3 +1,23 @@
+# QR REISSUE REASON — MERGE COMPLETE (code-only)
+
+**STATUS: CONTROLLED MERGE COMPLETE — AWAITING ChatGPT POST-MERGE VERIFICATION. No deployment, no production migration, no production data change, no pilot, no new initiative.**
+
+| | |
+|---|---|
+| Pre-merge PASS | `819b7bd6eb9caaee9321f9082cbcc0cf19184c74` |
+| Approved candidate | `7848b58573c9702ad2f76f45795d882929b97a1f` |
+| Baseline (unmoved pre-merge) | `1c6c1e6cc0167cf1fc1d87f2a12446a219664f55` |
+| **MERGE_SHA = ORIGIN_MAIN** | **`0afc68b2d6a18688e367daa66e304c96c147dbf1`** |
+| Candidate→merge | byte-identical; exactly the 4 authorized files; 172 ins / 3 del |
+| Deployment | not performed / not authorized |
+| Production migration | **Pending, NOT applied** (prod at migration 138; `2026_10_20_000001` pending) |
+
+Merge is code-only: the new reason-persist behavior is on `main` but not live; production DB stays migration 138; running container unchanged. A future deploy (138→139 + new code) needs separate owner authorization. Evidence: `docs/SCA-QR-REISSUE-REASON-MERGE-RESULT.md`. Prod non-mutating check unchanged (FP `d15a5cbd…`, loopback 200). **STOP for ChatGPT post-merge verification of `0afc68b`; do not deploy, run the production migration, mutate production, execute a pilot, or start another initiative.**
+
+---
+
+<!-- Prior pre-merge PASS decision retained below for traceability. -->
+
 # PRE-MERGE AUDIT DECISION — QR REISSUE REASON
 
 **PASS — LIMITED MERGE AUTHORIZATION ONLY.** Independently verified implementation `main` = exact base `1c6c1e6cc0167cf1fc1d87f2a12446a219664f55`, candidate `7848b58573c9702ad2f76f45795d882929b97a1f` 1 ahead / 0 behind. Exactly four files changed: additive migration `2026_10_20_000001_add_reason_to_sca_qr_lifecycle_events.php`, `QrService.php`, `QrReissueController.php`, `QrReissueTest.php`. Inspected migration CHECK/nullable compatibility, canonical `reissued_from` reason, atomic writer, request plumbing, stale guard and six new regression tests. Claude-reported focused 17 pass/96 assertions and full SCA 1386 pass/1 skip/0 fail/7342 assertions; ChatGPT did not execute tests.
