@@ -1,3 +1,11 @@
+# AUTHENTICATION & CERTIFICATION SAFEGUARDS — PRE-MERGE AUDIT PASS
+
+**PASS — LIMITED MERGE AUTHORIZATION ONLY.** Independent GitHub review of candidate `d21f08703051448ec9a77da741a74ac1daea858b` against exact implementation baseline `0afc68b2d6a18688e367daa66e304c96c147dbf1`: main remains base, candidate 1 ahead/0 behind; exactly 12 authorized files changed (501 insertions/29 deletions). Inspected both controllers, two FormRequests, both confirmation views, authentication create select, admin routes, item links, and new feature tests. No default Passed; required typed FINALIZE/ISSUE checked server-side; read-only GET, ACL and exact-item binding, existing service guards retained. Claude reports focused 47 passing and full SCA 1397 passing/1 skipped/0 failed (7403 assertions); ChatGPT did not execute tests. Note: server-side typed-word confirmation does not cryptographically prove GET page visit; this is the specified confirmation contract.
+
+Claude may merge **only candidate `d21f08703051448ec9a77da741a74ac1daea858b` into unchanged base `0afc68b2d6a18688e367daa66e304c96c147dbf1`**. Reconfirm origin/main equals base; if moved STOP. After controlled merge, verify candidate-to-merge content identical and base-to-merge diff exactly the 12 authorized files; record merge SHA and evidence in governance. **STOP for independent post-merge audit.** NO deployment, production migration (QR reason 139 still pending), production data changes, pilot, or new initiative. Production rollout requires separate owner authorization.
+
+---
+
 # NEXT TASK — AUTHENTICATION & CERTIFICATION SAFEGUARDS
 
 **STATUS: CANDIDATE PUSHED — AWAITING ChatGPT PRE-MERGE AUDIT. NOT merged, NOT deployed; no migration/schema; no production change.**
