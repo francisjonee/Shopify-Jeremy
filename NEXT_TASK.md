@@ -1,3 +1,11 @@
+# PRE-MERGE AUDIT DECISION — QR REISSUE REASON
+
+**PASS — LIMITED MERGE AUTHORIZATION ONLY.** Independently verified implementation `main` = exact base `1c6c1e6cc0167cf1fc1d87f2a12446a219664f55`, candidate `7848b58573c9702ad2f76f45795d882929b97a1f` 1 ahead / 0 behind. Exactly four files changed: additive migration `2026_10_20_000001_add_reason_to_sca_qr_lifecycle_events.php`, `QrService.php`, `QrReissueController.php`, `QrReissueTest.php`. Inspected migration CHECK/nullable compatibility, canonical `reissued_from` reason, atomic writer, request plumbing, stale guard and six new regression tests. Claude-reported focused 17 pass/96 assertions and full SCA 1386 pass/1 skip/0 fail/7342 assertions; ChatGPT did not execute tests.
+
+Claude may merge **only this exact candidate into this exact unchanged base** after reconfirming `origin/main` is still the base. Verify candidate-to-merge trees identical and base-to-merge diff exactly the four authorized files. Record merge SHA and evidence in governance, then STOP for ChatGPT independent post-merge audit. If base or candidate differs, STOP. **NO deployment, production migration, production data change, live QR reissue, physical pilot, or new initiative authorized.** Production migration (138→139) requires separate explicit owner authorization and deployment planning; no guarantee of zero-lock online migration is established.
+
+---
+
 # NEXT TASK — QR REISSUE REASON AUDIT INTEGRITY
 
 **STATUS: CANDIDATE PUSHED — AWAITING ChatGPT PRE-MERGE AUDIT. NOT merged, NOT deployed; migration applied to disposable test DB only; production NOT migrated.**
