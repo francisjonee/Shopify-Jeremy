@@ -1,6 +1,24 @@
 # NEXT TASK
 
-**STATUS: REAL-WORLD PILOT READINESS — ARCHITECTURE AUDIT COMPLETE; CONTROLLED PILOT PREPARATION PROMOTED.** Baseline `3b30a0f24323463c42dda58b476a453f58e49389`, migration 138. No production mutation, merge, deployment, or live pilot authorized by this task. Claude must first prepare evidence and a practical runbook; stop for ChatGPT audit.
+**STATUS: REAL-WORLD PILOT READINESS — DOCS-ONLY CANDIDATE PUSHED — AWAITING ChatGPT PRE-MERGE AUDIT + OWNER AUTHORIZATION OF THE PHYSICAL PILOT. NOT merged, NOT deployed, pilot NOT executed.**
+
+## Candidate under audit
+| | |
+|---|---|
+| Governance promotion | `0995dd48b02eab927e29a69846c5e16dac36867a` |
+| Production baseline | `3b30a0f24323463c42dda58b476a453f58e49389` (migration 138) |
+| Branch | `docs/sca-real-world-pilot-readiness` (1 ahead / 0 behind) |
+| Candidate SHA | `f78f981d3351dcd45aec7f108ef6838518442e65` |
+| Changed files | 1 (`docs/SCA-REAL-WORLD-PILOT-READINESS.md`, 183 ins) — docs only, no code/schema/config |
+| Migration / provenance | 138 unchanged; FP `d15a5cbd…`, counts `3/3/4/4/5/2/1/1/7` unchanged |
+
+Implementation doc `docs/SCA-REAL-WORLD-PILOT-READINESS.md` (candidate) + governance summary `docs/SCA-PILOT-READINESS-AUDIT.md` (here). Workflow readiness matrix (CODE-COMPLETE vs ENVIRONMENT-CONFIRMED vs NOT-YET-HUMAN-PILOT-VALIDATED — all stages NHV), controlled pilot runbook, operator checklists/incident/privacy/metrics, ranked gap register, and rg8 timing-flake diagnosis (test-only fix proposed, NOT patched). Blockers are human-process only (no pilot executed; owner approval pending); no code blocker. **STOP for ChatGPT pre-merge audit + owner authorization; do not merge/deploy/execute the pilot; do not start another initiative.**
+
+---
+
+<!-- Promotion brief retained below for traceability. -->
+
+**STATUS (promotion): REAL-WORLD PILOT READINESS — ARCHITECTURE AUDIT COMPLETE; CONTROLLED PILOT PREPARATION PROMOTED.** Baseline `3b30a0f24323463c42dda58b476a453f58e49389`, migration 138. No production mutation, merge, deployment, or live pilot authorized by this task. Claude must first prepare evidence and a practical runbook; stop for ChatGPT audit.
 
 ## Audit findings
 - Existing production code/test coverage already implements staff intake/authentication/certification, permanent QR/passport, collector claim/ownership/transfer, Shopify sale links, external submissions/custody/return, status safety, staff dashboard, and Market Reference. Do NOT rebuild these.
