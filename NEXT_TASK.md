@@ -1,5 +1,15 @@
 # NEXT TASK
 
+**STATUS: SCA QR rg8 TEST RELIABILITY CLOSED — INDEPENDENT POST-MERGE AUDIT PASS.**
+
+Independently checked implementation repository GitHub main = merge `1c6c1e6cc0167cf1fc1d87f2a12446a219664f55`. Approved candidate `1bc301eacc5b0d427a6f7e19e22ba201c3002216` → merge comparison: **files=[]**, 1 ahead / 0 behind (identical content). Approved baseline `9a7db357572600ddaeff8caa4fde5c1a8b6d273c` → merge comparison: exactly one modified file `app/tests/Feature/Sca/QrReissueTest.php` (+22/-3), 2 ahead / 0 behind; no production app changes. Reviewed governance merge evidence `docs/SCA-QR-RG8-TEST-RELIABILITY-MERGE-RESULT.md`, consistent. Test results (1380 passed, 1 skipped, 0 failed, 7310 assertions) are Claude-reported, not independently rerun. **No deployment or production mutation performed or authorized.** Running application code remains reported baseline `3b30a0f24323463c42dda58b476a453f58e49389`; migration 138 (not live-verified in this audit).
+
+**Initiative CLOSED.** Physical pilot remains on hold pending owner-approved exact frames, participants and window. No new development initiative promoted. STOP; do not merge, deploy, mutate production, run pilot, or start another initiative without new owner direction.
+
+---
+
+# NEXT TASK
+
 **STATUS: QR rg8 TEST RELIABILITY — TEST-ONLY MERGE COMPLETE — AWAITING ChatGPT POST-MERGE VERIFICATION. No application deployment, production data change, pilot, or new initiative authorized.**
 
 ## Merge result (awaiting post-merge verification)
