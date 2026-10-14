@@ -1,5 +1,15 @@
 # NEXT TASK
 
+**STATUS: REAL-WORLD PILOT READINESS DOCUMENTATION CLOSED — POST-MERGE AUDIT PASS.**
+
+Independent GitHub comparison verified approved candidate `bebd18139f008c29fc78c27bc1f4e27a34869ecb` → merge/main `9a7db357572600ddaeff8caa4fde5c1a8b6d273c` has **files=[]**; original application baseline `3b30a0f24323463c42dda58b476a453f58e49389` → merge changes exactly one file, `docs/SCA-REAL-WORLD-PILOT-READINESS.md` (199 insertions), and no `app/` files. Deployment was neither necessary nor authorized. Claude-reported non-mutating production checks remain unchanged; ChatGPT independently verified GitHub tree comparisons, not the production server.
+
+**Documentation initiative CLOSED.** Repo main `9a7db35`; deployed app code `3b30a0f`; migration 138. No physical pilot has been executed or authorized. To proceed, owner must explicitly approve exact consented frames, staff/collector participants, pilot window, and optional Shopify order; permanent provenance implications must be understood. No new initiative promoted. Do not merge/deploy/mutate production or execute pilot without separate authorization.
+
+---
+
+# NEXT TASK
+
 **STATUS: PILOT READINESS DOCS — DOCUMENTATION-ONLY MERGE COMPLETE — AWAITING ChatGPT POST-MERGE VERIFICATION. No application deployment, production data change, physical pilot, or new initiative authorized. Physical pilot still requires separate explicit owner approval of exact frames/participants/window.**
 
 ## Merge result (awaiting post-merge verification)
