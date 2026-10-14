@@ -1,3 +1,21 @@
+# NEXT TASK — QR REISSUE REASON AUDIT INTEGRITY
+
+**STATUS: OWNER-AUTHORIZED IMPLEMENTATION TASK; CANDIDATE ONLY, AWAIT CHATGPT PRE-MERGE AUDIT.**
+
+Implementation repo: `francisjonee/francisjonee-sca-platform-private`. Exact audited base `1c6c1e6cc0167cf1fc1d87f2a12446a219664f55`. Reconfirm main before work; if changed STOP. Governance audit: `docs/SCA-STAFF-COLLECTOR-OPS-AUDIT.md` finding P1 #1.
+
+**Problem:** `QrReissueRequest` requires a staff reason, but `QrReissueController::reissue` drops it, `QrService::reissue` does not accept it, and `sca_qr_lifecycle_events` cannot store it. This breaks operator justification traceability for irreversible QR rotation.
+
+**Implement a bounded fix in a candidate branch only:**
+1. Design a forward-only, additive migration for a nullable, bounded reason on the append-only QR lifecycle ledger. Do NOT rewrite prior migration, backfill invented reasons, alter existing events, or weaken append-only constraints. Preserve compatibility with historical rows and existing activation. Choose and document precisely which reissue event holds the reason (prefer `reissued_from` only, one canonical justification per rotation).
+2. Thread the validated, trimmed nonempty reason from request through controller to `QrService::reissue`, store it atomically with the three reissue events. Preserve the under-lock expected-active guard, one-active QR invariant, rollback, immutable identities, actor, and current projection. Do not put staff reason in public passport, collector views, QR payload, or logs.
+3. Add targeted regression tests proving exact reason persistence, no reason on unrelated lifecycle events, historic nullable compatibility, missing/blank reason rejects with zero mutation, stale/double POST creates no identity/event/reason, old QR 404/new QR 200, and certification/authentication/ownership unaffected. Adapt existing direct `reissue()` callers carefully. Tests only in disposable `sca_domain_test` with hard DB guard. Run focused tests and full SCA suite; record results honestly.
+4. Document migration compatibility and deployment considerations. **Do not execute migration on production or deploy.** No live QR rotations or pilot.
+
+**Boundaries:** No unrelated UX fixes, no Stripe/mail/Shopify changes, no refactors of public passport or ownership, no infrastructure. Commit and push candidate branch, provide exact base and head SHAs, diff/files changed, tests and any limitations in `docs/SCA-QR-REISSUE-REASON-RESULT.md` (governance repo), update NEXT_TASK.md to awaiting ChatGPT independent pre-merge audit. **STOP BEFORE MERGE.** No deployment or production data changes. ChatGPT must independently verify candidate and authorize any merge; deployment/migration requires separate owner authorization.
+
+---
+
 # NEXT TASK
 
 **STATUS: STAFF OPS & COLLECTOR EXPERIENCE AUDIT (READ-ONLY) DELIVERED — AWAITING ChatGPT INDEPENDENT REVIEW. No code/schema/config/infra/production change; no fixes implemented; no deployment; no pilot; no new initiative.**
