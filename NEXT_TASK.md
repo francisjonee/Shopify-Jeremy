@@ -1,5 +1,30 @@
 # NEXT TASK
 
+**STATUS: REAL-WORLD PILOT READINESS — ARCHITECTURE AUDIT COMPLETE; CONTROLLED PILOT PREPARATION PROMOTED.** Baseline `3b30a0f24323463c42dda58b476a453f58e49389`, migration 138. No production mutation, merge, deployment, or live pilot authorized by this task. Claude must first prepare evidence and a practical runbook; stop for ChatGPT audit.
+
+## Audit findings
+- Existing production code/test coverage already implements staff intake/authentication/certification, permanent QR/passport, collector claim/ownership/transfer, Shopify sale links, external submissions/custody/return, status safety, staff dashboard, and Market Reference. Do NOT rebuild these.
+- `PilotHardeningTest` and `PublicPassportPilotTest` already cover important safety/privacy scenarios, but automated tests do not establish that real people and physical frames have completed a pilot.
+- Existing `docs/RUNBOOK.md` contains historical staging language and operational commands. Treat it as reference, not proof of current live setup; verify production-specific details from authoritative evidence without revealing secrets.
+- External paid-auth payment remains dormant; manual submission advance is explicitly NOT payment confirmation. Shopify is read_orders only. Mail is log, so do not promise working outbound password-reset or notification emails. Off-site backup/restore and Stripe activation remain owner-parked.
+- `QrReissueTest::rg8` intermittently fails due to projection rebuilt_at timing under load. Investigate reproducibly and propose a narrowly scoped fix separately; never weaken the domain assertion or suppress a failure to pass deployment.
+
+## Claude task: substantial pilot-readiness package (documentation/evidence first)
+1. Inspect the exact deployed baseline and build a **workflow-by-workflow readiness matrix**: SCE-owned inventory intake→authentication→certification→QR printing→public scan→Shopify sale-link→grant/claim→current ownership→transfer; external collector submission→manual pilot advance (NOT paid)→physical custody→authentication result (passed/failed/inconclusive)→certification where eligible→grant→claim→return. Include lost/stolen/recovery, invalidation, staff corrections, and Market Reference as bounded safety cases.
+2. For each stage identify actual staff UI/route/service, actor, permissions, required physical artifact, irreversible mutation, safe rollback/correction, test evidence, and external dependency. Distinguish code-complete, environment-confirmed, and **not yet human-pilot-validated**. Do not claim a live Shopify transaction or Stripe payment without evidence.
+3. Create a **controlled pilot execution runbook** with 2–3 real or consented test frames, distinct staff and collector roles, unique traceable item references, paper custody chain, printed QR label/scan, verification on the canonical public domain, safe negative scenarios, checkpoints, screenshots/log evidence with PII redacted, and explicit stop/go criteria. Avoid manipulating real ownership or statuses until owner approves the exact pilot and participants.
+4. Draft operator checklists, incident/rollback boundaries, data handling/privacy, pilot success metrics, and a gap register ranked blocker/high/medium. Separate product defects from environment dependencies and human-process gaps.
+5. Analyze QR rg8 timing flake: inspect assertion and ProjectionService/QrService rebuild timestamps, identify likely race/precision source, suggest safe test/implementation correction and regression plan. Do NOT patch it in this preparation task without a separate approved scope.
+6. Verify no app code/schema/provider/infra edits; no production data mutation. Documentation and evidence only. Do not trigger Stripe, Postmark, backup activation, or live Shopify writes.
+7. Write `docs/SCA-REAL-WORLD-PILOT-READINESS.md` in implementation repo and a governance evidence summary `docs/SCA-PILOT-READINESS-AUDIT.md` here. Update `NEXT_TASK.md` with exact candidate SHA, matrix, blockers and next decision. Run documentation/static validation where applicable.
+8. Push a **docs-only** candidate based on exact `3b30a0f24323463c42dda58b476a453f58e49389`; if main moved STOP. Do not merge/deploy. STOP for independent ChatGPT audit and owner authorization of actual physical pilot.
+
+**No Marketplace, no new valuation features, no pilot execution, no code changes, no new initiative.**
+
+---
+
+# NEXT TASK
+
 **STATUS: MARKET REFERENCE / VALUE HISTORY — SLICE 2 CLOSED + LIVE. Independent ChatGPT post-deployment audit PASS.**
 
 Production/main/deployed: `3b30a0f24323463c42dda58b476a453f58e49389`. Approved candidate: `9e8453e2bad54ed24ef22a151c881e539b9dc8be`. GitHub candidate→merge comparison: **1 ahead / 0 behind / files=[]** (exact content identity).
