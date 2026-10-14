@@ -1,6 +1,28 @@
 # NEXT TASK
 
-**STATUS: SCA MARKET REFERENCE / VALUE HISTORY — SLICE 2 PRE-MERGE PASS.**
+**STATUS: SCA MARKET REFERENCE / VALUE HISTORY — SLICE 2 DEPLOYED TO PRODUCTION — AWAITING ChatGPT INDEPENDENT POST-DEPLOYMENT AUDIT. Slice 2 NOT closed; no other initiative started.**
+
+## Deployment result (awaiting post-deploy audit)
+| | |
+|---|---|
+| Deploy approval | `8b389ccfd3d30fb1c6bf9cd379fb0ddce2e40b9c` |
+| Approved candidate | `9e8453e2bad54ed24ef22a151c881e539b9dc8be` |
+| Audited baseline (unmoved pre-merge) | `6ca15958844dace74f7d087a10a3355a6497dd00` |
+| **MERGE_SHA = ORIGIN_MAIN = DEPLOYED_HEAD** | **`3b30a0f24323463c42dda58b476a453f58e49389`** |
+| Candidate→merge tree | byte-identical (no unreviewed delta) |
+| Migration | 138 (PRE/POST; "Nothing to migrate"; 0 pending) |
+| Deployed-tree full gate | 1380 passed / 1 skipped / 0 failed (7308 assertions) |
+| PRE==POST provenance FP | `d15a5cbd…`, counts `3/3/4/4/5/2/1/1/7` (unchanged) |
+| Health | `/admin/login` 200; guest `/collector[/collection]` → 302 /collector/login; public value-free via merge-tree m12 |
+| Dormancy/no-drift | Stripe dormant; MAIL_MAILER=log; SHOPIFY_SCOPES=read_orders; Caddy/DNS/provider/infra unchanged |
+
+First gate run aborted BEFORE prod migrate on the documented unrelated `QrReissueTest::rg8` flake (11/11 green isolated); prod untouched; re-run clean per fail-before-migrate policy. Evidence: `docs/SCA-MARKET-REFERENCE-SLICE2-DEPLOY-RESULT.md`. **STOP for ChatGPT independent post-deployment audit; do not declare Slice 2 closed; do not begin another initiative.**
+
+---
+
+<!-- Prior PRE-MERGE PASS gate retained below for traceability. -->
+
+**STATUS (pre-merge PASS): SCA MARKET REFERENCE / VALUE HISTORY — SLICE 2 PRE-MERGE PASS.**
 
 Approved candidate: `9e8453e2bad54ed24ef22a151c881e539b9dc8be`
 Exact production base: `6ca15958844dace74f7d087a10a3355a6497dd00`
