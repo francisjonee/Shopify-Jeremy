@@ -1,3 +1,29 @@
+# NEXT TASK — SCA QR REISSUE rg8 TEST RELIABILITY
+
+**STATUS: OWNER-APPROVED TEST-ONLY REMEDIATION PROMOTED; AWAITING CLAUDE CANDIDATE.** This supersedes the closed pilot-readiness documentation task. Owner authorized preparing/fixing the QR timing test while physical frames are unavailable, **not** merging, deploying, or executing a pilot.
+
+## Immutable baseline and scope
+- Implementation repo: `francisjonee/francisjonee-sca-platform-private`.
+- Require origin/main exactly `9a7db357572600ddaeff8caa4fde5c1a8b6d273c` before branching. If it moved, STOP and report.
+- One narrowly bounded **test-only** change to `app/tests/Feature/Sca/QrReissueTest.php`, specifically `rg8_certification_authentication_and_ownership_are_untouched`. Do not change production PHP, services, projection, migrations, configs, dependencies, infrastructure, or unrelated tests.
+- No Stripe, Postmark, backups, Shopify activity, production mutation, physical pilot, or new initiative.
+
+## Verified defect
+`rg8` captures entire `sca_item_current_state` before and after QR reissue, removes only `active_qr_identifier_id`, then `assertSame`. `QrService::reissue()` calls `ProjectionService::rebuild()`, which intentionally updates `rebuilt_at = now()`. Whole-second timestamp differences under load trigger false failures, even when certification, authentication, ownership and registry remain unchanged.
+
+## Required implementation
+1. Exclude `rebuilt_at` from the before/after equality comparison, as with the legitimately changed active QR ID. Keep assertion that active QR ID changed.
+2. Preserve meaningful invariant checks: other projection columns must remain identical; certification/authentication rows unchanged; ownership-event count unchanged; current owner preserved. Explicitly assert that the rebuild timestamp is present and not earlier than before, with safe date-time comparison (avoid introducing another precision/timing flake).
+3. Do not weaken other QR reissue guards or tests. If a genuine domain invariant fails, do not mask it.
+4. Run focused `QrReissueTest` and `QrArtifactTest`, then full `tests/Feature/Sca` suite in disposable `sca_domain_test` only. If test infra unavailable, report exact limitations; never substitute production DB. Capture test counts and failure details. If feasible repeat focused rg8 under varying timing/load without sleeping in production tests.
+5. Document root cause, minimal diff, proof of no non-test changes, test results, and remaining risks in a concise governance evidence file `docs/SCA-QR-RG8-TEST-RELIABILITY-RESULT.md` in Shopify-Jeremy. Update `NEXT_TASK.md` with branch, full candidate SHA, exact baseline, tests, and STOP status.
+6. Push candidate branch from exact baseline. **STOP BEFORE MERGE/DEPLOY.** ChatGPT independently audits candidate and records PASS/FAIL. Only after explicit PASS may Claude perform a controlled merge of exact audited candidate against exact audited base; post-merge verification is separate. No application deployment automatically authorized for a test-only change.
+
+## Acceptance
+Only `app/tests/Feature/Sca/QrReissueTest.php` differs in implementation repo; timestamp comparison corrected without loss of domain assertions; focused and full tests green or blockers transparently reported; no production changes; no pilot executed.
+
+---
+
 # NEXT TASK
 
 **STATUS: REAL-WORLD PILOT READINESS DOCUMENTATION CLOSED — POST-MERGE AUDIT PASS.**
