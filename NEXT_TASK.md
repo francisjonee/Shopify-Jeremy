@@ -1,5 +1,15 @@
 # NEXT TASK
 
+**STATUS: SCA REAL-WORLD PILOT READINESS R1 — PRE-MERGE RE-AUDIT PASS.** Docs-only candidate `bebd18139f008c29fc78c27bc1f4e27a34869ecb` approved against exact production baseline `3b30a0f24323463c42dda58b476a453f58e49389` (GitHub 1 ahead / 0 behind; one added Markdown document, no code/schema/config).
+
+Independent audit confirmed R1 corrections: Shopify sale-link-backed `ClaimWorkflow::claim()` distinguished from independent `claimByGrant()` (source inspected), per-chain PASS/DEFERRED/FAIL criteria, owner-designated sacrificial pilot frame with permanent adverse-event history, and Claude-reported environment verification properly qualified.
+
+**AUTHORIZATION LIMITED TO CONTROLLED DOCS-ONLY MERGE:** Recheck origin/main exact baseline; merge only approved candidate; prove merge tree content-identical to candidate and only doc added. No application deployment required for documentation-only merge; no production data mutation, no pilot execution, no live Shopify transaction, no Stripe/mail/backup activation. Record merge SHA and evidence, then STOP for ChatGPT post-merge verification. **Physical pilot still requires separate explicit owner approval of exact frames, participants and window.**
+
+---
+
+# NEXT TASK
+
 **STATUS: PILOT READINESS DOCS — R1 REMEDIATION PUSHED — AWAITING ChatGPT PRE-MERGE RE-AUDIT. NOT merged, NOT deployed, pilot NOT executed; no owner authorization inferred.**
 
 ## R1 remediation candidate (awaiting re-audit)
