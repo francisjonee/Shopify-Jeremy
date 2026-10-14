@@ -1,6 +1,26 @@
 # NEXT TASK — AUTHENTICATION & CERTIFICATION SAFEGUARDS
 
-**STATUS: OWNER-AUTHORIZED IMPLEMENTATION — CANDIDATE ONLY; AWAIT CHATGPT PRE-MERGE AUDIT.**
+**STATUS: CANDIDATE PUSHED — AWAITING ChatGPT PRE-MERGE AUDIT. NOT merged, NOT deployed; no migration/schema; no production change.**
+
+## Candidate under audit
+| | |
+|---|---|
+| Task promotion | `c0251ccbb0f77098aa9bdb4a55412318c2795d82` |
+| Exact base | `0afc68b2d6a18688e367daa66e304c96c147dbf1` |
+| Branch | `fix/sca-auth-cert-safeguards` (1 ahead / 0 behind) |
+| **Candidate SHA** | **`d21f08703051448ec9a77da741a74ac1daea858b`** |
+| Files changed | 12 (controllers + 2 requests + create.blade + 2 confirm views + show.blade + routes + new test + 2 adjusted tests), 501 ins / 29 del |
+| Focused | `AuthCertSafeguardsTest` 10 + adjusted Auth/Cert workflow tests (47 across the three) |
+| Full `tests/Feature/Sca` | 1397 passed / 1 skipped / 0 failed (7403 assertions) |
+| Production | migration 138 (QR-reason 139 still Pending/undeployed), FP `d15a5cbd…`, loopback 200 — untouched |
+
+Scope A: authentication Result select leads with a disabled empty "Select inspection result" placeholder (no default Passed); server allowlist unchanged. Scope B: read-only typed-confirmation GET interstitials for finalize (typed FINALIZE) and issue (typed ISSUE), server-enforced via new FormRequests; item-view actions now link to the confirm GET; confirm GETs read-only + ACL + exact-item/eligibility (404/redirect, no leak); missing/wrong word, stale/duplicate, ineligible → no new finalize/cert/QR. No migration/schema/provider/infra. Evidence: `docs/SCA-AUTH-CERT-SAFEGUARDS-RESULT.md`. **STOP for ChatGPT pre-merge audit; do not merge/deploy/run migrations/mutate production/pilot/start another initiative.**
+
+---
+
+<!-- Task promotion brief retained below for traceability. -->
+
+**STATUS (promotion): OWNER-AUTHORIZED IMPLEMENTATION — CANDIDATE ONLY; AWAIT CHATGPT PRE-MERGE AUDIT.**
 
 Implementation repo: `francisjonee/francisjonee-sca-platform-private`; exact base `0afc68b2d6a18688e367daa66e304c96c147dbf1`. Confirm origin/main equals this SHA before beginning; if not, STOP and report. Origin: staff/collector operations audit P1 irreversible finalize/certify and P2 default-Passed result.
 
