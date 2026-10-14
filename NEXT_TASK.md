@@ -1,3 +1,25 @@
+# NEXT TASK — SCA STAFF & COLLECTOR UX PHASE 2: DISCOVERY AND IMPLEMENTATION PLAN
+
+**STATUS: AUTHORIZED FOR READ-ONLY DISCOVERY / ARCHITECTURAL ASSESSMENT ONLY.** Implementation main baseline: `6022b75c021069bde332b4a10cd5806ae9065aaf`. Owner approved proceeding with Phase 2 planning; no code implementation or merge is authorized yet.
+
+## Goal
+Independently inspect the existing SCA staff/collector experience and produce a bounded, evidence-based Phase 2 implementation plan focused on **in-app collector notifications and claim confirmation**, with secondary triage of staff workflow visibility and inconsistent status copy. Do not invent a parallel notification or claim architecture.
+
+## Required investigation
+1. Map current collector and staff routes, controllers, views, services, tables, events, policies and tests relevant to authentication result, certification, claim grant/acceptance, ownership transfer, and collector alerts. Distinguish what exists from what is missing.
+2. Trace authoritative claim acceptance and ownership mutation, idempotency, concurrency, eligibility and privacy. Determine whether claim confirmation already exists and where an interstitial could be introduced without altering provenance or grant semantics.
+3. Assess a minimal in-app notification model, including event triggers, recipient scoping, read/unread, persistence, backfill/no-backfill, and whether existing activity/event infrastructure can be reused. No Postmark/Stripe activation, background workers or unbounded polling by default.
+4. Identify and prioritize concrete staff status/work-queue issues and collector status inconsistencies, referencing actual source locations and tests. Avoid expanding scope unnecessarily.
+5. Define a smallest coherent implementation slice, exact files likely affected, migrations if truly required, security/privacy invariants, failure and duplicate-delivery handling, tests, and explicit acceptance criteria. Distinguish must-have from deferred follow-ups.
+6. Confirm the current implementation main SHA and note any unmerged work; avoid conflicts with completed Phase 1 and backup DR scripts.
+
+## Deliverables
+Write `docs/SCA-STAFF-COLLECTOR-UX-PHASE2-ASSESSMENT.md` in governance repo with evidence, options/tradeoffs, recommended bounded implementation, risks, and verification matrix. Update `NEXT_TASK.md` to **AWAITING CHATGPT INDEPENDENT ASSESSMENT AUDIT**. Commit governance documentation only and return SHA. **STOP**; ChatGPT will inspect the actual repository and authorize a separate implementation task if appropriate.
+
+**Prohibited:** no implementation branch changes, application deploy, production backup configuration, DB migration, data mutation, mail/Stripe activation, service restart, DNS changes, QR rotation, ownership transfer, or physical pilot. Production release remains NO-GO; off-host backup storage is deferred by owner choice and must not be silently reintroduced.
+
+---
+
 # SCA BACKUP/DR — INDEPENDENT POST-MERGE PASS / CODE TASK CLOSED
 
 Verified implementation main `6022b75c021069bde332b4a10cd5806ae9065aaf`; approved candidate `ee3b0145683796952e1c9000418b514c8cb634a7` → merge has zero changed files; baseline `73b6c22ff0b8397e2d6c7c06ea9cc325d7693732` → merge changes exactly `scripts/backup-run.sh` (+24/-1) and `scripts/backup-verify-restore.sh` (+7/-0). **POST-MERGE PASS; code-only initiative CLOSED.**
