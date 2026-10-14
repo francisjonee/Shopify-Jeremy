@@ -1,5 +1,21 @@
 # NEXT TASK
 
+**STATUS: MARKET REFERENCE / VALUE HISTORY — SLICE 2 CLOSED + LIVE. Independent ChatGPT post-deployment audit PASS.**
+
+Production/main/deployed: `3b30a0f24323463c42dda58b476a453f58e49389`. Approved candidate: `9e8453e2bad54ed24ef22a151c881e539b9dc8be`. GitHub candidate→merge comparison: **1 ahead / 0 behind / files=[]** (exact content identity).
+
+Deployment evidence: `docs/SCA-MARKET-REFERENCE-SLICE2-DEPLOY-RESULT.md`. Deployed-tree full SCA gate **1380 pass / 1 skip / 0 fail, 7308 assertions** (documented execution evidence; not independently run by ChatGPT). First pre-migrate gate aborted on existing load-sensitive QrReissueTest::rg8 flake; production was untouched; isolated 11/11 green and clean full rerun preceded deployment. This flake remains a separate technical-debt item; do not silently treat it as resolved.
+
+Migration **138**, 0 pending; provenance fingerprint **d15a5cbdfb8df52ba65628b276533cfe**, canonical counts **3/3/4/4/5/2/1/1/7** unchanged PRE/POST. Health /admin/login 200, healthy app and DB, guest collector fail-closed, public Passport value-free on merge-tree tests. Stripe dormant, MAIL_MAILER=log, Shopify read_orders, no Caddy/DNS/provider drift.
+
+**Slice 2 CLOSED + LIVE.** Current-owner-only advisory Market Reference history, newest-first, correct current/historical/void/re-record identity, no staff/internal/private leakage, no provenance/marketplace/payment mutations.
+
+**NO NEXT INITIATIVE PROMOTED.** Reassess and architecture-audit the next roadmap priority before assigning Claude implementation. Marketplace remains unpromoted. Mail, backups, and Stripe activation remain parked unless owner reopens.
+
+---
+
+# NEXT TASK
+
 **STATUS: SCA MARKET REFERENCE / VALUE HISTORY — SLICE 2 DEPLOYED TO PRODUCTION — AWAITING ChatGPT INDEPENDENT POST-DEPLOYMENT AUDIT. Slice 2 NOT closed; no other initiative started.**
 
 ## Deployment result (awaiting post-deploy audit)
