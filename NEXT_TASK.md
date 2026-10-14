@@ -1,6 +1,22 @@
 # NEXT TASK
 
-**STATUS: PILOT READINESS DOCS — PRE-MERGE AUDIT FAIL (DOCUMENTATION REMEDIATION ONLY).** Candidate `f78f981d3351dcd45aec7f108ef6838518442e65` based exactly on production `3b30a0f24323463c42dda58b476a453f58e49389`; GitHub comparison 1 ahead / 0 behind, only `docs/SCA-REAL-WORLD-PILOT-READINESS.md` added (183 lines), no code/schema/config. Do not merge, deploy or execute pilot yet.
+**STATUS: PILOT READINESS DOCS — R1 REMEDIATION PUSHED — AWAITING ChatGPT PRE-MERGE RE-AUDIT. NOT merged, NOT deployed, pilot NOT executed; no owner authorization inferred.**
+
+## R1 remediation candidate (awaiting re-audit)
+| | |
+|---|---|
+| Prior R1 FAIL (docs remediation only) | `2ec508165ef90710d564aa982f32743b7c0003b7` |
+| Baseline | `3b30a0f24323463c42dda58b476a453f58e49389` (migration 138, unchanged) |
+| **R1 candidate SHA** | **`bebd18139f008c29fc78c27bc1f4e27a34869ecb`** (amended single docs commit; supersedes `f78f981`; 1 ahead / 0 behind) |
+| Changed files | 1 (`docs/SCA-REAL-WORLD-PILOT-READINESS.md`) — docs only, no code/schema/config |
+
+Three content fixes + source validation applied (docs only): (1) Shopify sale→claim (`ClaimWorkflow::claim`, sale-link-gated) split from the independent staff grant (`claimByGrant`); a manual grant never validates the Shopify chain; Shopify chain NOT VALIDATED without a live order. (2) Success scored per chain — core / external-unpaid / optional-Shopify — pass/deferred/fail, optional-unexecuted = DEFERRED not PASS, Stripe paid flow excluded. (3) Adverse negative testing confined to an owner-designated consented sacrificial frame (`PILOT-SAC`) with permanent-history consequences documented (no erasable cleanup). (4) Routes/ACLs/services validated against source at `3b30a0f`; ENVIRONMENT-CONFIRMED tier marked Claude-reported, not ChatGPT-verified. Evidence: `docs/SCA-PILOT-READINESS-AUDIT.md`. **STOP for ChatGPT pre-merge re-audit + owner authorization; do not merge/deploy/execute the pilot; do not start another initiative.**
+
+---
+
+<!-- Prior R1 FAIL brief retained below for traceability. -->
+
+**STATUS (R1 FAIL): PILOT READINESS DOCS — PRE-MERGE AUDIT FAIL (DOCUMENTATION REMEDIATION ONLY).** Candidate `f78f981d3351dcd45aec7f108ef6838518442e65` based exactly on production `3b30a0f24323463c42dda58b476a453f58e49389`; GitHub comparison 1 ahead / 0 behind, only `docs/SCA-REAL-WORLD-PILOT-READINESS.md` added (183 lines), no code/schema/config. Do not merge, deploy or execute pilot yet.
 
 **Required fixes on same docs branch, no code changes:**
 1. Separate the **Shopify-derived claim entitlement** from the **staff-issued external grant**. In Chain A, explicitly name the real Shopify sale→claim eligibility→claim path, its authority and evidence, and distinguish any independent manual grant pilot fallback. Never claim a manual external grant validates a Shopify sale/claim chain. If a real Shopify order is deferred, mark Shopify chain NOT VALIDATED, even if the independent grant→ownership path passes.
