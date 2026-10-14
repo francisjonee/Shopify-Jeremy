@@ -1,4 +1,19 @@
-# NEXT TASK — SCA BACKUP & DISASTER RECOVERY REMEDIATION
+# NEXT TASK — SCA BACKUP & DR REMEDIATION — DELIVERED; AWAITING INDEPENDENT CHATGPT AUDIT
+
+**STATUS (2026-10-14):** Remediation performed. Evidence in `docs/SCA-BACKUP-DR-REMEDIATION-RESULT.md`.
+- **Staging bug fixed** on candidate branch `fix/sca-backup-staging-diskbacked` @ `ee3b0145683796952e1c9000418b514c8cb634a7` (pushed, **NOT merged**): staging moved off the `/tmp` tmpfs to a disk-backed, 0700 workspace (`backups/.work`), with stale-sweep, disk-space guardrail, and unchanged encryption/flock/shred-cleanup/retention/live-DB-guard. +31/−1 across only the two backup scripts.
+- **Fresh encrypted backup generated + integrity-checked:** `sca-backup-20261014T220630Z.tar.gz.gpg` (4.2 GB, sha256 `fd19be09…1fbae1`, 4525 docs).
+- **Restore PROVEN in an isolated disposable DB** (`sca_krayin_restore_verify`, dropped after): tables=100, triggers=46, FK=129, referential integrity OK, app read items=3/state=3, 4525 doc files intact.
+- **Off-host replication = BLOCKER (stopped, as instructed):** no approved destination/credentials provisioned (`SCA_BACKUP_REMOTE`/uploader unset, no rclone/aws). Owner must provision one.
+- **Release rollback plan corrected** in `docs/SCA-PRODUCTION-RELEASE-READINESS.md` (§3/§5/§11): pinned immutable revision, no `origin/main` reset, migration 139 preserved, QR audit `reason` data never auto-dropped.
+- **Impl `origin/main` unmoved** at `73b6c22`; working tree restored to `main` → the installed nightly script is still the unfixed version, so **automated backups keep failing until `ee3b014` is reviewed + deployed**. A fresh restore-verified backup exists as of 2026-10-14T22:06Z to cover the gap.
+- **GO/NO-GO: NO-GO** — one remaining blocker (no off-host recovery point).
+
+**Prohibitions honored:** no deploy, no production migration, no production restore, no provenance mutation, no unrelated service restart, no DNS/Caddy change, no pilot. **STOP — awaiting ChatGPT independent audit.**
+
+---
+
+# (ORIGINAL TASK) SCA BACKUP & DISASTER RECOVERY REMEDIATION
 
 **OWNER AUTHORIZATION:** Remediate the broken SCA backup process, establish off-host recoverability, and verify a restore **in an isolated disposable environment only**. This is narrowly scoped operational backup work. **NO APPLICATION DEPLOYMENT, PRODUCTION DB MIGRATION, PRODUCTION RESTORE, OR PROVENANCE MUTATION AUTHORIZED.**
 
