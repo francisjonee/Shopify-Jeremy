@@ -1,3 +1,21 @@
+# NEXT TASK — AUTHENTICATION & CERTIFICATION SAFEGUARDS
+
+**STATUS: OWNER-AUTHORIZED IMPLEMENTATION — CANDIDATE ONLY; AWAIT CHATGPT PRE-MERGE AUDIT.**
+
+Implementation repo: `francisjonee/francisjonee-sca-platform-private`; exact base `0afc68b2d6a18688e367daa66e304c96c147dbf1`. Confirm origin/main equals this SHA before beginning; if not, STOP and report. Origin: staff/collector operations audit P1 irreversible finalize/certify and P2 default-Passed result.
+
+**Scope A — deliberate authentication selection.** In `app/packages/Sca/Registry/src/Resources/views/authentication/create.blade.php`, make Result initially unselected with a disabled empty placeholder (e.g. “Select inspection result”), preserve `old('result')` after validation errors, and keep required server-side allowlist validation. Never default to Passed. Ensure condition-grade requirements remain enforced. Test a blank result fails without draft mutation and a deliberately selected Passed/Failed/Inconclusive behaves as before.
+
+**Scope B — irreversible-action confirmation.** Add explicit staff confirmation interstitials for (1) finalize an authentication and (2) issue a certification. Display item reference and relevant authentication result/grade and consequences in safe escaped text, provide Cancel, and require deliberate typed confirmation (choose clear distinct words, e.g. FINALIZE and ISSUE) checked **server-side**, not merely browser JS. Confirmation GET must be read-only. Final POST must remain bound to exact item/authentication, existing admin ACL, draft/finalized eligibility, issued-cert eligibility, session-derived actor, and service-level locking/idempotency. A stale/invalid/duplicate confirmation must fail closed with no new provenance event/certificate/QR identity. Do not leak cross-item or missing records. Prefer explicit routes/controller methods and small focused views; reuse existing style and avoid JS-only modals. Inspect current item view POST forms/routes/ACL/test coverage before design; update links/forms to lead to confirmation GET rather than accidentally breaking existing flows. Ensure existing direct POST tests/callers are reviewed and adjusted only for intentional new confirmation contract.
+
+**Tests:** Add focused feature coverage for GET no mutation, unauthorized access, missing/cross-item 404, blank/wrong typed word no mutation, successful confirmed finalize/issue, stale/double submit no second mutation, passed-only certification, and unaffected authentication/ownership/QR invariants. Preserve existing test database hard guard `sca_domain_test`. Run focused and full `tests/Feature/Sca` suites; record exact commands, counts and limitations.
+
+**Boundaries:** No QR reason migration/deployment (migration 139 still pending production), no schema changes unless essential and justified, no Stripe/mail/Shopify, no collector profile UX, no public route changes, no production data, no pilot, no infra, no unrelated refactors. No deployment.
+
+**Delivery:** Commit and push candidate branch only. In governance repo write `docs/SCA-AUTH-CERT-SAFEGUARDS-RESULT.md` with design, exact baseline/candidate SHAs, diff and routes, tests, security/compatibility review, and any remaining risks. Update `NEXT_TASK.md` status to awaiting independent pre-merge audit. **STOP BEFORE MERGE**. ChatGPT audits GitHub candidate and decides PASS/FAIL; no merge or deploy without separate approval.
+
+---
+
 # QR REISSUE REASON — POST-MERGE PASS / CODE TASK CLOSED
 
 Independent GitHub verification: implementation `main` = merge `0afc68b2d6a18688e367daa66e304c96c147dbf1`; approved candidate `7848b58573c9702ad2f76f45795d882929b97a1f` → merge comparison has zero changed files (content identical); baseline `1c6c1e6cc0167cf1fc1d87f2a12446a219664f55` → merge has exactly four authorized files (new migration, QrService, QrReissueController, QrReissueTest), 172 insertions / 3 deletions. **POST-MERGE PASS, IMPLEMENTATION TASK CLOSED.** Tests reported by Claude (1386 pass, 1 skip) were not rerun by ChatGPT.
