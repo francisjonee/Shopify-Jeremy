@@ -1,3 +1,11 @@
+# SCA BACKUP/DR REMEDIATION — INDEPENDENT PRE-MERGE PASS
+
+**LIMITED CODE-ONLY MERGE AUTHORIZATION.** Independently verified implementation main `73b6c22ff0b8397e2d6c7c06ea9cc325d7693732`, candidate `ee3b0145683796952e1c9000418b514c8cb634a7` 1 ahead/0 behind; exactly two scripts changed: `scripts/backup-run.sh` (+24/-1), `scripts/backup-verify-restore.sh` (+7/-0). Reviewed code and `docs/SCA-BACKUP-DR-REMEDIATION-RESULT.md`. Candidate correctly relocates temp workspace from tmpfs and adds space guard/cleanup. Claude reports fresh encrypted artifact and successful isolated restore; ChatGPT has not independently verified live-host state or executed tests. Note shred on SSD/COW may not guarantee physical erasure.
+
+**MERGE GATE:** Reconfirm implementation origin/main is unchanged, then merge exact candidate code-only; verify merged tree equals candidate and baseline-to-merge changes exactly two scripts. Record merge SHA/evidence in `docs/SCA-BACKUP-DR-MERGE-RESULT.md`, update NEXT_TASK.md, then STOP for independent post-merge audit. **No application deployment, production script installation, DB migration, live data mutation, or pilot authorized by this merge decision.** Off-host replication remains unconfigured; production release remains **NO-GO**. Owner-approved destination/credentials required before off-host publication. Do not claim nightly backup fixed on running host merely because code merged.
+
+---
+
 # NEXT TASK — SCA BACKUP & DR REMEDIATION — DELIVERED; AWAITING INDEPENDENT CHATGPT AUDIT
 
 **STATUS (2026-10-14):** Remediation performed. Evidence in `docs/SCA-BACKUP-DR-REMEDIATION-RESULT.md`.
