@@ -1,3 +1,11 @@
+# SCA BACKUP/DR — INDEPENDENT POST-MERGE PASS / CODE TASK CLOSED
+
+Verified implementation main `6022b75c021069bde332b4a10cd5806ae9065aaf`; approved candidate `ee3b0145683796952e1c9000418b514c8cb634a7` → merge has zero changed files; baseline `73b6c22ff0b8397e2d6c7c06ea9cc325d7693732` → merge changes exactly `scripts/backup-run.sh` (+24/-1) and `scripts/backup-verify-restore.sh` (+7/-0). **POST-MERGE PASS; code-only initiative CLOSED.**
+
+**PRODUCTION NO-GO.** No production script installation or application deployment authorized. Running nightly backup fix not verified live. Off-host destination/credentials remain absent. Reported fresh local encrypted restore-verified backup is Claude evidence, not independently verified on live host. Owner approval required for separate operational activation and approved off-host replication; no migrations, provenance mutations or pilot.
+
+---
+
 # SCA BACKUP/DR REMEDIATION — CODE-ONLY MERGE DONE; AWAITING INDEPENDENT POST-MERGE AUDIT
 
 **STATUS (2026-10-15):** Controlled code-only merge complete. Evidence in `docs/SCA-BACKUP-DR-MERGE-RESULT.md`.
