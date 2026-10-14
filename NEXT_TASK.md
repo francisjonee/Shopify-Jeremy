@@ -1,3 +1,23 @@
+# STAFF & COLLECTOR UX HARDENING PHASE 1 — MERGE COMPLETE (code-only)
+
+**STATUS: CONTROLLED CODE-ONLY MERGE COMPLETE — AWAITING ChatGPT POST-MERGE AUDIT. No deployment, no production migration, no production data change, no infrastructure change, no pilot, no new initiative.**
+
+| | |
+|---|---|
+| Pre-merge PASS | `55544de6c480441c01ba0d0b945ea5c803c66840` |
+| Approved candidate | `63177b197511c35653f70d1577c7392728652997` |
+| Baseline (unmoved pre-merge) | `62c5d8b7370b5c846a4adbc3c530f9800495bab1` |
+| **MERGE_SHA = ORIGIN_MAIN** | **`73b6c22ff0b8397e2d6c7c06ea9cc325d7693732`** |
+| Candidate→merge | byte-identical; exactly the 13 authorized files; 348 ins / 39 del |
+| Deployment | not performed / not authorized |
+| Migration | none this task; pre-existing QR-reason 139 still Pending/undeployed (unchanged) |
+
+Code-only merge: the seven UX fixes are on `main` but not live; running container unchanged (app `3b30a0f`). Evidence: `docs/SCA-STAFF-COLLECTOR-UX-PHASE1-MERGE-RESULT.md`. Prod non-mutating check unchanged (FP `d15a5cbd…`, loopback 200, 1 pending migration = reason 139). **STOP for ChatGPT post-merge audit of `73b6c22`; do not deploy, run production migrations, mutate production, change infrastructure, conduct a pilot, or start another initiative.**
+
+---
+
+<!-- Prior pre-merge PASS decision retained below for traceability. -->
+
 # STAFF & COLLECTOR UX HARDENING PHASE 1 — INDEPENDENT PRE-MERGE PASS
 
 **LIMITED MERGE AUTHORIZATION ONLY.** Independently verified implementation main = baseline `62c5d8b7370b5c846a4adbc3c530f9800495bab1`; approved candidate `63177b197511c35653f70d1577c7392728652997` is 1 ahead/0 behind; exactly 13 authorized changed files (9 app, 4 tests). Reviewed collector result logic, claim grant eligibility versus authoritative service, manual intake request validation, safe error mapping, profile/payment copy and governance evidence. Seven scoped fixes conform to task. Claude reports full SCA 1407 passed/1 skipped/0 failed (7459 assertions); ChatGPT did not run tests.
