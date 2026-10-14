@@ -1,6 +1,25 @@
 # NEXT TASK — SCA STAFF & COLLECTOR UX HARDENING (PHASE 1)
 
-**STATUS: OWNER-AUTHORIZED CANDIDATE IMPLEMENTATION; STOP BEFORE MERGE.**
+**STATUS: CANDIDATE PUSHED — AWAITING ChatGPT PRE-MERGE AUDIT. NOT merged, NOT deployed; no migration/schema/provider; no production change.**
+
+## Candidate under audit
+| | |
+|---|---|
+| Task promotion | `7f0d4806e836a942b4df6be942a42e78d8ed346d` |
+| Exact base | `62c5d8b7370b5c846a4adbc3c530f9800495bab1` |
+| Branch | `fix/sca-staff-collector-ux-phase1` (1 ahead / 0 behind) |
+| **Candidate SHA** | **`63177b197511c35653f70d1577c7392728652997`** |
+| Files changed | 13 (9 app + 4 test) |
+| Full `tests/Feature/Sca` | 1407 passed / 1 skipped / 0 failed (7459 assertions) |
+| Production | migration 138 (QR-reason 139 still pending/undeployed), FP `d15a5cbd…`, loopback 200 — untouched |
+
+Seven bounded fixes (no provenance/cert/QR/ownership/payment/ACL/public-route/schema/migration change): (1) collector profile no longer advertises the edge-blocked `/u/{handle}` as a clickable link (canonical `/c/` shown); (2) collector copy distinguishes inconclusive from failed; (3) safe operator error copy for CSV-import preview + finalize (no raw codes/exceptions); (4) honest `year.max` message; (5) brand+model required on the MANUAL-create request only (custody/import/service/legacy unaffected); (6) staff "Make claimable" mirrors authoritative grant eligibility (adds external_intake + no-completed-claim); (7) honest staff+collector payment copy while Stripe dormant (no implied charge). New `StaffCollectorUxPhase1Test` + adjusted CollectorUi3Test/EyewearRegistryTest/CollectorHandleTest. Evidence: `docs/SCA-STAFF-COLLECTOR-UX-PHASE1-RESULT.md`. **STOP for ChatGPT pre-merge audit; do not merge/deploy/run migrations/mutate production/pilot/start another initiative.**
+
+---
+
+<!-- Task promotion brief retained below for traceability. -->
+
+**STATUS (promotion): OWNER-AUTHORIZED CANDIDATE IMPLEMENTATION; STOP BEFORE MERGE.**
 
 Implementation repository: `francisjonee/francisjonee-sca-platform-private`. **Exact baseline `62c5d8b7370b5c846a4adbc3c530f9800495bab1`.** Reconfirm remote main matches baseline before work; if not, STOP and report. Create dedicated candidate branch; no direct commits to main.
 
