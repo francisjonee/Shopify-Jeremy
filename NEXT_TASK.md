@@ -1,3 +1,9 @@
+# INDEPENDENT RELEASE-READINESS AUDIT — NO-GO
+
+Reviewed governance report at `9701493bcaa22efe2572f5962cb3762191854e1f` and independently compared GitHub code `3b30a0f..73b6c22`: 10 commits, 29 changed paths including one additive QR-reason migration. Target main remains `73b6c22ff0b8397e2d6c7c06ea9cc325d7693732`. **NO-GO: reported failed backups and no verified off-host restore point.** This is an evidence-based assessment of Claude's production observations, not independent access to the live host. The report's deployed SHA is inferred rather than byte-verified. Clarify rollback plan: do not reset shared origin/main to a prior commit; use an explicitly approved immutable prior artifact/revision. Do not assume database rollback is harmless after new audit reasons exist. Any backup remediation requires separate owner authorization. No deployment or production modification authorized.
+
+---
+
 # SCA PRODUCTION RELEASE READINESS — ASSESSMENT DELIVERED (read-only)
 
 **STATUS: READ-ONLY RELEASE-READINESS ASSESSMENT DELIVERED — AWAITING ChatGPT INDEPENDENT AUDIT. No deployment authorized. No migration/production mutation/service restart/infrastructure/backup/pilot performed.**
