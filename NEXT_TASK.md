@@ -1,3 +1,11 @@
+# STAFF & COLLECTOR UX HARDENING PHASE 1 — POST-MERGE PASS / CLOSED
+
+**INDEPENDENT POST-MERGE PASS.** GitHub implementation `main` = `73b6c22ff0b8397e2d6c7c06ea9cc325d7693732`. Approved candidate `63177b197511c35653f70d1577c7392728652997` → merge has zero changed files (identical content); baseline `62c5d8b7370b5c846a4adbc3c530f9800495bab1` → merge has exactly 13 authorized files, 348 additions/39 deletions. No unexpected code changes. Claude-reported full SCA suite 1407 passed/1 skipped/0 failed (7459 assertions); ChatGPT did not execute tests. **Code initiative closed.**
+
+**NOT DEPLOYED.** Claude reports production still on prior app code `3b30a0f`, DB migration 138, QR reason 139 pending; ChatGPT did not independently verify the live server. No deployment, migration, production data change, infrastructure change, pilot or new initiative authorized. Owner approval required for production rollout.
+
+---
+
 # STAFF & COLLECTOR UX HARDENING PHASE 1 — MERGE COMPLETE (code-only)
 
 **STATUS: CONTROLLED CODE-ONLY MERGE COMPLETE — AWAITING ChatGPT POST-MERGE AUDIT. No deployment, no production migration, no production data change, no infrastructure change, no pilot, no new initiative.**
