@@ -1,6 +1,26 @@
 # NEXT TASK — QR REISSUE REASON AUDIT INTEGRITY
 
-**STATUS: OWNER-AUTHORIZED IMPLEMENTATION TASK; CANDIDATE ONLY, AWAIT CHATGPT PRE-MERGE AUDIT.**
+**STATUS: CANDIDATE PUSHED — AWAITING ChatGPT PRE-MERGE AUDIT. NOT merged, NOT deployed; migration applied to disposable test DB only; production NOT migrated.**
+
+## Candidate under audit
+| | |
+|---|---|
+| Task promotion | `393bdddae6690e4714649e0c3e35d725c76eb4e6` |
+| Exact base | `1c6c1e6cc0167cf1fc1d87f2a12446a219664f55` |
+| Branch | `fix/sca-qr-reissue-reason` (1 ahead / 0 behind) |
+| **Candidate SHA** | **`7848b58573c9702ad2f76f45795d882929b97a1f`** |
+| Files changed | 4 (migration + QrService + QrReissueController + QrReissueTest), 172 ins / 3 del |
+| Focused | `QrReissueTest` 17 pass (rr1–rr6 new), 96 assertions |
+| Full `tests/Feature/Sca` | 1386 passed / 1 skipped / 0 failed (7342 assertions) |
+| Production | migration 138 / 0 pending, FP `d15a5cbd…`, loopback 200 — untouched |
+
+Additive forward-only migration `2026_10_20_000001` (nullable `reason VARCHAR(500)` + CHECK `reason IS NULL OR event_type='reissued_from'`, all historic rows NULL-compatible, 138→139 on a future deploy); `QrService::reissue(...,?string $reason=null)` stores it on the canonical `reissued_from` event under the existing lock/guard, trimmed, never in payload/passport/collector/log; controller threads the validated required reason. Evidence: `docs/SCA-QR-REISSUE-REASON-RESULT.md`. **STOP for ChatGPT pre-merge audit; do not merge/deploy/run the production migration/start another initiative.**
+
+---
+
+<!-- Task promotion brief retained below for traceability. -->
+
+**STATUS (promotion): OWNER-AUTHORIZED IMPLEMENTATION TASK; CANDIDATE ONLY, AWAIT CHATGPT PRE-MERGE AUDIT.**
 
 Implementation repo: `francisjonee/francisjonee-sca-platform-private`. Exact audited base `1c6c1e6cc0167cf1fc1d87f2a12446a219664f55`. Reconfirm main before work; if changed STOP. Governance audit: `docs/SCA-STAFF-COLLECTOR-OPS-AUDIT.md` finding P1 #1.
 
