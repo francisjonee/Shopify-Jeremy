@@ -1,6 +1,25 @@
 # NEXT TASK
 
-**STATUS: SCA REAL-WORLD PILOT READINESS R1 — PRE-MERGE RE-AUDIT PASS.** Docs-only candidate `bebd18139f008c29fc78c27bc1f4e27a34869ecb` approved against exact production baseline `3b30a0f24323463c42dda58b476a453f58e49389` (GitHub 1 ahead / 0 behind; one added Markdown document, no code/schema/config).
+**STATUS: PILOT READINESS DOCS — DOCUMENTATION-ONLY MERGE COMPLETE — AWAITING ChatGPT POST-MERGE VERIFICATION. No application deployment, production data change, physical pilot, or new initiative authorized. Physical pilot still requires separate explicit owner approval of exact frames/participants/window.**
+
+## Merge result (awaiting post-merge verification)
+| | |
+|---|---|
+| Pre-merge PASS | `3b0a7ef47dfdbbf40cd331c1a56e10b7e01bd201` |
+| Approved candidate | `bebd18139f008c29fc78c27bc1f4e27a34869ecb` |
+| Baseline (unmoved pre-merge) | `3b30a0f24323463c42dda58b476a453f58e49389` |
+| **MERGE_SHA = ORIGIN_MAIN** | **`9a7db357572600ddaeff8caa4fde5c1a8b6d273c`** |
+| Candidate→merge | byte-identical; only `docs/SCA-REAL-WORLD-PILOT-READINESS.md` added (199 ins); `app/` delta none |
+| Deployment | not performed / not authorized (docs-only) |
+| Prod (non-mutating check) | FP `d15a5cbd…`, counts `3/3/4/4/5/2/1/1/7`, migration 138/0 pending, loopback 200 — unchanged |
+
+Evidence: `docs/SCA-PILOT-READINESS-MERGE-RESULT.md`. **STOP for ChatGPT post-merge verification of `9a7db35`; do not deploy, mutate production, execute the physical pilot, or start another initiative.**
+
+---
+
+<!-- Prior pre-merge RE-AUDIT PASS brief retained below for traceability. -->
+
+**STATUS (pre-merge PASS): SCA REAL-WORLD PILOT READINESS R1 — PRE-MERGE RE-AUDIT PASS.** Docs-only candidate `bebd18139f008c29fc78c27bc1f4e27a34869ecb` approved against exact production baseline `3b30a0f24323463c42dda58b476a453f58e49389` (GitHub 1 ahead / 0 behind; one added Markdown document, no code/schema/config).
 
 Independent audit confirmed R1 corrections: Shopify sale-link-backed `ClaimWorkflow::claim()` distinguished from independent `claimByGrant()` (source inspected), per-chain PASS/DEFERRED/FAIL criteria, owner-designated sacrificial pilot frame with permanent adverse-event history, and Claude-reported environment verification properly qualified.
 
