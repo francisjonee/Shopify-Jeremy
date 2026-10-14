@@ -1,6 +1,25 @@
 # NEXT TASK — SCA QR REISSUE rg8 TEST RELIABILITY
 
-**STATUS: OWNER-APPROVED TEST-ONLY REMEDIATION PROMOTED; AWAITING CLAUDE CANDIDATE.** This supersedes the closed pilot-readiness documentation task. Owner authorized preparing/fixing the QR timing test while physical frames are unavailable, **not** merging, deploying, or executing a pilot.
+**STATUS: QR REISSUE rg8 TEST RELIABILITY — CANDIDATE PUSHED — AWAITING ChatGPT PRE-MERGE AUDIT. NOT merged, NOT deployed. Test-only change; no production/infra/pilot.**
+
+## Candidate under audit
+| | |
+|---|---|
+| Governance promotion | `cc4cf4934b266235e398ecbd44618ef1c94eb292` |
+| Exact baseline (origin/main, confirmed) | `9a7db357572600ddaeff8caa4fde5c1a8b6d273c` |
+| Branch | `fix/sca-qr-rg8-test-reliability` (1 ahead / 0 behind) |
+| **Candidate SHA** | **`1bc301eacc5b0d427a6f7e19e22ba201c3002216`** |
+| Changed files | 1 — `app/tests/Feature/Sca/QrReissueTest.php` (+22/−3); no production/infra |
+| Focused | `QrReissueTest`+`QrArtifactTest` 21 pass; rg8 3× green |
+| Full `tests/Feature/Sca` | 1380 passed / 1 skipped / 0 failed (7310 assertions) |
+
+Fix excludes the recompute timestamp `rebuilt_at` from rg8's before/after projection equality (like `active_qr_identifier_id`), preserving all domain assertions (active-QR changed; other projection columns identical; cert/auth rows unchanged; ownership-count unchanged; owner preserved) and adding a safe monotonic `rebuilt_at` present/≥ check. Evidence: `docs/SCA-QR-RG8-TEST-RELIABILITY-RESULT.md`. **STOP for ChatGPT pre-merge audit; do not merge/deploy; no deployment authorized for a test-only change; do not start another initiative.**
+
+---
+
+<!-- Promotion brief retained below for traceability. -->
+
+**STATUS (promotion): OWNER-APPROVED TEST-ONLY REMEDIATION PROMOTED; AWAITING CLAUDE CANDIDATE.** This supersedes the closed pilot-readiness documentation task. Owner authorized preparing/fixing the QR timing test while physical frames are unavailable, **not** merging, deploying, or executing a pilot.
 
 ## Immutable baseline and scope
 - Implementation repo: `francisjonee/francisjonee-sca-platform-private`.
