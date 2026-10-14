@@ -1,5 +1,18 @@
 # NEXT TASK
 
+**STATUS: PILOT READINESS DOCS — PRE-MERGE AUDIT FAIL (DOCUMENTATION REMEDIATION ONLY).** Candidate `f78f981d3351dcd45aec7f108ef6838518442e65` based exactly on production `3b30a0f24323463c42dda58b476a453f58e49389`; GitHub comparison 1 ahead / 0 behind, only `docs/SCA-REAL-WORLD-PILOT-READINESS.md` added (183 lines), no code/schema/config. Do not merge, deploy or execute pilot yet.
+
+**Required fixes on same docs branch, no code changes:**
+1. Separate the **Shopify-derived claim entitlement** from the **staff-issued external grant**. In Chain A, explicitly name the real Shopify sale→claim eligibility→claim path, its authority and evidence, and distinguish any independent manual grant pilot fallback. Never claim a manual external grant validates a Shopify sale/claim chain. If a real Shopify order is deferred, mark Shopify chain NOT VALIDATED, even if the independent grant→ownership path passes.
+2. Split pilot success into **core inventory/auth/cert/QR/owner-claim/transfer**, **external manual unpaid submission/custody/auth/return**, and **optional Shopify-integrated paid-order/reconciliation/claim**. State precise pass/deferred/fail per chain; do not label an optional unexecuted step end-to-end passed. Keep Stripe paid flow explicitly excluded.
+3. Restrict lost/stolen negative tests and permanent adverse events to an **owner-designated, consented sacrificial pilot frame** with documented permanent-history consequences and pre-approved recovery. No such mutations on ordinary saleable/customer inventory. Also avoid presenting permanent certification/ownership events as erasable test cleanup.
+4. Validate any runbook claims of route names, ACLs, services, and compensating actions against deployed code; correct inaccuracies. Clarify that production health evidence is reported by Claude, not independently verified by ChatGPT.
+5. Update implementation document and governance evidence, push revised docs-only candidate, and STOP for independent ChatGPT re-audit. Exact production baseline unchanged; no merge/deploy/production mutation; no owner authorization of physical pilot inferred.
+
+---
+
+# NEXT TASK
+
 **STATUS: REAL-WORLD PILOT READINESS — DOCS-ONLY CANDIDATE PUSHED — AWAITING ChatGPT PRE-MERGE AUDIT + OWNER AUTHORIZATION OF THE PHYSICAL PILOT. NOT merged, NOT deployed, pilot NOT executed.**
 
 ## Candidate under audit
