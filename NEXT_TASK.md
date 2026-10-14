@@ -1,6 +1,24 @@
 # NEXT TASK
 
-**STATUS: QR rg8 TEST RELIABILITY — INDEPENDENT PRE-MERGE AUDIT PASS.** Candidate `1bc301eacc5b0d427a6f7e19e22ba201c3002216`, exact base `9a7db357572600ddaeff8caa4fde5c1a8b6d273c`. GitHub comparison 1 ahead / 0 behind; exactly one file changed: `app/tests/Feature/Sca/QrReissueTest.php` (+22/-3). Inspected rg8: excludes legitimately mutable `active_qr_identifier_id` and `rebuilt_at` from domain projection equality, asserts QR pointer changes, all other projection fields identical, certification/authentication rows unchanged, ownership count unchanged, current owner present, and timestamp monotonic. No production code/config/schema changed. Claude reports focused 21 pass, rg8 3 repeated green, full SCA 1380 pass / 1 skip / 0 fail (7310 assertions); ChatGPT did not independently execute tests.
+**STATUS: QR rg8 TEST RELIABILITY — TEST-ONLY MERGE COMPLETE — AWAITING ChatGPT POST-MERGE VERIFICATION. No application deployment, production data change, pilot, or new initiative authorized.**
+
+## Merge result (awaiting post-merge verification)
+| | |
+|---|---|
+| Pre-merge PASS | `14941ed90463bdbcfcc2e255ea81fc31366e6cc3` |
+| Approved candidate | `1bc301eacc5b0d427a6f7e19e22ba201c3002216` |
+| Baseline (unmoved pre-merge) | `9a7db357572600ddaeff8caa4fde5c1a8b6d273c` |
+| **MERGE_SHA = ORIGIN_MAIN** | **`1c6c1e6cc0167cf1fc1d87f2a12446a219664f55`** |
+| Candidate→merge | byte-identical; only `app/tests/Feature/Sca/QrReissueTest.php` (+22/−3); no non-test `app/` delta |
+| Deployment | not performed / not authorized (test-only) |
+
+Evidence: `docs/SCA-QR-RG8-TEST-RELIABILITY-MERGE-RESULT.md`. **STOP for ChatGPT post-merge verification of `1c6c1e6`; do not deploy, mutate production, execute the physical pilot, or start another initiative.**
+
+---
+
+<!-- Prior pre-merge PASS brief retained below for traceability. -->
+
+**STATUS (pre-merge PASS): QR rg8 TEST RELIABILITY — INDEPENDENT PRE-MERGE AUDIT PASS.** Candidate `1bc301eacc5b0d427a6f7e19e22ba201c3002216`, exact base `9a7db357572600ddaeff8caa4fde5c1a8b6d273c`. GitHub comparison 1 ahead / 0 behind; exactly one file changed: `app/tests/Feature/Sca/QrReissueTest.php` (+22/-3). Inspected rg8: excludes legitimately mutable `active_qr_identifier_id` and `rebuilt_at` from domain projection equality, asserts QR pointer changes, all other projection fields identical, certification/authentication rows unchanged, ownership count unchanged, current owner present, and timestamp monotonic. No production code/config/schema changed. Claude reports focused 21 pass, rg8 3 repeated green, full SCA 1380 pass / 1 skip / 0 fail (7310 assertions); ChatGPT did not independently execute tests.
 
 **LIMITED MERGE AUTHORIZATION:** Reconfirm origin/main remains exact base `9a7db357572600ddaeff8caa4fde5c1a8b6d273c`. Merge only exact audited candidate, prove candidate→merge tree content identical and base→merge only that test file. Record merge SHA, GitHub evidence and test results in governance. STOP for independent post-merge verification. **No production deployment**, production data mutation, pilot, Stripe/mail/backup/Shopify activity, or next initiative authorized. If main moved or diff changed, STOP and request re-audit.
 
