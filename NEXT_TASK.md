@@ -1,8 +1,18 @@
+# SCA PRODUCTION RELEASE READINESS — ASSESSMENT DELIVERED (read-only)
+
+**STATUS: READ-ONLY RELEASE-READINESS ASSESSMENT DELIVERED — AWAITING ChatGPT INDEPENDENT AUDIT. No deployment authorized. No migration/production mutation/service restart/infrastructure/backup/pilot performed.**
+
+Deployed app `3b30a0f24323463c42dda58b476a453f58e49389` (migration 138) → target main `73b6c22ff0b8397e2d6c7c06ea9cc325d7693732` (migration 139). Report: `docs/SCA-PRODUCTION-RELEASE-READINESS.md` (full deployed→target diff, migration-139 analysis, backup/restore, deploy/rollback, prod config, per-domain regression risk, checklist, go/no-go, post-release verification, rollback, assumptions/blockers).
+
+**VERDICT: NO-GO — one BLOCKER.** Code/migration delta is low-risk and test-green (target gate 1407/1/0; 20 app files +373/−40; **exactly one additive migration 139**; **zero dependency changes**). BUT the encrypted backup has **FAILED nightly since 2026-10-08** (`/tmp` is a 2.9 GB RAM-backed tmpfs on a swapless host; the document-archive step exhausts it — root disk has 343 GB free), newest usable backup is 6 days stale, and **off-site replication is unconfigured** (`SCA_OFFSITE_UPLOADER` unset) — no fresh, verified, off-host recoverable backup exists before the proposed migrate. Remediate backup first; migration 139 is additive and a code-rollback needs no DB rollback (old code ignores the `reason` column). **STOP for ChatGPT audit; do not deploy/migrate/mutate-prod/restart/change-infra/backup-restore/pilot or start another initiative.**
+
+---
+
+<!-- Prior status (UX Phase 1 POST-MERGE PASS / CLOSED) retained below for traceability. -->
+
 # STAFF & COLLECTOR UX HARDENING PHASE 1 — POST-MERGE PASS / CLOSED
 
-**INDEPENDENT POST-MERGE PASS.** GitHub implementation `main` = `73b6c22ff0b8397e2d6c7c06ea9cc325d7693732`. Approved candidate `63177b197511c35653f70d1577c7392728652997` → merge has zero changed files (identical content); baseline `62c5d8b7370b5c846a4adbc3c530f9800495bab1` → merge has exactly 13 authorized files, 348 additions/39 deletions. No unexpected code changes. Claude-reported full SCA suite 1407 passed/1 skipped/0 failed (7459 assertions); ChatGPT did not execute tests. **Code initiative closed.**
-
-**NOT DEPLOYED.** Claude reports production still on prior app code `3b30a0f`, DB migration 138, QR reason 139 pending; ChatGPT did not independently verify the live server. No deployment, migration, production data change, infrastructure change, pilot or new initiative authorized. Owner approval required for production rollout.
+**INDEPENDENT POST-MERGE PASS.** GitHub implementation `main` = `73b6c22ff0b8397e2d6c7c06ea9cc325d7693732`. Approved candidate `63177b197511c35653f70d1577c7392728652997` → merge has zero changed files (identical content); baseline `62c5d8b7370b5c846a4adbc3c530f9800495bab1` → merge has exactly 13 authorized files, 348 additions/39 deletions. Claude-reported full SCA suite 1407 passed/1 skipped/0 failed (7459 assertions); ChatGPT did not execute tests. **Code initiative closed.** NOT DEPLOYED — production still on prior app code `3b30a0f`, DB migration 138, QR reason 139 pending; owner approval required for production rollout.
 
 ---
 
