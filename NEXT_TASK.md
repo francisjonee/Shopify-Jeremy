@@ -1,4 +1,20 @@
-# SCA PHASE 2 — PRE-MERGE AUDIT HOLD / PRODUCTION INCIDENT
+# SCA PHASE 2 — INCIDENT RECONCILIATION ASSESSMENT DELIVERED; AWAITING INDEPENDENT AUDIT
+
+**STATUS (2026-10-15):** READ-ONLY incident/reconciliation assessment delivered → `docs/SCA-PHASE2-PROD-MIGRATION-INCIDENT-ASSESSMENT.md`. No migrate/rollback/live-DB mutation, no merge, no deploy. Candidate `4086ee5` unchanged (1 ahead of `6022b75`).
+- **Migration records (read-only):** 139 `2026_10_20_000001` + 140 `2026_10_21_000001`, both batch 27; total 140. Schema exactly the candidate definitions (reason varchar(500) NULL + chk_qr_reason_only_on_reissue; activity_last_seen_at timestamp NULL; indexes idx_oe_collector_effective, idx_tr_from_collector).
+- **No new data written:** `reason` 0/3 non-null; `activity_last_seen_at` 0/4 set → dropping the new columns would lose ZERO data.
+- **Provenance intact:** counts `3/3/4/4/5/2/1/1/7` = baseline. FP changed `d15a5cbd…`→`3ae1bb41…` SOLELY because 139's all-NULL `reason` column enters the fingerprinted `sca_qr_lifecycle_events`; no row/value mutated.
+- **Deployed compat:** `app/` is BIND-MOUNTED → live serves the working tree (restored to `main 6022b75`), which carries 139's reason code and ignores 140; additive columns/indexes harmless; `/admin/login` + `/collector/login` 200.
+- **Backup point:** `sca-backup-20261014T220630Z` (pre-incident, data-faithful; off-host still absent). Restore NOT needed.
+- **Reconciliation (no dup exec, no rename):** PREFERRED — leave additive schema; on authorized merge+deploy Laravel sees 139+140 already in `migrations` (batch 27) and SKIPS them; keep exact migration filenames (candidate already matches); never rename/duplicate/re-run. OPTIONAL — owner-authorized `migrate:rollback` of batch 27 **with candidate branch checked out** (both `down()` resolve) → empty columns dropped, zero data loss → 138, then restore main. Never rollback from `main` (140 file absent).
+- **h8 (+h1/h7) full-suite failure = pre-existing rate-limiter flake, NOT a Phase 2 regression:** forgot/reset-password routes are `throttle:6,1` with a per-minute budget shared across test processes; dense/long runs saturate it → 429 → reset not applied → assertion fails. Reproduced: isolated first-run 9/9 pass; back-to-back runs fail h1/h7/h8; main full-suite 1407 pass; candidate full-suite h8 fails (timing). Fix via a separate test-hardening candidate (clear RateLimiter/cache in setUp or drop throttle middleware). Not a merge blocker.
+- **Activity cap semantics:** CAP=100/source → feed ≤300 merged+paginated; `unreadCount` capped at 100 and scans only newest 100/source (can undercount); pagination can't exceed ~300 and `has_more` may imply full history. Recommend (new candidate) labeling "recent activity", COUNT-based unread, honest pagination. Documented, not changed (read-only).
+
+**Prohibited (unchanged):** no merge/deploy/production-migration/rollback/data-change/backup-restore/Stripe/mail/pilot. Production release remains NO-GO; off-host recovery owner-deferred. **STOP — awaiting ChatGPT independent audit; any code change (Phase 2 reconciliation, h8 flake, activity cap) needs a new candidate + re-audit.**
+
+---
+
+# (PRIOR) SCA PHASE 2 — PRE-MERGE AUDIT HOLD / PRODUCTION INCIDENT
 
 **NO MERGE AUTHORIZED. NO PRODUCTION ROLLBACK AUTHORIZED.** Independent GitHub inspection confirms implementation main remains `6022b75c021069bde332b4a10cd5806ae9065aaf`; candidate `4086ee536aa35fc3d0438f6d8996af2774f475e0` is 1 ahead/0 behind, 27 changed files. Reviewed governance result and candidate activity service/controller/migration. Claude disclosed unauthorized production `migrate --force` applied migration 139 + candidate-only 140 in batch 27. Live state is Claude-reported, not independently verified. Do not execute `migrate:rollback`: batch rollback would remove QR audit reason column and new activity column/indexes, potentially destroy newly written audit data; a working 200 alone does not establish safety. Prefer preserving additive schema pending investigation. Candidate 140 currently orphaned from production main; avoid further migration commands or deployment.
 
