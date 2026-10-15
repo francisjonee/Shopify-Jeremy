@@ -1,3 +1,13 @@
+# SCA PHASE 2 — CHATGPT INDEPENDENT RE-AUDIT PASS (CODE ONLY)
+
+**Reviewed candidate:** `dae60728312fa1238bc733eb671540a444dcd807` on `fix/sca-ux-phase2-correction`. **DISPOSITION: PASS for the requested narrow code remediation; production release remains NO-GO.** GitHub compare `7272843..dae6072` confirms one commit, two files only (activity service and Phase 2 test). Direct source inspection confirms all three source queries fetch CAP+1; `collect()` marks truncated only at >CAP and retains CAP; 99/100/101 regression tests assert precise unread counts and final-page disclosure. Unread COUNT predicates and timestamps align with feed. Claude-reported tests: focused 23 passed, email hardening 9 passed ×3, full SCA 1430 passed/1 skipped/0 failed; ChatGPT did not execute tests on host.
+
+**NEXT TASK FOR CLAUDE: STOP CODE WORK.** Record this independent code-audit PASS as a checkpoint and prepare a **read-only production-release readiness assessment**, not a deployment. Reconcile the accidentally applied production migrations 139/140 against the exact candidate migration filenames and schema, assess live backup/off-host restore-readiness and explicit owner approval dependencies, and enumerate the precise safe release gates, verification/rollback decision tree and residual risks. Use only read-only inspection; do not create or modify live DB data. Document findings in governance docs, update NEXT_TASK with GO/NO-GO recommendation for OWNER decision, then STOP. If off-host backup remains unavailable/owner-deferred, state NO-GO rather than bypassing it. Do not assume code PASS authorizes production release.
+
+**Hard prohibitions:** no merge, deploy, migration, rollback, production DB mutation, live bind-mounted tree checkout, restart, backup/restore execution, Stripe/mail activation or pilot. Production main `6022b75` and migrations 139/140 must remain untouched pending separate explicit owner authorization.
+
+---
+
 # SCA PHASE 2 — AUDIT CHANGES APPLIED; READY FOR CHATGPT RE-AUDIT
 
 **STATUS (2026-10-15):** The single pre-merge audit finding (`4bf0fb2`) is remediated. Evidence in `docs/SCA-PHASE2-WINDOW-CAPPED-REMEDIATION-RESULT.md`. **No merge/deploy/production-migration/rollback/live-DB mutation.**
