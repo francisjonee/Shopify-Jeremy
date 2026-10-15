@@ -1,4 +1,17 @@
-# SCA UX PHASE 2 — INDEPENDENT ASSESSMENT CONDITIONAL PASS / IMPLEMENTATION TASK
+# SCA UX PHASE 2 — CANDIDATE IMPLEMENTED; AWAITING INDEPENDENT PRE-MERGE AUDIT
+
+**STATUS (2026-10-15):** Bounded Phase 2 implemented per the six refinements. Evidence in `docs/SCA-STAFF-COLLECTOR-UX-PHASE2-RESULT.md`. **Candidate `4086ee536aa35fc3d0438f6d8996af2774f475e0`** on branch `feat/sca-ux-phase2-activity-confirm` (pushed, **NOT merged**); baseline `6022b75` unmoved; 27 files (+155/−60).
+- Collector **Activity** feed = derive-on-read from authoritative collector-scoped ledgers (ownership claim/transfer_in; accepted transfer via `sca_transfer_requests.from_collector_id`, never the NULL transfer_out row; own-submission status). GET read-only; **explicit POST** mark-seen (CSRF+throttle, monotonic, replay-safe); NULL watermark ⇒ 0 unread (no "all new" first visit); bounded+indexed; unread badge via view composer. Migration `2026_10_21_000001` additive (nullable `activity_last_seen_at` + 2 indexes), sequenced after 139.
+- **Explicit acknowledgement** (unchecked checkbox, server-validated, hidden `confirm=1` NOT accepted) on all four ownership POSTs (QR/grant/submission claim, transfer accept); existing 404/409/eligibility/idempotency/locks/expiry/CSRF unchanged.
+- New `SubmissionStateLabels` single-sources submission copy; removed "we will be in touch" out-of-band promises; Home "Not currently certified". Staff work-queue + cert/auth notifications DEFERRED.
+- Tests: new `StaffCollectorUxPhase2Test` 17/17 (89 assn); full `tests/Feature/Sca` 1423 pass/1 skip/1 unrelated load-flake (`TransactionalEmailHardeningTest::h8`, passes isolated). Working tree restored to main; live loopback 200.
+- **⚠️ PRODUCTION INCIDENT (owner decision):** an accidental `artisan migrate --force` hit the default connection `sca_krayin` and applied migrations **139 + 140 to PRODUCTION** (batch 27). Additive DDL only (no data mutation; site 200). Corrective `migrate:rollback` was **correctly denied** as a production action and NOT bypassed. 140's file is only on the candidate (applied-but-orphaned on main). Recommended: owner-authorized `migrate:rollback` (batch 27, candidate checked out) to restore prod to 138. See result doc §6.
+
+**Prohibited (unchanged):** no merge/deploy/production-migration/data-mutation/Stripe/mail/pilot. Production release remains NO-GO; off-host backup owner-deferred. **STOP — awaiting ChatGPT independent pre-merge audit of `4086ee5` (and an owner decision on the production-migration remediation).**
+
+---
+
+# (PRIOR) SCA UX PHASE 2 — INDEPENDENT ASSESSMENT CONDITIONAL PASS / IMPLEMENTATION TASK
 
 **Assessment:** `docs/SCA-STAFF-COLLECTOR-UX-PHASE2-ASSESSMENT.md` reviewed against implementation main `6022b75c021069bde332b4a10cd5806ae9065aaf`. **CONDITIONAL PASS:** proceed with bounded candidate implementation ONLY subject to the refinements below. No merge or deploy authorization.
 
