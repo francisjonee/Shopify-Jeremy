@@ -1,3 +1,17 @@
+# SCA PHASE 2 — INCIDENT ASSESSMENT ACCEPTED; CORRECTIVE CANDIDATE REQUIRED
+
+**Independent disposition:** Reviewed `docs/SCA-PHASE2-PROD-MIGRATION-INCIDENT-ASSESSMENT.md`. Accept read-only reconciliation as reported by Claude (live host not independently accessed). Production batch 27 migrations 139/140 additive; reported new columns all NULL, baseline row counts unchanged, live login endpoints 200. **DO NOT ROLLBACK** and do not run any production migration or other DB mutation. Preserve exact migration filenames and deployed main tree; do not rename, re-run or duplicate 139/140. Production remains NO-GO.
+
+**Candidate `4086ee536aa35fc3d0438f6d8996af2774f475e0` remains UNMERGED / NOT APPROVED.** Read-only assessment is not a code PASS. One candidate revision is authorized from current candidate, no merge/deploy:
+1. Make activity UI honestly `Recent activity`, disclose historical truncation and bounded source windows; badge must not imply exact unread count if capped. Prefer precise indexed COUNT queries if feasible without broadening scope; otherwise display capped value with clear `+` semantics and verify 100+/source boundary behavior.
+2. Fix deterministic test isolation for `TransactionalEmailHardeningTest` shared password-reset throttle, with targeted reproduction and repeat runs. Do not disable production throttle; ensure baseline behavior unchanged.
+3. Review claim/transfer confirmation errors, privacy, event scoping, mark-seen GET/POST behavior and migration file identity; add focused edge-case tests as warranted. Avoid unrelated changes.
+4. Run focused tests and full SCA suite against explicitly selected disposable DB; verify connection target BEFORE any test/migrate command. Do not run any `artisan migrate` against default connection. Supply exact candidate SHA, changed file diff, test outputs, and documentation in `docs/SCA-STAFF-COLLECTOR-UX-PHASE2-CORRECTION-RESULT.md`; update NEXT_TASK.md to await independent pre-merge audit and STOP.
+
+**Hard prohibitions:** No production DB write, migration/rollback, deploy, merge, branch checkout in live bind-mounted app that affects production serving code, service restart, backup/restore, QR rotation, Stripe/mail activation or physical pilot. No production release authorization.
+
+---
+
 # SCA PHASE 2 — INCIDENT RECONCILIATION ASSESSMENT DELIVERED; AWAITING INDEPENDENT AUDIT
 
 **STATUS (2026-10-15):** READ-ONLY incident/reconciliation assessment delivered → `docs/SCA-PHASE2-PROD-MIGRATION-INCIDENT-ASSESSMENT.md`. No migrate/rollback/live-DB mutation, no merge, no deploy. Candidate `4086ee5` unchanged (1 ahead of `6022b75`).
