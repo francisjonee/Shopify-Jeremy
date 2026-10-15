@@ -1,3 +1,17 @@
+# SCA PHASE 2 — CHATGPT INDEPENDENT PRE-MERGE AUDIT: CHANGES REQUESTED
+
+**Audit target:** implementation candidate `7272843a0f943a31a7489c6af1ba1ddc22bcf917` (`fix/sca-ux-phase2-correction`), built on `4086ee5`, baseline main `6022b75`. Reviewed actual GitHub source (activity service/controller/view, password-reset test isolation, Phase 2 tests), governance result and commit comparisons. **DISPOSITION: CHANGES REQUESTED; NO MERGE OR DEPLOY.** Claimed test runs are Claude-reported, not independently rerun on host.
+
+**Required narrow remediation:** `CollectorActivityService::collect()` currently marks `window_capped` true at `count(source) >= CAP`, while each source fetches `limit(CAP)`. Exactly 100 rows cannot establish that older rows exist; view then incorrectly asserts "older history isn’t listed here." Use CAP+1 probe for each source, retain only CAP records, and mark capped only if an extra record exists. Add regression tests for 99, exactly 100, and 101 events, including final-page UI disclosure and exact unread count. Preserve stable sorting and bounded queries.
+
+**Additional audit verification:** inspect whether `unreadCount()` uses identical filters/joins and time comparisons to displayed feed across ownership, accepted transfers, and submissions; verify index/query plans on disposable DB if practical. Confirm all four acknowledgement paths remain secure, and preserve migration filenames 139/140. No scope expansion without separate authorization.
+
+**Delivery:** Claude may implement ONLY this bounded correction in separate non-live worktree/ephemeral container; verify DB target `sca_domain_test` before every test; run focused tests, repeated reset suite, full SCA suite. Document exact SHA/diff/test evidence in governance and update NEXT_TASK to await ChatGPT re-audit, then STOP. Live bind-mounted application must remain on main.
+
+**Hard prohibitions:** no merge, production deploy, migration/rollback, live DB mutation, live tree checkout, restart, backup/restore, Stripe/mail activation, QR rotation or pilot. Production release remains NO-GO; off-host backup owner-deferred.
+
+---
+
 # SCA PHASE 2 — CORRECTION CANDIDATE DELIVERED; AWAITING INDEPENDENT PRE-MERGE AUDIT
 
 **STATUS (2026-10-15):** Corrective candidate delivered. Evidence in `docs/SCA-STAFF-COLLECTOR-UX-PHASE2-CORRECTION-RESULT.md`. **No merge/deploy/production-migration/rollback/DB-mutation.** Production 139/140 left untouched (NOT rolled back), filenames preserved.
