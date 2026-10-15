@@ -1,4 +1,18 @@
-# SCA PHASE 2 — CHATGPT READINESS AUDIT: NO-GO CONFIRMED; BACKUP SAFETY TASK QUEUED
+# SCA BACKUP — DOCUMENT-CONSISTENCY FIX DELIVERED (ISOLATED CANDIDATE); AWAITING CHATGPT AUDIT
+
+**STATUS (2026-10-15):** Backup document-archive consistency fix developed + validated in isolation. Evidence in `docs/SCA-BACKUP-DOCUMENT-CONSISTENCY-RESULT.md`. **NOT activated** — live backup script/cron unchanged. No prod backup execution/restore, no merge/deploy/migration/rollback/DB-mutation/live-tree-checkout.
+- **Candidate `4263f28ec38af88489ac1be7c893d2143d9abc56`** on `fix/sca-backup-document-consistency` (from `main` `6022b75`, pushed, UNMERGED). +1 new `scripts/lib-docsnapshot.sh`, 2 edited (`backup-run.sh`, `backup-verify-restore.sh`).
+- **Root cause:** generated cert PDFs written in-place to unique random paths (DocumentService::putGenerated→Storage::put); tarring the LIVE tree races a concurrent write (`tar: file changed as we read it`) and could capture a partial file; manifest computed by a separate pass. A clean tar exit does NOT prove consistency.
+- **Fix (consistency, NOT suppression; backup-scripts-only, no app change, no quiescence):** `snapshot_documents()` bulk-copies then PROVES each copied file complete by matching source (size,mtime-ns); re-captures in-flight files in bounded rounds; EXCLUDES files appearing after the copy; FAILS CLOSED if a file never stabilises. backup-run.sh archives the STATIC snapshot + derives the manifest from the SAME snapshot (archived bytes ≡ manifest by construction → restore-verify authoritative; also closes the pre-existing tar-vs-manifest gap).
+- **Validation (isolated, synthetic, no DB/key/prod):** new `backup-verify-restore.sh doc-consistency-selftest` → PASS — consistent archive under concurrency (bytes==manifest, 44 files restore-verifiable) + perpetually-changing source fails closed (no false success). bash -n clean.
+- **Deferred/recommended (separate auth):** writer-side atomic publish (putGenerated tmp+rename) as defense-in-depth (app change). **Activation needs owner-approved deploy**; until then nightly runs the unfixed script (may intermittently fail the tar race); interim recovery point = 2026-10-14T22:06Z restore-verified backup.
+- **Residual release blockers UNCHANGED:** off-host replication absent/owner-deferred → production release remains **NO-GO**.
+
+**Hard prohibitions (unchanged):** no merge/deploy/prod-backup-execution/restore/live-DB-mutation/migration/rollback/restart/live-tree-checkout/Stripe/mail/pilot. `main 6022b75` + migrations 139/140 untouched. **STOP — awaiting ChatGPT independent audit of `4263f28`.**
+
+---
+
+# (PRIOR) SCA PHASE 2 — CHATGPT READINESS AUDIT: NO-GO CONFIRMED; BACKUP SAFETY TASK QUEUED
 
 **Audit of** `docs/SCA-PHASE2-RELEASE-READINESS.md` (gov `e4619e8`): **ACCEPTED as a read-only readiness assessment, with production release NO-GO.** Code candidate `dae6072` remains PASS but NOT authorized for merge/deploy. Live health, backup log and migration data in the report are Claude-reported, not independently host-verified by ChatGPT.
 
