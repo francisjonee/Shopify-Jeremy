@@ -1,3 +1,19 @@
+# SCA UX PHASE 2 — INDEPENDENT ASSESSMENT CONDITIONAL PASS / IMPLEMENTATION TASK
+
+**Assessment:** `docs/SCA-STAFF-COLLECTOR-UX-PHASE2-ASSESSMENT.md` reviewed against implementation main `6022b75c021069bde332b4a10cd5806ae9065aaf`. **CONDITIONAL PASS:** proceed with bounded candidate implementation ONLY subject to the refinements below. No merge or deploy authorization.
+
+## Authorized implementation slice
+- Collector **Activity** feed (not a promise of push/email notifications), derive-on-read from authoritative collector-scoped claim/ownership/transfer and own-submission event sources; no new provenance writers, listeners, workers, mail, polling or certification/auth result attribution by current owner.
+- Additive nullable `notifications_last_seen_at` or appropriately named `activity_last_seen_at` on collector account in migration sequentially AFTER QR reason migration 139. GET activity list read-only; **explicit POST** mark-seen with CSRF, throttle, monotonic update and replay safety. Pagination/count queries bounded, indexed and account-scoped. Historical activity can appear but should not misleadingly appear all 'new' on first visit; specify initialization semantics and test them.
+- Verify authoritative event types/roles before labeling claim, transfer-in/out, or submission transitions. Never infer transfer-out solely from `collector_account_id`; avoid misleading event duplication. Preserve own historical activity without leaking later owner, current private state, internal ids, invite/claim tokens or other PII. Confirm scoping and ownership transfer edge cases.
+- Add explicit user-entered acknowledgement (unchecked checkbox or typed phrase) on existing GET review forms for **all four ownership-acquiring POSTs**: QR claim, grant claim, submission claim, transfer accept. Server-side required validation, with missing/invalid acknowledgement rejecting before domain mutation; retain existing safe 404/409, eligibility, idempotency, locks, races, token expiry, CSRF. Do NOT accept prefilled hidden `confirm=1` as meaningful acknowledgement.
+- Centralize collector submission status labels and replace unsupported promises of out-of-band contact with accurate in-app status guidance; keep Phase 1 distinctions intact. Minimal staff tile optional only if trivial; otherwise defer staff queue.
+
+## Delivery gates
+Implement on a candidate branch from the exact baseline; if main moved, STOP and request rebase approval. Document exact file/migration delta and test matrix, including cross-collector isolation, transfers, first-view unread behavior, GET no write, POST monotonic seen, pagination, malformed tokens, bare POST rejection, double-submit, stale/adverse/expired grants, provenance fingerprint unchanged, and full SCA suite. Write `docs/SCA-STAFF-COLLECTOR-UX-PHASE2-RESULT.md` in governance and update NEXT_TASK.md to await ChatGPT independent pre-merge audit. STOP. **No merge, production deploy, production migration/data mutation, backup changes, Stripe/mail activation, QR rotation or pilot.** Production release remains NO-GO; off-host backup remains owner-deferred.
+
+---
+
 # NEXT TASK — SCA STAFF & COLLECTOR UX PHASE 2 — ASSESSMENT DELIVERED; AWAITING CHATGPT INDEPENDENT ASSESSMENT AUDIT
 
 **STATUS (2026-10-15):** Read-only architectural assessment delivered → `docs/SCA-STAFF-COLLECTOR-UX-PHASE2-ASSESSMENT.md`. Confirmed impl main baseline `6022b75c021069bde332b4a10cd5806ae9065aaf` (QR-reason migration 139 merged-but-undeployed is the only pending migration; prod app still 3b30a0f/138). **No code, branch, deploy, migration, data mutation, or mail/Stripe activation.**
