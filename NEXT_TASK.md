@@ -1,4 +1,17 @@
-# SCA PHASE 2 — CHATGPT INDEPENDENT RE-AUDIT PASS (CODE ONLY)
+# SCA PHASE 2 — RELEASE-READINESS ASSESSMENT DELIVERED; OWNER DECISION PENDING (NO-GO)
+
+**STATUS (2026-10-15):** READ-ONLY production-release readiness assessment delivered → `docs/SCA-PHASE2-RELEASE-READINESS.md`. No merge/deploy/migration/rollback/DB-mutation/restart/live-tree-checkout. Phase 2 **code** audit = PASS (`dae6072`); **production release = NO-GO** pending OWNER decision.
+- **RECOMMENDATION: NO-GO.** Blockers are OPERATIONAL, not code.
+- **Migration 139/140 reconciliation (verified read-only):** both batch 27; candidate migration-140 filename + schema EXACTLY match applied; columns still empty (reason 0/3, watermark 0/4). On merge+deploy the migrator SKIPS both (already recorded) — no duplicate execution / no rename / no DB action required. Optional owner-authorized rollback to 138 is clean (empty columns) but not required.
+- **Backup = BLOCKER.** tmpfs staging fix is live (10-15 nightly staged disk-backed), BUT the 10-15 01:17 nightly FAILED on a NEW `tar: sca/generated: file changed as we read it` race (concurrent doc write during archive; script treats tar exit 1 as fatal) → no fresh AUTOMATED backup. Newest GOOD backup = 2026-10-14T22:06Z (manual, restore-verified), VPS-local only. **Off-host replication ABSENT** (no remote/rclone/creds; owner-deferred) → explicit NO-GO.
+- **Release gates:** (1) off-host restore-verified fresh backup pre-migrate — UNMET; (2) backup pipeline reliability (fix tar race) — UNMET; (3) controlled --no-ff merge of dae6072 (candidate↔merge identical, audited files) + full green gate on merge tree; (4) migration reconciliation confirmed (MET in principle); (5) owner-approved window. Deploy/verify/rollback decision tree in the doc (rollback = pinned prior revision 6022b75, NEVER reset origin/main, keep 139/140, never auto-drop reason audit data).
+- Live health admin/collector 200; live serves working tree main `6022b75`.
+
+**OWNER must decide:** provision off-host backup + fix the nightly tar race + approve a window before any merge/deploy is authorized. **STOP — awaiting ChatGPT independent audit + OWNER GO/NO-GO.** Production main `6022b75` and migrations 139/140 untouched.
+
+---
+
+# (PRIOR) SCA PHASE 2 — CHATGPT INDEPENDENT RE-AUDIT PASS (CODE ONLY)
 
 **Reviewed candidate:** `dae60728312fa1238bc733eb671540a444dcd807` on `fix/sca-ux-phase2-correction`. **DISPOSITION: PASS for the requested narrow code remediation; production release remains NO-GO.** GitHub compare `7272843..dae6072` confirms one commit, two files only (activity service and Phase 2 test). Direct source inspection confirms all three source queries fetch CAP+1; `collect()` marks truncated only at >CAP and retains CAP; 99/100/101 regression tests assert precise unread counts and final-page disclosure. Unread COUNT predicates and timestamps align with feed. Claude-reported tests: focused 23 passed, email hardening 9 passed ×3, full SCA 1430 passed/1 skipped/0 failed; ChatGPT did not execute tests on host.
 
