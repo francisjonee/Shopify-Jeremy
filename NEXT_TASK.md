@@ -1,4 +1,19 @@
-# NEXT TASK — SCA STAFF & COLLECTOR UX PHASE 2: DISCOVERY AND IMPLEMENTATION PLAN
+# NEXT TASK — SCA STAFF & COLLECTOR UX PHASE 2 — ASSESSMENT DELIVERED; AWAITING CHATGPT INDEPENDENT ASSESSMENT AUDIT
+
+**STATUS (2026-10-15):** Read-only architectural assessment delivered → `docs/SCA-STAFF-COLLECTOR-UX-PHASE2-ASSESSMENT.md`. Confirmed impl main baseline `6022b75c021069bde332b4a10cd5806ae9065aaf` (QR-reason migration 139 merged-but-undeployed is the only pending migration; prod app still 3b30a0f/138). **No code, branch, deploy, migration, data mutation, or mail/Stripe activation.**
+
+Findings in brief:
+- **Notifications (focus 1):** NO in-app notification/inbox/activity-feed exists (only a mail-only password-reset Notification); dashboard is static counts. Rich append-only ledgers exist — `sca_ownership_events`(collector_account_id,effective_at), `sca_submission_status_events`(via submission→collector), `sca_status_events`(raised_by_collector_id), `sca_transfer_events` are collector-scoped and reusable. No per-collector read/seen marker.
+- **Claim confirmation (focus 2):** ownership-acquiring POSTs (ClaimController::claim, GrantClaimController::claim, SubmissionController::claim, TransferController::accept) mutate on a single-click POST with NO explicit confirm field, while lost/stolen/anonymization already require one (CollectorStatusConfirmRequest). Reuse that pattern.
+- **Staff visibility (focus 3, secondary):** counts-only dashboard; no consolidated work-queue; no awaiting-FINALIZE/pending-submissions surface; label drift bypassing ItemStateLabels.
+- **Status copy (focus 4, secondary):** submission status has 3 uncentralized vocabularies; "Not certified" vs "Not currently certified"; misleading "We will be in touch" (submissions/show :15,62,66) with no delivery (MAIL_MAILER=log).
+- **Recommended bounded slice:** Option-A derive-on-read notifications (claims+transfers+own-submission; one additive `notifications_last_seen_at` column; no workers/polling/email) + reuse confirm pattern on the 4 ownership POSTs + centralize submission labels + fix misleading copy. Certification/authentication notifications (need owner-at-event-time join) and a consolidated staff work-queue are DEFERRED.
+
+**Prohibited (unchanged):** no implementation/branch/deploy/migration/data-mutation/mail/Stripe/service-restart/DNS/QR-rotation/ownership-transfer/pilot. Production release remains NO-GO; off-host backup owner-deferred. **STOP — ChatGPT will inspect the repo and authorize a separate implementation task if appropriate.**
+
+---
+
+# (PRIOR) SCA STAFF & COLLECTOR UX PHASE 2: DISCOVERY AND IMPLEMENTATION PLAN
 
 **STATUS: AUTHORIZED FOR READ-ONLY DISCOVERY / ARCHITECTURAL ASSESSMENT ONLY.** Implementation main baseline: `6022b75c021069bde332b4a10cd5806ae9065aaf`. Owner approved proceeding with Phase 2 planning; no code implementation or merge is authorized yet.
 
