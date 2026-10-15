@@ -1,4 +1,18 @@
-# SCA PHASE 2 — CHATGPT INDEPENDENT PRE-MERGE AUDIT: CHANGES REQUESTED
+# SCA PHASE 2 — AUDIT CHANGES APPLIED; READY FOR CHATGPT RE-AUDIT
+
+**STATUS (2026-10-15):** The single pre-merge audit finding (`4bf0fb2`) is remediated. Evidence in `docs/SCA-PHASE2-WINDOW-CAPPED-REMEDIATION-RESULT.md`. **No merge/deploy/production-migration/rollback/live-DB mutation.**
+- **New candidate head `dae60728312fa1238bc733eb671540a444dcd807`** on `fix/sca-ux-phase2-correction` (pushed; prev audited head `7272843`; built on `4086ee5`; baseline `6022b75` unmoved). Remediation = 2 files, +53/−17.
+- **Fix:** `CollectorActivityService` sources now fetch a **CAP+1 probe**; `collect()` flags `window_capped` only when a source has MORE than CAP (extra row exists), retaining the newest CAP for display. Exactly 100 → NOT capped (no false "older history" disclosure); 101 → capped. Stable sort + bounded queries unchanged.
+- **Regression tests (99 / exactly 100 / 101):** a12a (99, not capped), a12b (exactly 100, not capped — the fix), a12c (101, capped), each asserting window_capped + exact unread + final-page UI disclosure. a11/a13/c1–c5 retained.
+- **Verified:** `unreadCount()` uses identical filters/joins/time fields to the feed per source (ownership effective_at; accepted-transfer te.created_at; submission sse.created_at); served by idx_oe_collector_effective / idx_tr_from_collector / submission indexes. Four acknowledgement paths secure; migration filenames 139/140 preserved; no scope expansion.
+- **Safety:** dev+tests in separate worktree + ephemeral container; target verified `sca_domain_test`; live bind-mount stayed on `main 6022b75`; loopback 200.
+- **Tests:** focused Phase2 **23 pass**; email-hardening **9/9 ×3**; full `tests/Feature/Sca` **1430 pass / 1 skip / 0 fail**.
+
+**Prohibited (unchanged):** no merge/deploy/production-migration/rollback/live-DB-write/live-tree-checkout/backup-restore/Stripe/mail/pilot. Production release remains NO-GO; off-host backup owner-deferred. **STOP — READY FOR ChatGPT independent RE-AUDIT of `dae6072`.**
+
+---
+
+# (PRIOR) SCA PHASE 2 — CHATGPT INDEPENDENT PRE-MERGE AUDIT: CHANGES REQUESTED
 
 **Audit target:** implementation candidate `7272843a0f943a31a7489c6af1ba1ddc22bcf917` (`fix/sca-ux-phase2-correction`), built on `4086ee5`, baseline main `6022b75`. Reviewed actual GitHub source (activity service/controller/view, password-reset test isolation, Phase 2 tests), governance result and commit comparisons. **DISPOSITION: CHANGES REQUESTED; NO MERGE OR DEPLOY.** Claimed test runs are Claude-reported, not independently rerun on host.
 
