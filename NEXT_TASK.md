@@ -1,3 +1,17 @@
+# SCA PHASE 2 — CHATGPT READINESS AUDIT: NO-GO CONFIRMED; BACKUP SAFETY TASK QUEUED
+
+**Audit of** `docs/SCA-PHASE2-RELEASE-READINESS.md` (gov `e4619e8`): **ACCEPTED as a read-only readiness assessment, with production release NO-GO.** Code candidate `dae6072` remains PASS but NOT authorized for merge/deploy. Live health, backup log and migration data in the report are Claude-reported, not independently host-verified by ChatGPT.
+
+**Critical audit qualification:** DO NOT "fix" the nightly tar failure merely by suppressing `file changed as we read it`, using `--ignore-failed-read`, or accepting exit 1 as success. That can create a seemingly successful but inconsistent document backup. Backup success must represent a consistent recovery point and pass an actual isolated restore/integrity verification.
+
+**NEXT TASK — narrowly scoped backup-reliability design and non-production validation:** Claude should inspect the backup scripts and document-writer concurrency paths, identify a safe snapshot/quiescence or equivalent consistency mechanism for `app/storage/app/sca/generated`, and produce a precise implementation and validation plan with failure handling, atomic publication, integrity checks and restore-verification criteria. If a correction can be safely developed and tested in a separate non-live worktree/disposable environment, implement it there, run targeted failure-injection and concurrent-write tests, and submit candidate SHA plus governance evidence for independent audit. Do not activate or replace production backup scripts yet; do not assume a clean tar exit alone proves restore consistency. If snapshot/quiescence requires live changes, stop at the plan and request separate owner approval.
+
+**Unchanged blockers:** off-host destination/credentials and fresh off-host restore-verified recovery point remain owner-deferred. No production GO until those are addressed and a release window explicitly approved. Keep migration 139/140 unchanged; no rollback needed for the release plan.
+
+**Hard STOP:** no merge, deploy, production backup execution/restore, live DB mutation, migration/rollback, restart, live-tree checkout, Stripe/mail activation or pilot. Preserve `main 6022b75` and production state. Update governance evidence and NEXT_TASK, then STOP for ChatGPT audit.
+
+---
+
 # SCA PHASE 2 — RELEASE-READINESS ASSESSMENT DELIVERED; OWNER DECISION PENDING (NO-GO)
 
 **STATUS (2026-10-15):** READ-ONLY production-release readiness assessment delivered → `docs/SCA-PHASE2-RELEASE-READINESS.md`. No merge/deploy/migration/rollback/DB-mutation/restart/live-tree-checkout. Phase 2 **code** audit = PASS (`dae6072`); **production release = NO-GO** pending OWNER decision.
