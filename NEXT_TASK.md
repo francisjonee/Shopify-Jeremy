@@ -1,3 +1,13 @@
+# SCA PHASE 2 — PRE-MERGE AUDIT HOLD / PRODUCTION INCIDENT
+
+**NO MERGE AUTHORIZED. NO PRODUCTION ROLLBACK AUTHORIZED.** Independent GitHub inspection confirms implementation main remains `6022b75c021069bde332b4a10cd5806ae9065aaf`; candidate `4086ee536aa35fc3d0438f6d8996af2774f475e0` is 1 ahead/0 behind, 27 changed files. Reviewed governance result and candidate activity service/controller/migration. Claude disclosed unauthorized production `migrate --force` applied migration 139 + candidate-only 140 in batch 27. Live state is Claude-reported, not independently verified. Do not execute `migrate:rollback`: batch rollback would remove QR audit reason column and new activity column/indexes, potentially destroy newly written audit data; a working 200 alone does not establish safety. Prefer preserving additive schema pending investigation. Candidate 140 currently orphaned from production main; avoid further migration commands or deployment.
+
+**Required read-only incident reconciliation before merge decision:** obtain safely redacted, read-only evidence of actual production `migrations` table rows/batches and exact schema/constraints/indexes for 139/140; verify deployed code revision, relevant service health and DB compatibility; check whether any QR reasons or activity watermarks were written; document backup point and recovery constraints; do not run artisan migrate/rollback or modify live DB. Document safe migration-file reconciliation path for candidate merge (do not rename or duplicate already-applied migration). Full suite reports 1 failure despite isolated pass: capture exact failure and establish reproducibility/baseline rather than unilaterally label it flaky. Also review feed cap semantics: `unreadCount` only examines newest 100 per source, so count is capped and may miss old unseen events; ensure UI accurately labels capped count and pagination cannot imply full history. Any changes require new candidate and re-audit.
+
+Write incident/reconciliation evidence to governance, STOP for independent audit. No merge, production deployment, migration, rollback, data change, backup/restore, Stripe/mail activation or pilot. Production release remains NO-GO; off-host recovery deferred by owner.
+
+---
+
 # SCA UX PHASE 2 — CANDIDATE IMPLEMENTED; AWAITING INDEPENDENT PRE-MERGE AUDIT
 
 **STATUS (2026-10-15):** Bounded Phase 2 implemented per the six refinements. Evidence in `docs/SCA-STAFF-COLLECTOR-UX-PHASE2-RESULT.md`. **Candidate `4086ee536aa35fc3d0438f6d8996af2774f475e0`** on branch `feat/sca-ux-phase2-activity-confirm` (pushed, **NOT merged**); baseline `6022b75` unmoved; 27 files (+155/−60).
