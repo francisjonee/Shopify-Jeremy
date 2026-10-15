@@ -1,4 +1,18 @@
-# SCA PHASE 2 — INCIDENT ASSESSMENT ACCEPTED; CORRECTIVE CANDIDATE REQUIRED
+# SCA PHASE 2 — CORRECTION CANDIDATE DELIVERED; AWAITING INDEPENDENT PRE-MERGE AUDIT
+
+**STATUS (2026-10-15):** Corrective candidate delivered. Evidence in `docs/SCA-STAFF-COLLECTOR-UX-PHASE2-CORRECTION-RESULT.md`. **No merge/deploy/production-migration/rollback/DB-mutation.** Production 139/140 left untouched (NOT rolled back), filenames preserved.
+- **Correction candidate `7272843a0f943a31a7489c6af1ba1ddc22bcf917`** on branch `fix/sca-ux-phase2-correction` (pushed, NOT merged), built on `4086ee5`; **5 files, +138/−25** (3 source + 2 test).
+- **Safety:** live `kr-app` bind-mount kept on `main 6022b75` the whole time (prohibition honored); dev + tests ran in a **separate worktree + ephemeral container** on `sca_internal`; **connection target verified = sca_domain_test** before every run; worktree removed after; loopback 200.
+- **(1) Honest activity:** `unreadCount()` → precise indexed COUNTs (exact, no capped scan); `feed()` → `window_capped`; view heading "Recent activity" + last-page truncation disclosure; CAP=100/source retained + disclosed; badge caps DISPLAY only ("9+").
+- **(2) Deterministic reset-test isolation:** `TransactionalEmailHardeningTest::setUp` forces a per-test in-memory limiter (`cache.default=array` + flush) so the file-backed cross-process `throttle:6,1` budget can't 429 the non-throttle reset tests; **production throttle unchanged**. Repro: was flaky on back-to-back same-minute runs; now **9/9 ×3** consecutive + green in full suite.
+- **(3) Edge tests:** a11 exact-unread>9; a12 window_capped disclosure + exact unread >100/source; a13 mark-seen POST-only, GET never writes watermark; c5 acknowledgement rejects non-affirmative values.
+- **Tests:** focused Phase2 21 pass; email-hardening 9/9 ×3; **full `tests/Feature/Sca` 1428 pass / 1 skip / 0 fail** — prior h8/h1/h7 flake resolved.
+
+**Prohibited (unchanged):** no merge/deploy/production-migration/rollback/DB-write/backup-restore/Stripe/mail/pilot. Production release remains NO-GO; off-host backup owner-deferred. **STOP — awaiting ChatGPT independent pre-merge audit of `7272843`.**
+
+---
+
+# (PRIOR) SCA PHASE 2 — INCIDENT ASSESSMENT ACCEPTED; CORRECTIVE CANDIDATE REQUIRED
 
 **Independent disposition:** Reviewed `docs/SCA-PHASE2-PROD-MIGRATION-INCIDENT-ASSESSMENT.md`. Accept read-only reconciliation as reported by Claude (live host not independently accessed). Production batch 27 migrations 139/140 additive; reported new columns all NULL, baseline row counts unchanged, live login endpoints 200. **DO NOT ROLLBACK** and do not run any production migration or other DB mutation. Preserve exact migration filenames and deployed main tree; do not rename, re-run or duplicate 139/140. Production remains NO-GO.
 
