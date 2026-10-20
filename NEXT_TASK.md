@@ -1,4 +1,17 @@
-# SCA BACKUP — RE-AUDIT OF 77e4023: CHANGES REQUESTED (VANISHED FILE CAN BREAK DB/DOCUMENT CONSISTENCY)
+# SCA BACKUP — VANISHED/ENUMERATION FAIL-CLOSED REMEDIATION DELIVERED; AWAITING CHATGPT RE-AUDIT
+
+**STATUS (2026-10-20):** Re-audit findings (`43260e6`: unsafe vanished-skip + masked enumeration failure) remediated. Evidence in `docs/SCA-BACKUP-VANISHED-ENUM-FAILCLOSED-RESULT.md`. **NOT activated** — live app/scripts/cron/DB unchanged. No merge/deploy/prod-backup/restore/DB-mutation/live-tree-checkout.
+- **New candidate head `1a22d8c8da5572232cf2f019f9a2207adf1932b6`** on `fix/sca-backup-document-consistency` (prev audited `77e4023`; **scripts-only** diff, 2 files +67/−33, no app delta; pushed, UNMERGED).
+- **Fix (`snapshot_documents`):** (1) disappearance now FAIL CLOSED (no skip) — ANY cp failure incl. source vanished after enumeration → rm partial dest + non-zero (deletion-safety would need a coordinated DB+doc point-in-time snapshot; out of scope; write-ordering NOT relied upon). (2) enumeration status captured via temp list + checked (`if ! (cd src && find…) > listf`) → failed/incomplete `find` fails closed (process-substitution status-drop removed). mkdir checked; inventory copied==enumerated==present; symlinks excluded; backup-run.sh still `|| fail` so no .gpg on failure.
+- **Deterministic fault-injection:** (D) copy-fail-source-present→fail-closed; (E) REVISED disappearance→fail-closed (no dangling-row backup); (F) NEW enumeration-failure (find shim)→fail-closed; (G) NEW mkdir-failure→fail-closed. Retains (A) paused .part excluded, (B) atomic-rename boundary, (C) concurrent in-flight. `DOC-CONSISTENCY-SELFTEST PASS` (A–G); bash -n clean.
+- **App unchanged since c6fc97b** (publishAtomically + PART_SUFFIX + BackupDocumentAtomicityTest + full SCA 1409/1/0 stand; scripts-only). Isolated worktree; live stayed on main; loopback 200.
+- **Must deploy app+scripts together** (owner-approved); interim recovery = 2026-10-14T22:06Z backup. **Off-host absent → release NO-GO.** Phase 2 `dae6072` frozen; `main 6022b75` + migr 139/140 untouched.
+
+**STOP — awaiting ChatGPT independent RE-AUDIT of `1a22d8c`. No merge/deploy/migrate/rollback/restart/live-backup/restore/Stripe/mail/pilot.**
+
+---
+
+# (PRIOR) SCA BACKUP — RE-AUDIT OF 77e4023: CHANGES REQUESTED (VANISHED FILE CAN BREAK DB/DOCUMENT CONSISTENCY)
 
 **Audit verdict (2026-10-20): CHANGES REQUESTED; DO NOT MERGE OR ACTIVATE.** Candidate 77e40230524a7456b9d43198ac5351acb0a011aa correctly fixes the prior `cp ... || true` fail-open when the source still exists. Independent code inspection found that the newly accepted “source vanished → skip” policy is not safe given the backup ordering.
 
