@@ -1,3 +1,25 @@
+# SCA UX PHASE 2 — UNREAD SEMANTICS AUDIT: CHANGES REQUESTED; PRODUCTION NO-GO
+
+**Independent source review: 2026-10-21.** Latest candidate reviewed: `dae60728312fa1238bc733eb671540a444dcd807` on `fix/sca-ux-phase2-correction`; baseline `6022b75c021069bde332b4a10cd5806ae9065aaf`. GitHub compare reports 3 commits ahead / 0 behind, 27 files changed. Full report: `docs/SCA-STAFF-COLLECTOR-UX-PHASE2-UNREAD-SEMANTICS-AUDIT.md` (governance commit `5da1b65b8f581da499ae08e2bd4ae37362a839c6`).
+
+**Disposition: CHANGES REQUESTED. No merge/deploy.** Source review confirms the latest candidate contains the CAP+1 truncation correction, exact unread COUNT queries, and “Recent activity” disclosure. A new blocking finding remains: unread semantics compare event timestamps strictly with `activity_last_seen_at`. Same-second events may compare equal, and ownership uses `effective_at`, which can be backdated and is not necessarily event-recording time. New events can therefore be missed by both the feed and unread count.
+
+## Authorized next candidate task (candidate branch only)
+
+1. Define unread semantics as “recorded after mark-seen” or otherwise document the intended behavior; inspect available authoritative ledger columns before choosing the boundary.
+2. Fix same-second precision and late-recorded/backdated ownership-event behavior without broadening activity sources or weakening collector scoping.
+3. Add regression tests for same-second event recording and late-recorded ownership events with an older `effective_at`; assert feed `is_new` and exact unread count agree.
+4. Preserve CAP+1 truncation behavior, exact COUNT queries, ownership acknowledgements, read-only GET activity, explicit authenticated/CSRF POST mark-seen, and migration filenames 139/140.
+5. Run focused and full SCA feature tests only against verified disposable `sca_domain_test`; record exact SHA, diff, commands, target DB, and output. Update a governance result report, then STOP for ChatGPT independent re-audit.
+
+## Production migration incident — read-only evidence still required
+
+The existing incident report says migrations 139 and 140 were applied to production `sca_krayin` in batch 27, with additive schema and no observed data mutation. This audit did **not** connect to the live production host or database, so those live observations remain operator-reported, not independently verified here. Before any release decision, obtain fresh, safely redacted read-only evidence of migration rows/batches, exact columns/indexes/constraint, and whether the new columns have populated values. If direct read-only access is unavailable, keep the limitation explicit. Do not run `migrate`, `migrate:rollback`, or any production write.
+
+**Hard prohibitions:** no merge, deploy, production migration/rollback/write, live-tree checkout, restart, backup/restore execution, Stripe/mail activation, or pilot. Keep candidate unmerged. Production remains **NO-GO**; off-host recovery remains a separate release gate. No production action was taken by this audit.
+
+---
+
 # SCA OFF-HOST/DR ASSESSMENT — REVIEWED; DIRECTION CONDITIONALLY ACCEPTED, IMPLEMENTATION NOT AUTHORIZED
 
 **ChatGPT review: 2026-10-21.** Reviewed `docs/SCA-OFFHOST-DR-ASSESSMENT.md` and inspected the current `main` implementation of `scripts/lib-offsite.sh` and relevant `backup-run.sh` references. The read-only assessment is useful and the Storage Box + SFTP/rclone approach is a reasonable primary option for recovery from loss of the production VPS. **This is not approval to provision, configure, upload production backups, merge, deploy, or change production.** No production action was taken by this review.
