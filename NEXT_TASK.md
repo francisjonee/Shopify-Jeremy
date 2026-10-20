@@ -1,3 +1,20 @@
+# SCA BACKUP — RE-AUDIT OF 77e4023: CHANGES REQUESTED (VANISHED FILE CAN BREAK DB/DOCUMENT CONSISTENCY)
+
+**Audit verdict (2026-10-20): CHANGES REQUESTED; DO NOT MERGE OR ACTIVATE.** Candidate 77e40230524a7456b9d43198ac5351acb0a011aa correctly fixes the prior `cp ... || true` fail-open when the source still exists. Independent code inspection found that the newly accepted “source vanished → skip” policy is not safe given the backup ordering.
+
+**Blocking finding — database dump precedes document snapshot.** If a published document is deleted after the DB dump but before its copy, the snapshot helper can skip the missing file while the database dump still contains a row referencing it. “Rows are written only after publication” only establishes create ordering; it does not protect against deletion after the dump. Test (E) currently declares success for this potentially inconsistent backup.
+
+**Required remediation:**
+1. Safest default: if an enumerated published file disappears or cannot be copied, fail the entire backup closed and publish no final artifact. Do not skip disappearance unless the implementation proves a real DB/document point-in-time consistency protocol covering both create and delete operations (for example, an appropriately enforced shared lock/quiescence or storage snapshot coordinated with the DB snapshot). Do not infer safety from write ordering alone.
+2. Extend deterministic fault injection: (D) copy failure while source remains present fails closed; revise (E) disappearance after enumeration to fail closed/no successful artifact under the default policy. If a stronger coordinated consistency protocol is implemented instead, test deletion during the snapshot and prove the DB dump cannot retain a dangling reference.
+3. Audit the find enumeration pipeline in `snapshot_documents()`: `while ... done < <( ... find ... )` does not propagate the process-substitution command's exit status to the caller. Ensure a failed/incomplete source enumeration cannot return success as a partial snapshot. Explicitly capture/check enumeration status and clean the destination on failure.
+4. Check critical filesystem operations and ensure any snapshot failure prevents creation/publication of a successful encrypted artifact. Add deterministic failure-injection coverage for enumeration failure as well as copy and mkdir failure where practical.
+5. Retain `.part` exclusion and atomic publication tests, checksums/restore verification, PHP atomicity tests, and full SCA test evidence. Re-run relevant shell tests after changes; do not rely solely on the previous candidate's reported results.
+6. Update the report with the precise consistency guarantee and limitations. Do not claim cross-consistency unless the actual protocol and tests establish it.
+
+**Safety boundary:** isolated worktree + synthetic/disposable data only. No live app/script/cron change, production backup/restore, merge/deploy, database mutation, migration/rollback, restart, Stripe/mail activation, or live-tree checkout. Keep Phase 2 frozen and production release **NO-GO**; off-host recovery remains absent. Commit candidate + evidence, update this task queue, then STOP for independent ChatGPT re-audit.
+
+---
 # SCA BACKUP — SNAPSHOT FAIL-CLOSED REMEDIATION DELIVERED; AWAITING CHATGPT RE-AUDIT
 
 **STATUS (2026-10-20):** Re-audit finding (`8ce68d4` — `cp ... || true` fail-open) remediated. Evidence in `docs/SCA-BACKUP-SNAPSHOT-FAILCLOSED-RESULT.md`. **NOT activated** — live app/scripts/cron/DB unchanged. No merge/deploy/prod-backup/restore/DB-mutation/live-tree-checkout.
