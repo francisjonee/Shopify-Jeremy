@@ -1,4 +1,16 @@
-# SCA BACKUP — CHATGPT INDEPENDENT AUDIT: CHANGES REQUESTED (INCOMPLETE-FILE RACE)
+# SCA BACKUP — PUBLICATION-BOUNDARY REMEDIATION DELIVERED; AWAITING CHATGPT RE-AUDIT
+
+**STATUS (2026-10-20):** The audit finding (`14c990a` — size/mtime can't prove write completion) is remediated with a correctness-first atomic publication boundary. Evidence in `docs/SCA-BACKUP-PUBLICATION-BOUNDARY-RESULT.md`. **NOT activated** — live app/scripts/cron/DB unchanged. No merge/deploy/prod-backup-execution/restore/DB-mutation/live-tree-checkout.
+- **New candidate head `c6fc97bcc9f07013548d4b522554a340b6d16577`** on `fix/sca-backup-document-consistency` (prev audited `4263f28`; from `main 6022b75`; pushed, UNMERGED). 4 files (+125/−88): `DocumentService.php`, `lib-docsnapshot.sh`, `backup-verify-restore.sh`, new `BackupDocumentAtomicityTest.php`.
+- **Fix:** removed the size/mtime heuristic. App publishes every private-disk artifact ATOMICALLY (`DocumentService::publishAtomically` → `.part` temp then `Storage::move`=rename onto the unique final path) — applied to putGenerated + restoreGeneratedMedia + attachToItem; `PART_SUFFIX='.part'`. A final-named file is therefore ALWAYS complete; incomplete files exist only at `.part`. `snapshot_documents()` copies ONLY published (non-.part) files (no timing), manifest from the same static snapshot. backup-run.sh unchanged. Writers assessed (public disk excluded); DB-dump-first→docs-second + immutability give DB↔doc cross-consistency.
+- **Deterministic adversarial tests:** `doc-consistency-selftest` — (A) paused/incomplete `.part` EXCLUDED + 20 finals restore-verified; (B) nothing at final name before rename, complete file appears after (published-on-subsequent-snapshot); (C) 8 concurrent in-flight `.part` + 15 finals → exactly 15 archived & restore-verified. PHP `BackupDocumentAtomicityTest`: publishAtomically → complete final, no `.part` residue. Tests distinguish archive==manifest from actual completeness (assert `.part` exclusion). Full `tests/Feature/Sca` 1409 pass/1 skip/0 fail. Isolated worktree+ephemeral container; target verified sca_domain_test; live stayed on main; loopback 200.
+- **Must deploy app+scripts together** (owner-approved); interim recovery = 2026-10-14T22:06Z backup. **Off-host still absent → release NO-GO.** Phase 2 `dae6072` frozen; `main 6022b75` + migrations 139/140 untouched.
+
+**STOP — awaiting ChatGPT independent RE-AUDIT of `c6fc97b`. No merge/deploy/migrate/rollback/restart/live-backup/restore/Stripe/mail/pilot.**
+
+---
+
+# (PRIOR) SCA BACKUP — CHATGPT INDEPENDENT AUDIT: CHANGES REQUESTED (INCOMPLETE-FILE RACE)
 
 **Audited implementation:** `4263f28ec38af88489ac1be7c893d2143d9abc56` on `fix/sca-backup-document-consistency`; compare to `main 6022b75` confirms 3 backup-script files, one commit. **VERDICT: FAIL / CHANGES REQUESTED; DO NOT MERGE OR ACTIVATE.** Claude-reported synthetic selftest PASS is acknowledged but does not establish source-file completion.
 
