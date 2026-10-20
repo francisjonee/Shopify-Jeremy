@@ -1,3 +1,18 @@
+# SCA BACKUP — INDEPENDENT RE-AUDIT OF 268c637: CODE REVIEW PASS; RELEASE STILL NO-GO
+
+**Audit date: 2026-10-20.** Independent source review of implementation candidate `268c637503883007622c58a94232fcc9d05dfe1f` found the two prior findings on `0f38626` addressed in the inspected code. **No new blocking source-level finding identified in this review.** This is a code review of the pushed candidate, not a claim that ChatGPT executed the candidate's shell tests or verified a production restore.
+
+- **Path containment:** `verify_db_document_refs()` now extracts the whole quoted path token, validates it against an anchored traversal-free canonical grammar before any filesystem probe, and independently rejects absolute paths and `.`/`..` components. Test (L) creates a real file outside the snapshot and uses a traversal reference; the stage must fail and leave no document archive. Near-miss malformed paths are also tested.
+- **Extraction fail-closed:** the local-count grep status and both statuses from the path-extraction grep/sed pipeline are captured and checked. Only grep's documented no-match status is accepted; grep read errors and sed errors return non-zero. Test (M) injects a no-output grep error specifically at the extraction stage and asserts stage failure/no archive.
+- **Prior protections retained in inspected source:** the shared checked `backup_document_stage()` remains the runner's single decision path; DB-reference integrity check; snapshot enumeration/copy failure handling; atomic app publication and `.part` exclusion; checked manifest inputs and local artifact publication to `.part` before rename.
+- **Evidence reported by implementation:** `DOC-CONSISTENCY-SELFTEST PASS (A–M)`, `offsite-selftest` PASS, shell syntax checks clean; app unchanged this round. These are candidate-reported results, not independently executed in this audit.
+- **Candidate remains UNMERGED / NOT ACTIVATED.** Production `main 6022b75c021069bde332b4a10cd5806ae9065aaf` and migrations 139/140 must remain untouched until separate owner-approved release steps. Off-host replication/recovery is absent; production release remains **NO-GO**. The option-B reference-integrity check is not a coordinated DB/document point-in-time snapshot.
+- **Safety:** no production action taken by this audit. No merge/deploy, DB mutation, migration/rollback, restart, production backup/restore, or Stripe/mail activation.
+
+**Next action:** keep the candidate frozen pending explicit owner decision on the remaining operational release gates, especially off-host recovery and an approved deployment/restore-verification plan. Do not infer production readiness from this source-level pass.
+
+---
+
 # SCA BACKUP — REFERENCE-PATH GRAMMAR / EXTRACTION-STATUS REMEDIATION DELIVERED; AWAITING CHATGPT RE-AUDIT
 
 **STATUS (2026-10-20):** Re-audit findings on `0f38626` (gov `b6ac62e`: reference-path escape + unchecked extraction-stage statuses in `verify_db_document_refs()`) remediated. Evidence in `docs/SCA-BACKUP-REFPATH-GRAMMAR-EXTRACTION-RESULT.md`. **NOT activated** — live app/scripts/cron/DB unchanged. No merge/deploy/prod-backup/restore/DB-mutation/live-tree-checkout.
