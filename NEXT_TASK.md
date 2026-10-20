@@ -1,4 +1,18 @@
-# SCA BACKUP — RE-AUDIT OF 1a22d8c: CHANGES REQUESTED (PRE-ENUMERATION DELETION / EMPTY-ARCHIVE FAIL-OPEN)
+# SCA BACKUP — EMPTY-ARCHIVE FAIL-OPEN / DELETION-WINDOW REMEDIATION DELIVERED; AWAITING CHATGPT RE-AUDIT
+
+**STATUS (2026-10-20):** Re-audit findings on `1a22d8c` (gov `6202edc`: caller-level empty-archive fail-open + DB-dump→document-inventory deletion window) remediated. Evidence in `docs/SCA-BACKUP-EMPTY-ARCHIVE-FAILOPEN-RESULT.md`. **NOT activated** — live app/scripts/cron/DB unchanged. No merge/deploy/prod-backup/restore/DB-mutation/live-tree-checkout.
+- **New candidate head `0f386266bf34d436b9a61d4271abf26953640163`** on `fix/sca-backup-document-consistency` (prev audited `1a22d8c`; **scripts-only** diff, 3 files +238/−23, no app delta; pushed, UNMERGED).
+- **Fix:** (1) removed the `if [ -n "$(find … -print -quit 2>/dev/null)" ]` pre-probe that conflated a FAILED enumeration with an empty corpus (could publish a successful EMPTY archive while the DB referenced docs). A single shared `backup_document_stage()` (used verbatim by backup-run.sh AND the selftest) makes ONE checked snapshot decision, fails the whole backup closed on any inability to establish the inventory, and represents an existing-but-empty tree as empty ONLY after a successful complete enumeration. (2) `verify_db_document_refs()` proves every PRIVATE-disk (`local`) document reference in the just-dumped DB is present in the snapshot — closing the deletion window snapshot_documents alone cannot see (file deleted before its enumeration). Table-scoped extraction over the safe server-generated `storage_path` charset; corrupt dump / decompress-or-grep read error / parse ambiguity (non-`sca/` local path) / any missing referenced file all FAIL CLOSED. Append-only media model ⇒ normal runs pass; guards out-of-band removal/corruption + mid-backup deletion. Honest limitation: this is option B (reference-integrity proof), NOT a coordinated point-in-time quiescence protocol — sufficient for fail-closed correctness, does NOT by itself change the verdict.
+- **Other runner fail-open paths hardened:** manifest component checksums into CHECKED vars (no silent empty/garbage hash); encrypted artifact published ATOMICALLY to a local `*.part` then renamed after checksum (interrupted encryption leaves only a `*.part`, swept by cleanup; never a final-named backup). `set -euo pipefail` preserved; fragile extraction uses a bounded `set +e` with explicit `PIPESTATUS` capture.
+- **Deterministic tests through the REAL decision path (`backup_document_stage`):** (H) positive end-to-end + other-disk ref ignored + restore-verified; (I) deletion window → fail closed (rc 12); (J) enumeration failure → fail closed (rc 11), NO empty archive; (K) genuinely empty tree → succeeds only after successful enumeration (count 0). Retained A–G + direct `verify_db_document_refs` edge checks. `DOC-CONSISTENCY-SELFTEST PASS (A–K)`, `offsite-selftest` PASS, `bash -n` clean.
+- **App unchanged since c6fc97b/1a22d8c** (publishAtomically + PART_SUFFIX + BackupDocumentAtomicityTest + full SCA 1409/1/0 stand; scripts-only). Isolated worktree (removed); live stayed on `main 6022b75`; loopback 200; no throwaway `.env` committed.
+- **Must deploy app+scripts together** (owner-approved); interim recovery = 2026-10-14T22:06Z backup. **Off-host absent → release NO-GO.** Phase 2 `dae6072` frozen; `main 6022b75` + migr 139/140 untouched.
+
+**STOP — awaiting ChatGPT independent RE-AUDIT of `0f38626`. No merge/deploy/migrate/rollback/restart/live-backup/restore/Stripe/mail/pilot.**
+
+---
+
+# (PRIOR) SCA BACKUP — RE-AUDIT OF 1a22d8c: CHANGES REQUESTED (PRE-ENUMERATION DELETION / EMPTY-ARCHIVE FAIL-OPEN)
 
 **Verdict (2026-10-20): CHANGES REQUESTED; DO NOT MERGE OR ACTIVATE.** Candidate `1a22d8c8da5572232cf2f019f9a2207adf1932b6` correctly hardens the snapshot helper's copy and enumeration paths, but a caller-level fail-open remains in `scripts/backup-run.sh`.
 
