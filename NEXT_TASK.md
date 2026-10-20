@@ -1,3 +1,20 @@
+# SCA BACKUP — RE-AUDIT OF c6fc97b: CHANGES REQUESTED (SNAPSHOT COPY FAIL-OPEN)
+
+**Implementation candidate:** `c6fc97bcc9f07013548d4b522554a340b6d16577` on `fix/sca-backup-document-consistency`; compare to `main 6022b75` shows 2 commits ahead and the five-file net diff. **Verdict: CHANGES REQUESTED; DO NOT MERGE OR ACTIVATE.** The atomic-publication approach addresses the previous size/mtime flaw, but a separate fail-open remains in `scripts/lib-docsnapshot.sh`.
+
+**Blocking finding:** inside `snapshot_documents()`, `cp -p "$src/$rel" "$dst/$rel" 2>/dev/null || true` discards every copy failure and continues. If a published final file still exists but copying fails due to disk-full, permissions, I/O, or another error, the helper may return success with that document omitted. The manifest is derived from the same incomplete snapshot, so its checksum agreement will not reveal the omission. This violates fail-closed backup semantics.
+
+**Next task:** update the snapshot helper to handle copy outcomes explicitly:
+- If the source path disappeared between enumeration and copy, skip it only after checking that it genuinely no longer exists (and document any symlink/race handling).
+- If the source still exists and copying fails, fail the entire snapshot, remove the partial destination, return non-zero, and ensure `backup-run.sh` cannot publish a successful artifact.
+- Check destination-directory creation and other filesystem operations; do not mask errors.
+- Add deterministic fault-injection tests for copy failure while source remains present, plus disappearance-between-enumeration-and-copy; assert the former fails closed with no successful artifact and the latter follows the explicitly documented policy. Retain the paused `.part`, atomic rename, checksum/restore, and PHP tests.
+- Consider verifying copied final-file count/path inventory against the enumeration, without reintroducing timing heuristics. Do not claim DB/document cross-consistency beyond what the actual writer and ordering contract prove.
+
+Use a separate worktree and synthetic/disposable environment only. No live application/script/cron changes, production backup/restore, merge/deploy, DB mutation, migration/rollback, restart, or live-tree checkout. Keep Phase 2 frozen and production release NO-GO (off-host recovery remains absent). Commit candidate + test evidence and update governance/NEXT_TASK, then STOP for independent audit.
+
+---
+
 # SCA BACKUP — PUBLICATION-BOUNDARY REMEDIATION DELIVERED; AWAITING CHATGPT RE-AUDIT
 
 **STATUS (2026-10-20):** The audit finding (`14c990a` — size/mtime can't prove write completion) is remediated with a correctness-first atomic publication boundary. Evidence in `docs/SCA-BACKUP-PUBLICATION-BOUNDARY-RESULT.md`. **NOT activated** — live app/scripts/cron/DB unchanged. No merge/deploy/prod-backup-execution/restore/DB-mutation/live-tree-checkout.
