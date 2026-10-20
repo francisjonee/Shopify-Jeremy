@@ -1,4 +1,19 @@
-# SCA UX PHASE 2 — UNREAD SEMANTICS AUDIT: CHANGES REQUESTED; PRODUCTION NO-GO
+# SCA UX PHASE 2 — UNREAD SEMANTICS FIX DELIVERED; AWAITING CHATGPT RE-AUDIT
+
+**STATUS (2026-10-21):** Blocking unread-semantics finding on `dae6072` (gov audit `5da1b65`) remediated on a clean candidate branch. Evidence: `docs/SCA-STAFF-COLLECTOR-UX-PHASE2-UNREAD-SEMANTICS-RESULT.md`. **NOT merged / NOT deployed.** No production migration/rollback/write, live-tree checkout, restart, backup/restore, Stripe/mail.
+- **Candidate branch `fix/sca-ux-phase2-unread-semantics`, head `ece24f18aaf4608d167ed606f23907360ecd7c02`** (built on `dae6072`; baseline `6022b75`; pushed, UNMERGED). 3 files: `CollectorActivityService.php`, new migration `2026_10_22_000001_add_collector_activity_source_watermarks`, `StaffCollectorUxPhase2Test.php`.
+- **Git state checked first:** experimental `fix/sca-ux-phase2-unread-id-watermarks` is EMPTY (== `dae6072`). A second experimental `fix/sca-ux-phase2-source-watermarks` (`4fe1571`) was an INCOMPLETE `MAX(id)` attempt that also removed the CAP+1/`window_capped` logic and shrank the test → rejected as a base (reference only).
+- **Fix:** unread now keyed on RECORDING IDENTITY = per-source append-only auto-increment event `id`, not timestamps. `unreadCount`/feed `is_new` use `id > seen_source_id` (strict integer → no same-second tie; immune to backdated `effective_at`); both use the identical rule so count/feed/badge agree. `markSeen` snapshots `MAX(id)` per source under a row lock and advances each watermark + `activity_last_seen_at` MONOTONICALLY (replay-/concurrent-safe; an uncommitted row is invisible to MAX and stays unread once it commits). `activity_last_seen_at` is now only the first-visit marker. CAP+1 truncation, exact COUNT, first-visit, privacy, ownership-ack, submission-labels all PRESERVED.
+- **Migration:** additive, 3 nullable columns, sequenced AFTER 140; **139/140 files untouched**; applied ONLY to disposable `sca_domain_test` after verifying the target (`db:show`); no prod migrate/`--force`/rollback.
+- **Honest concurrency limit documented:** a per-source scalar id watermark leaves one bounded residual (two overlapping inserts to the SAME source for the SAME collector committing out of id order); strictly narrower than the timestamp scheme; full closure would need per-event read tracking (a new event system, which the task directed against).
+- **Tests (added, not weakened):** a14 same-second, a15 backdated-recorded-after, a16 feed/count/badge agree, a17 cross-collector count isolation, a18 id-watermark replay idempotence, a19 delayed-insert-older-timestamps-higher-id-not-lost; A–C/CAP boundary retained. Focused **29 passed (129 assn)**; full `tests/Feature/Sca` **1436 passed / 1 skipped / 0 failed (7592 assn)**; email-hardening **9/9 ×3** isolated. Password-reset flake investigated → shared `throttle:6,1` budget under dense runs, isolated by the `dae6072` setUp limiter reset (preserved); not reproduced here.
+- Isolated worktree (removed); live stayed on `main 6022b75`; diff = exactly the 3 files, no secrets/debug.
+
+**STOP — awaiting ChatGPT independent RE-AUDIT of `ece24f1`. Candidate unmerged/inactive; production NO-GO; prod-migration-incident (139/140) and off-host/DR remain separate open release gates.**
+
+---
+
+# (PRIOR) SCA UX PHASE 2 — UNREAD SEMANTICS AUDIT: CHANGES REQUESTED; PRODUCTION NO-GO
 
 **Independent source review: 2026-10-21.** Latest candidate reviewed: `dae60728312fa1238bc733eb671540a444dcd807` on `fix/sca-ux-phase2-correction`; baseline `6022b75c021069bde332b4a10cd5806ae9065aaf`. GitHub compare reports 3 commits ahead / 0 behind, 27 files changed. Full report: `docs/SCA-STAFF-COLLECTOR-UX-PHASE2-UNREAD-SEMANTICS-AUDIT.md` (governance commit `5da1b65b8f581da499ae08e2bd4ae37362a839c6`).
 
