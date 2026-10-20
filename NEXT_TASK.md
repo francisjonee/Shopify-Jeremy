@@ -1,4 +1,17 @@
-# SCA BACKUP — RE-AUDIT OF c6fc97b: CHANGES REQUESTED (SNAPSHOT COPY FAIL-OPEN)
+# SCA BACKUP — SNAPSHOT FAIL-CLOSED REMEDIATION DELIVERED; AWAITING CHATGPT RE-AUDIT
+
+**STATUS (2026-10-20):** Re-audit finding (`8ce68d4` — `cp ... || true` fail-open) remediated. Evidence in `docs/SCA-BACKUP-SNAPSHOT-FAILCLOSED-RESULT.md`. **NOT activated** — live app/scripts/cron/DB unchanged. No merge/deploy/prod-backup/restore/DB-mutation/live-tree-checkout.
+- **New candidate head `77e40230524a7456b9d43198ac5351acb0a011aa`** on `fix/sca-backup-document-consistency` (prev audited `c6fc97b`; **scripts-only** diff, 3 files +74/−10, no app delta; pushed, UNMERGED).
+- **Fix (`snapshot_documents`):** explicit copy-outcome handling — cp success→include; cp fail + source still exists→remove partial dest + return non-zero (**FAIL CLOSED**, backup-run.sh then publishes no artifact); cp fail + source genuinely vanished→documented **SKIP** (dump-before-docs ordering means no restored DB row references a skipped file). mkdir checked (not masked); final inventory check (snapshot files == copied count); `-type f` excludes symlinks. backup-run.sh fail message corrected.
+- **Deterministic fault-injection tests** (cp shim, no timing): (D) copy-failure-with-source-present → fails closed, no partial dest, source untouched; (E) vanished-source → skipped per policy, surviving finals archived & restore-verified. Retained (A) paused `.part` excluded, (B) atomic-rename boundary, (C) concurrent in-flight. `DOC-CONSISTENCY-SELFTEST PASS` (A–E); bash -n clean.
+- **App unchanged since c6fc97b** (publishAtomically + PART_SUFFIX + BackupDocumentAtomicityTest + full SCA 1409/1/0 stand; scripts-only commit). Isolated worktree; target-verified; live stayed on main; loopback 200.
+- **Must deploy app+scripts together** (owner-approved); interim recovery = 2026-10-14T22:06Z backup. **Off-host absent → release NO-GO.** Phase 2 `dae6072` frozen; `main 6022b75` + migr 139/140 untouched.
+
+**STOP — awaiting ChatGPT independent RE-AUDIT of `77e4023`. No merge/deploy/migrate/rollback/restart/live-backup/restore/Stripe/mail/pilot.**
+
+---
+
+# (PRIOR) SCA BACKUP — RE-AUDIT OF c6fc97b: CHANGES REQUESTED (SNAPSHOT COPY FAIL-OPEN)
 
 **Implementation candidate:** `c6fc97bcc9f07013548d4b522554a340b6d16577` on `fix/sca-backup-document-consistency`; compare to `main 6022b75` shows 2 commits ahead and the five-file net diff. **Verdict: CHANGES REQUESTED; DO NOT MERGE OR ACTIVATE.** The atomic-publication approach addresses the previous size/mtime flaw, but a separate fail-open remains in `scripts/lib-docsnapshot.sh`.
 
