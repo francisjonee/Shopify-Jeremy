@@ -1,3 +1,35 @@
+# SCA BACKUP — RE-AUDIT OF 0f38626: CHANGES REQUESTED (REFERENCE-PATH ESCAPE + UNCHECKED EXTRACTION STATUS)
+
+**Verdict (2026-10-20): CHANGES REQUESTED; DO NOT MERGE OR ACTIVATE.** Independent inspection of implementation candidate `0f386266bf34d436b9a61d4271abf26953640163` confirms the earlier caller-level empty-archive probe is removed and the shared staging function is used by the runner. Two fail-closed gaps remain in `scripts/lib-docsnapshot.sh` inside `verify_db_document_refs()`.
+
+## Blocking finding 1 — a malformed `storage_path` can escape the snapshot root
+
+The path extractor accepts `'local','sca/[A-Za-z0-9._/-]+'`; this character class permits arbitrary `..` path segments. The subsequent check is only `[ -f "$root/$p" ]`, which follows path traversal. A dumped local row such as `sca/../../../../etc/passwd` (depth adjusted to the runtime path) can therefore pass by resolving to a regular file outside `$root`, even though that referenced document is NOT in the snapshot/archive. This contradicts the stated proof that every private-disk reference exists inside the snapshot and the claim that corrupted/ambiguous paths fail closed.
+
+**Required fix:** validate each extracted path against the actual canonical path grammar emitted by `DocumentService` (report states `sca/{documents|generated}/<id>/<40-hex>.<ext>`; confirm against current source and encode the exact accepted grammar), explicitly reject `.`/`..` path components and any non-canonical/absolute path, and verify containment without following a path outside the snapshot root. Do not merely rely on the safe-character set or a `sca/` prefix.
+
+**Required deterministic test:** create a synthetic dumped `local` row whose path traverses out of the snapshot to a real file outside the snapshot root; the verifier and `backup_document_stage` must fail closed (non-zero) and produce no `documents.tar.gz`. Include near-miss/invalid canonical paths too. Retain H–K and A–G.
+
+## Blocking finding 2 — second-stage grep/extraction errors are not checked
+
+The function's initial `gzip -dc | grep` pipeline correctly captures both statuses in `PIPESTATUS`. But the later extraction block runs:
+- `grep -oaE "'local'," "$ins" > "$dcs"`
+- `grep -oaE "'local','sca/[A-Za-z0-9._/-]+'" "$ins" | sed ... > "$paths"`
+
+inside `set +e`, then immediately restores `set -e`, without capturing/checking either command's status. If both reads fail before producing output, both count files can be empty (`localcount == pathcount == 0`) and the verifier can return success despite being unable to establish the inventory. This violates the advertised fail-closed behavior for grep/read errors.
+
+**Required fix:** capture statuses immediately for each extraction pipeline (including both `grep` and `sed` where applicable); distinguish only the expected “no match” status for a truly empty/no-local-row table from actual read/processing errors. On any unhandled error, clean temporary files and return non-zero. Avoid a broad `set +e` block that discards status.
+
+**Required deterministic test:** inject a grep/read failure specifically in the local-count/path-extraction stage (not only the earlier gzip→grep pipeline), including the zero-output case; assert verifier/stage failure and no archive. Keep the existing corrupt-gzip, parse-ambiguity, missing-reference, positive, and genuinely-empty cases passing.
+
+## Safety / release boundary
+
+Work only in the isolated candidate worktree with synthetic/disposable data. Commit the fix + deterministic tests + evidence, update this queue/report, then STOP for another independent audit. No live-tree checkout, production backup/restore, merge/deploy, DB mutation, migration/rollback, restart, or Stripe/mail activation. Keep Phase 2 `dae6072` frozen. Production release remains **NO-GO** while off-host recovery is absent; do not alter production `main 6022b75` or migrations 139/140.
+
+**STOP — awaiting remediation of these two findings and independent re-audit.**
+
+---
+
 # SCA BACKUP — EMPTY-ARCHIVE FAIL-OPEN / DELETION-WINDOW REMEDIATION DELIVERED; AWAITING CHATGPT RE-AUDIT
 
 **STATUS (2026-10-20):** Re-audit findings on `1a22d8c` (gov `6202edc`: caller-level empty-archive fail-open + DB-dump→document-inventory deletion window) remediated. Evidence in `docs/SCA-BACKUP-EMPTY-ARCHIVE-FAILOPEN-RESULT.md`. **NOT activated** — live app/scripts/cron/DB unchanged. No merge/deploy/prod-backup/restore/DB-mutation/live-tree-checkout.
