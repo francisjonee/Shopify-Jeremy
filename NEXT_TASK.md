@@ -1,3 +1,20 @@
+# SCA BACKUP — RE-AUDIT OF 1a22d8c: CHANGES REQUESTED (PRE-ENUMERATION DELETION / EMPTY-ARCHIVE FAIL-OPEN)
+
+**Verdict (2026-10-20): CHANGES REQUESTED; DO NOT MERGE OR ACTIVATE.** Candidate `1a22d8c8da5572232cf2f019f9a2207adf1932b6` correctly hardens the snapshot helper's copy and enumeration paths, but a caller-level fail-open remains in `scripts/backup-run.sh`.
+
+**Blocking finding:** `backup-run.sh` dumps the DB first, then checks whether documents exist using `if [ -d "$DOCS_DIR" ] && [ -n "$(find "$DOCS_DIR" -type f -print -quit 2>/dev/null)" ]; then ... else ... empty archive ... fi`. If a document referenced by the DB dump is deleted after the DB dump but before this preliminary `find`, the probe can return no files and the runner creates a valid empty document archive without ever calling `snapshot_documents()`. The helper cannot detect a file already missing before its own enumeration. This can publish a successful backup whose DB still references a missing document. A failed/permission-denied initial `find` may also be misclassified as an empty corpus.
+
+**Required remediation:**
+1. Remove the fail-open preliminary existence probe. Do not decide that the corpus is empty based on command substitution that collapses `find` failure and empty output into the same state.
+2. Make one explicit, checked enumeration/snapshot decision. Any inability to establish the document inventory must fail the whole backup. Ensure an actually empty document tree can still be represented as empty without masking an enumeration error.
+3. Address the DB-dump-to-document-snapshot deletion window honestly. Fail-closed copy/enumeration only catches deletion after enumeration starts; it cannot detect deletion between DB dump and first enumeration. Either implement a genuinely coordinated DB/document point-in-time protocol/quiescence covering deletes, or provide a reliable integrity check that proves every document reference in the dumped DB is present in the archived snapshot. Do not claim DB/document consistency without this guarantee. If the safe solution is out of scope, explicitly mark the design insufficient for release and keep NO-GO; do not label this candidate fully remediated.
+4. Add deterministic tests through the actual backup-run decision path: (a) initial source enumeration failure must fail, never produce an empty archive; (b) a document deleted after DB dump but before first inventory must not yield a successful backup; (c) a genuinely empty tree succeeds only after a successful, complete enumeration; (d) retain tests D–G and A–C.
+5. Audit other relevant fail-open paths in the runner: ensure `find`, manifest generation, archive creation, and artifact publication errors cannot be converted to success. Preserve `set -euo pipefail`, but verify conditional/subshell/command-substitution behavior explicitly.
+6. Update evidence and `NEXT_TASK.md`, commit/push the candidate and tests, then STOP for independent re-audit.
+
+**Safety:** isolated worktree and synthetic/disposable data only. No live script/app/cron change, production backup/restore, merge/deploy, database mutation, migration/rollback, restart, Stripe/mail activation, or live-tree checkout. Keep Phase 2 frozen. Off-host recovery is absent and production release remains **NO-GO**.
+
+---
 # SCA BACKUP — VANISHED/ENUMERATION FAIL-CLOSED REMEDIATION DELIVERED; AWAITING CHATGPT RE-AUDIT
 
 **STATUS (2026-10-20):** Re-audit findings (`43260e6`: unsafe vanished-skip + masked enumeration failure) remediated. Evidence in `docs/SCA-BACKUP-VANISHED-ENUM-FAILCLOSED-RESULT.md`. **NOT activated** — live app/scripts/cron/DB unchanged. No merge/deploy/prod-backup/restore/DB-mutation/live-tree-checkout.
