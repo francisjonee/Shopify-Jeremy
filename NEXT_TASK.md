@@ -1,4 +1,18 @@
-# SCA BACKUP — RE-AUDIT OF 0f38626: CHANGES REQUESTED (REFERENCE-PATH ESCAPE + UNCHECKED EXTRACTION STATUS)
+# SCA BACKUP — REFERENCE-PATH GRAMMAR / EXTRACTION-STATUS REMEDIATION DELIVERED; AWAITING CHATGPT RE-AUDIT
+
+**STATUS (2026-10-20):** Re-audit findings on `0f38626` (gov `b6ac62e`: reference-path escape + unchecked extraction-stage statuses in `verify_db_document_refs()`) remediated. Evidence in `docs/SCA-BACKUP-REFPATH-GRAMMAR-EXTRACTION-RESULT.md`. **NOT activated** — live app/scripts/cron/DB unchanged. No merge/deploy/prod-backup/restore/DB-mutation/live-tree-checkout.
+- **New candidate head `268c637503883007622c58a94232fcc9d05dfe1f`** on `fix/sca-backup-document-consistency` (prev audited `0f38626`; **scripts-only** diff, 2 files +102/−24 — `lib-docsnapshot.sh` + `backup-verify-restore.sh`, `backup-run.sh` unchanged this round; pushed, UNMERGED).
+- **Fix 1 (path containment):** each extracted `local` path is validated against the EXACT canonical grammar DocumentService emits — `^sca/(documents|generated)/[0-9]+/[0-9a-f]{40}\.(pdf|jpg|jpeg|png)$` (re-confirmed vs source: attachToItem/putGenerated/restoreGeneratedMedia; ext∈{pdf,jpg,jpeg,png}) — **before any filesystem probe**, so a traversing/absolute/corrupt path (e.g. `sca/../../etc/passwd`) is REJECTED (fail closed) and can never resolve via `[ -f "$root/$p" ]` to a file outside the snapshot. Defence-in-depth absolute-path + `.`/`..`-component rejection. Extractor now captures `'<disk>','[^']*'` so a malformed path is captured+rejected, not silently dropped. Containment established by the traversal-free grammar, not the `sca/` prefix/charset.
+- **Fix 2 (extraction statuses):** local-count grep status (`gc1=$?`), path-extraction grep+sed statuses (`PIPESTATUS`) are all captured immediately and checked — only grep "no match" (exit 1) permitted; any grep/sed READ/processing error fails closed (8). An errored extraction producing no output can no longer be read as "zero references".
+- **Tests:** added (L) traversal to a REAL out-of-snapshot file + near-miss non-canonical paths → fail closed, no `documents.tar.gz`; (M) extraction-stage grep read error (keyed on `-oaE`, only the extraction uses it) → fail closed, no archive, not a false 0-ref pass (trace-verified it reaches the extraction only after the isolation grep succeeds). A–K retained, updated to canonical 40-hex names. `DOC-CONSISTENCY-SELFTEST PASS (A–M)`, `offsite-selftest` PASS, `bash -n` clean.
+- **App unchanged** (publishAtomically + PART_SUFFIX + BackupDocumentAtomicityTest + full SCA 1409/1/0 from 1a22d8c stand; scripts-only). Guarantee remains option-B reference-integrity proof, NOT point-in-time quiescence. Isolated worktree (removed); live stayed on `main 6022b75`; loopback 200; no throwaway `.env` committed.
+- **Must deploy app+scripts together** (owner-approved); interim recovery = 2026-10-14T22:06Z backup. **Off-host absent → release NO-GO.** Phase 2 `dae6072` frozen; `main 6022b75` + migr 139/140 untouched.
+
+**STOP — awaiting ChatGPT independent RE-AUDIT of `268c637`. No merge/deploy/migrate/rollback/restart/live-backup/restore/Stripe/mail/pilot.**
+
+---
+
+# (PRIOR) SCA BACKUP — RE-AUDIT OF 0f38626: CHANGES REQUESTED (REFERENCE-PATH ESCAPE + UNCHECKED EXTRACTION STATUS)
 
 **Verdict (2026-10-20): CHANGES REQUESTED; DO NOT MERGE OR ACTIVATE.** Independent inspection of implementation candidate `0f386266bf34d436b9a61d4271abf26953640163` confirms the earlier caller-level empty-archive probe is removed and the shared staging function is used by the runner. Two fail-closed gaps remain in `scripts/lib-docsnapshot.sh` inside `verify_db_document_refs()`.
 
