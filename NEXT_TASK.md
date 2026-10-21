@@ -1,4 +1,17 @@
-# SCA UX PHASE 2 — REPRODUCIBLE FAIL-CLOSED LOCKING-TEST RUNNER DELIVERED; AWAITING CHATGPT REVIEW
+# SCA UX PHASE 2 — TEST-RUNNER HARDENED (VALIDATED DB TARGETS + VISIBLE CLEANUP); AWAITING CHATGPT REVIEW
+
+**STATUS (2026-10-21):** Re-audit of `fbbfdeb` (CHANGES REQUIRED on the runner's DB-target safeguards) remediated. Evidence: `docs/SCA-STAFF-COLLECTOR-UX-PHASE2-TEST-RUNNER-HARDENING-RESULT.md`. **NOT merged / NOT deployed.** No prod migrate/rollback/write, live-tree checkout, restart, backup/restore, Stripe/mail, pilot; production never used as a test target. `main 6022b75` + migr 139/140 untouched.
+- **New candidate branch `fix/sca-ux-phase2-test-runner-2`, head `0ba09faf9af1c6c56998b991912eeab40d9a10de`** (on `fbbfdeb`; pushed, UNMERGED). 1 file: `scripts/run-sca-feature-tests.sh` (+159/−49).
+- **Finding 1 (target override→prod) FIXED:** `validate_targets()` runs BEFORE any docker/mysql op and aborts (exit 2, nothing touched) unless both targets safe — `SCA_TEST_DB` = valid identifier, `*_test`, NOT `sca_krayin` (regardless of override); `SCA_LOCK_DB` must match explicit disposable allowlist `^sca_lock_test(_<suffix>)?$` (never prod/shared/arbitrary), differ from SCA_TEST_DB. Strict identifier regex also closes SQL-identifier injection. Cleanup trap armed only AFTER validation passes.
+- **Finding 2 (hidden cleanup failure) FIXED:** `resolve_cleanup()` surfaces a drop failure (stderr FAIL) and resolves to non-zero, PRESERVING original status (rc0→1; rc2 kept); replaces `|| true`.
+- **Negative safety tests (new `selftest` mode, no DB touched):** 17 checks — safe accepted; prod/non-_test/bad-id/arbitrary/injection/shared/equal rejected; rejection occurs BEFORE any destructive command (recording `docker` shim never invoked for unsafe config → exit 2, empty sentinel); cleanup-failure surfacing + status preservation.
+- **Evidence (this host):** `selftest` → 17 passed/0 failed, exit 0 (no DB). Hardened `run` end-to-end (safe defaults): migrated disposable DB; locking `Tests: 2 passed` (k1+k2 EXECUTED); full `tests/Feature/Sca` 1442 passed / 1 skipped / 0 failed; runner exit 0; disposable DB dropped (SHOW DATABASES→0); sca_domain_test/prod untouched.
+
+**STOP — awaiting ChatGPT review of `0ba09fa`. Candidate unmerged/inactive; production NO-GO; prod-migration-incident (139/140) and off-host/DR remain separate open release gates.**
+
+---
+
+# (PRIOR) SCA UX PHASE 2 — REPRODUCIBLE FAIL-CLOSED LOCKING-TEST RUNNER DELIVERED; AWAITING CHATGPT REVIEW
 
 **STATUS (2026-10-21):** `8656a40` source changes ACCEPTED by re-audit; the remaining "durable test execution" item is addressed with a committed, reproducible, fail-closed runner. Evidence: `docs/SCA-STAFF-COLLECTOR-UX-PHASE2-TEST-RUNNER-RESULT.md`. **NOT merged / NOT deployed.** No prod migrate/rollback/write, live-tree checkout, restart, backup/restore, Stripe/mail, pilot. `main 6022b75` + migr 139/140 untouched; no production DB touched.
 - **New candidate branch `fix/sca-ux-phase2-test-runner`, head `fbbfdebc3950ef083fb65f51862975bfd1a66355`** (on `8656a40`; pushed, UNMERGED). One new file: `scripts/run-sca-feature-tests.sh` (no app/source change).
