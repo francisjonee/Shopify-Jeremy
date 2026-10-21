@@ -1,4 +1,16 @@
-# SCA-OPTC — SECURE QR PASSPORT CLAIMING: CANDIDATE IMPLEMENTED + PUSHED; AWAITING CHATGPT AUDIT
+# SCA-OPTC — AUDIT REMEDIATION PLAN DELIVERED; AWAITING OWNER + CHATGPT APPROVAL (PLAN ONLY)
+
+**STATUS (2026-10-22):** ChatGPT audit of candidate `7b41e8d` returned 4 findings (CHANGES REQUIRED). A minimal remediation **plan** + proposed test commands is delivered: `docs/SCA-OPTC-REMEDIATION-PLAN.md`. **PLAN ONLY — nothing implemented, no code changed, no test run executed.** Per the restriction, **no further destructive test run** until the revised DB-isolation safeguards are independently reviewed (the plan adds a no-DB `selftest` for that review first). Candidate branch `feat/sca-optc-secure-claim @ 7b41e8d` unchanged; `main 6022b75` + `sca_krayin` untouched.
+- **F1 (runner drops shared `sca_domain_test`):** runner → per-run unique DB for BOTH phases (`sca_optc_test_<rand>` + `sca_optcfull_test_<rand>`), remove `sca_domain_test` entirely; migrate the ~98 SCA inline `!== 'sca_domain_test'` setUp guards → existing fail-closed `guardDisposableDb()` (accepts per-run names, still hard-rejects `sca_krayin`). Rejected the advisory-lock-on-shared-DB alt (not "uniquely named").
+- **F2 (cleanup can exit 0 on drop failure):** EXIT trap captures incoming `$?`, `drop_db` returns real status; drop failure → loud + fatal (exit 4) when tests passed, preserves prior non-zero test status.
+- **F3 (13 vs 12 failures):** evidence doc with full failing-test diff + per-test classification (all pre-existing env/fragility; the sole delta `CollectorHandleTest::h7` is a numeric-id-substring fragility, also fails in isolation on id `1`, no collector-handle code touched). Verdict wording: "no Option-C-attributable failure" — NOT "full PASS".
+- **F4 (fulfillment semantics):** docs-only — state release = STAFF AUTHORIZATION attestation (sold/ready-to-ship), NOT independent purchase/payment verification (no Shopify/Stripe check). Manual design preserved, no behavior change.
+
+**STOP — awaiting owner + ChatGPT approval of the plan. On approval: implement on the candidate branch in a fresh non-mounted worktree, starting with the no-DB `selftest` for independent safeguard review BEFORE any DB-touching run.**
+
+---
+
+# (PRIOR) SCA-OPTC — SECURE QR PASSPORT CLAIMING: CANDIDATE IMPLEMENTED + PUSHED; AWAITING CHATGPT AUDIT
 
 **STATUS (2026-10-21):** Option C implemented as a candidate and pushed. Evidence: `docs/SCA-OPTC-SECURE-CLAIM-CANDIDATE-RESULT.md`. **NOT merged / NOT deployed / NO production migration / NO restart / NO integration activation.** `main 6022b75` + `sca_krayin` untouched; production never used as a test target.
 - **Impl branch `feat/sca-optc-secure-claim`, head `7b41e8d38b7f34b3186925120737b4463a81baeb`** (on `6022b75`; pushed, UNMERGED). 22 files, +978/−279. **ZERO dependency changes**; one additive nullable migration `2026_10_23_000001` (`fulfillment_released_at`/`by`; no backfill/CHECK/index).
