@@ -1,4 +1,18 @@
-# SCA UX PHASE 2 — TEST-RUNNER HARDENED (VALIDATED DB TARGETS + VISIBLE CLEANUP); AWAITING CHATGPT REVIEW
+# SCA — PROD MIGRATION INCIDENT: READ-ONLY RECONCILIATION DELIVERED; AWAITING CHATGPT REVIEW + OWNER DECISION
+
+**STATUS (2026-10-21T15:32:34Z):** Independent READ-ONLY reconciliation of the 139/140 production-migration incident delivered → `docs/SCA-PHASE2-PROD-MIGRATION-INCIDENT-RECONCILIATION.md`. **Evidence collection only — no migrate/rollback/fresh, no DDL/DML, no prod data/schema change, no restart/checkout/deploy, no backup/restore, no merge/deploy, no Stripe/SMTP/pilot.** Only SELECT/information_schema queries against live `sca_krayin` (modify nothing); root pw never printed; only COUNTs/schema metadata (no values/PII/secrets).
+- **Independently verified (fresh read-only, 15:32:34Z):** migrations `139=2026_10_20_000001_add_reason_to_sca_qr_lifecycle_events` + `140=2026_10_21_000001_add_collector_activity_last_seen`, BOTH batch 27; `138=…market_reference_events`=batch 26 (pre-incident HEAD); MAX(batch)=27, total=140, batch 27 = exactly these 2. Schema objects EXIST: `reason` varchar(500) NULL + CHECK `chk_qr_reason_only_on_reissue (reason IS NULL OR event_type='reissued_from')`; `activity_last_seen_at` timestamp NULL; indexes `idx_oe_collector_effective`, `idx_tr_from_collector`. Populated values: reason 0/3, activity_last_seen_at 0/4 → **zero data in the new columns**. Candidate 141 NOT deployed (0 source-watermark cols, 0 migration row).
+- **Impl repo:** 139 present on `main`; **140 ABSENT on main (candidate-only/orphaned)**; 141 candidate-only.
+- **Operator-reported / NOT DB-verifiable:** the cause (accidental `artisan migrate --force` on the default `sca_krayin` conn) and its exact time/actor — the migrations table has no timestamp/actor column.
+- **Inference (NOT executed):** rollback of batch 27 drops the 2 cols + 2 indexes with ZERO data loss, BUT must run with a tree containing BOTH 139+140 `down()` (main lacks the 140 file → rollback from main would fail on the missing class).
+- **No discrepancy** vs the prior assessment (gov `3cdda3c`); all its read-only claims re-verified.
+- **Disposition (owner decision pending):** (a) LEAVE additive schema — a future authorized deploy sees 139/140 already recorded (batch 27) and SKIPS them; preferred, needs nothing now. (b) owner-authorized `migrate:rollback` batch 27→138 (clean, zero data loss) with the candidate tree checked out. Prod `main 6022b75` is forward-compatible (ignores 140 col/indexes; CHECK satisfied). Release remains NO-GO.
+
+**STOP — read-only only; production untouched. Awaiting ChatGPT review + owner's 139/140 decision. Phase 2 candidate `0ba09fa` + off-host DR remain separate open gates.**
+
+---
+
+# (PRIOR) SCA UX PHASE 2 — TEST-RUNNER HARDENED (VALIDATED DB TARGETS + VISIBLE CLEANUP); AWAITING CHATGPT REVIEW
 
 **STATUS (2026-10-21):** Re-audit of `fbbfdeb` (CHANGES REQUIRED on the runner's DB-target safeguards) remediated. Evidence: `docs/SCA-STAFF-COLLECTOR-UX-PHASE2-TEST-RUNNER-HARDENING-RESULT.md`. **NOT merged / NOT deployed.** No prod migrate/rollback/write, live-tree checkout, restart, backup/restore, Stripe/mail, pilot; production never used as a test target. `main 6022b75` + migr 139/140 untouched.
 - **New candidate branch `fix/sca-ux-phase2-test-runner-2`, head `0ba09faf9af1c6c56998b991912eeab40d9a10de`** (on `fbbfdeb`; pushed, UNMERGED). 1 file: `scripts/run-sca-feature-tests.sh` (+159/−49).
