@@ -1,4 +1,18 @@
-# SCA UX PHASE 2 — UNREAD CONCURRENCY CLOSED (OPTION B); AWAITING CHATGPT RE-AUDIT
+# SCA UX PHASE 2 — UNREAD-LOCK RE-AUDIT: EVIDENCE STRENGTHENED + ACCOUNTS-FIRST TRANSFER LOCK; AWAITING CHATGPT RE-AUDIT
+
+**STATUS (2026-10-21):** Re-audit of `7344d75` (CHANGES REQUESTED; Finding 1 accepted) answered — the three Finding-2 evidence/clarity items are addressed. Evidence: `docs/SCA-STAFF-COLLECTOR-UX-PHASE2-UNREAD-LOCKING-REAUDIT-RESULT.md`. **NOT merged / NOT deployed.** No prod migrate/rollback/write, live-tree checkout, restart, backup/restore, Stripe/mail, pilot. `main 6022b75` + migr 139/140 untouched.
+- **New candidate branch `fix/sca-ux-phase2-unread-locking-2`, head `8656a40af6a0eaada4928ac6bd63e3ec6a48304e`** (on `7344d75`; pushed, UNMERGED). 3 files: `CollectorActivityService` docblock, `TransferService::accept` lock order, rewritten `CollectorActivityLockingTest`.
+- **Item 1 (stale comment):** CollectorActivityService CONCURRENCY docblock no longer says "KNOWN OPEN"/"writers do not uniformly serialize"; it now states the implemented invariant (every eligible writer holds the collector account lock before insert+until commit; markSeen takes same lock → race closed; accounts-before-other-rows → no deadlock).
+- **Item 2 (test strengthened):** `CollectorActivityLockingTest` rewritten to use a DEDICATED DISPOSABLE DB (`SCA_LOCK_DB`, created/migrated/dropped by runner) so real append-only events commit without polluting `sca_domain_test`; skips if absent. Two real connections, real txns, REAL writer (`SubmissionService::create`): k1 real writer blocks on a held account lock (timeout); k2 real e1 committed→markSeen; uncommitted e2 held on 2nd conn → markSeen BLOCKS and the SUBMISSION WATERMARK is unchanged; after commit markSeen captures e2; subsequent real e3 unread with feed is_new+count agreeing. No mocks.
+- **Item 3 (lock-order audit):** `TransferService::accept` now locks sender+recipient accounts (ascending) BEFORE the request row (peek immutable from_collector_id unlocked → lock accounts → lock+revalidate request → item); global order accounts(asc)→request→item. Audit: ONLY accept locks `sca_transfer_requests`; `CollectorPrivacyService` (pseudonymization) locks account→item_current_state and never touches transfer_requests → no inverse order/cycle.
+- **Item 4:** all eligible writers rechecked; backfill b1–b4, first-visit, CAP+1, exact count, privacy, ack, a14–a19 all preserved (no domain-outcome change).
+- **Validation (verified DB=sca_domain_test; disposable sca_lock_test migrated through 141):** focused locking+backfill+Phase2 **35 passed (157 assn)**; full `tests/Feature/Sca` **1442 passed / 1 skipped / 0 failed (7620 assn)**, exit 0, no deadlock/regression; disposable DB dropped after. Diff reviewed vs `7344d75` (no secrets/debug/unrelated). Isolated worktree (removed); live stayed on `main 6022b75`.
+
+**STOP — awaiting ChatGPT independent RE-AUDIT of `8656a40`. Candidate unmerged/inactive; production NO-GO; prod-migration-incident (139/140) and off-host/DR remain separate open gates.**
+
+---
+
+# (PRIOR) SCA UX PHASE 2 — UNREAD CONCURRENCY CLOSED (OPTION B); AWAITING CHATGPT RE-AUDIT
 
 **STATUS (2026-10-21):** Approved Option B implemented — the out-of-order-commit race is closed by a uniform collector-account lock invariant; Finding 1 docblock cleanup done. Evidence: `docs/SCA-STAFF-COLLECTOR-UX-PHASE2-UNREAD-LOCKING-RESULT.md`. **NOT merged / NOT deployed.** No prod migrate/rollback/write, live-tree checkout, restart, backup/restore, Stripe/mail, pilot. `main 6022b75` + migr 139/140 untouched.
 - **New candidate branch `fix/sca-ux-phase2-unread-locking`, head `7344d7507559cbffcaa687a9e11150df230a5adb`** (on `1e3f2b7`; pushed, UNMERGED). New `CollectorAccountLock`, 4 writer services, migration docblock, new `CollectorActivityLockingTest`.
