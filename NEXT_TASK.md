@@ -1,4 +1,16 @@
-# SCA UX PHASE 2 — UNREAD-LOCK RE-AUDIT: EVIDENCE STRENGTHENED + ACCOUNTS-FIRST TRANSFER LOCK; AWAITING CHATGPT RE-AUDIT
+# SCA UX PHASE 2 — REPRODUCIBLE FAIL-CLOSED LOCKING-TEST RUNNER DELIVERED; AWAITING CHATGPT REVIEW
+
+**STATUS (2026-10-21):** `8656a40` source changes ACCEPTED by re-audit; the remaining "durable test execution" item is addressed with a committed, reproducible, fail-closed runner. Evidence: `docs/SCA-STAFF-COLLECTOR-UX-PHASE2-TEST-RUNNER-RESULT.md`. **NOT merged / NOT deployed.** No prod migrate/rollback/write, live-tree checkout, restart, backup/restore, Stripe/mail, pilot. `main 6022b75` + migr 139/140 untouched; no production DB touched.
+- **New candidate branch `fix/sca-ux-phase2-test-runner`, head `fbbfdebc3950ef083fb65f51862975bfd1a66355`** (on `8656a40`; pushed, UNMERGED). One new file: `scripts/run-sca-feature-tests.sh` (no app/source change).
+- **Entry point:** `scripts/run-sca-feature-tests.sh` — provisions + migrates a DEDICATED DISPOSABLE DB (default `sca_lock_test`; refuses `sca_krayin`/`sca_domain_test`), runs `CollectorActivityLockingTest` with `SCA_LOCK_DB` and **FAILS CLOSED unless k1+k2 executed & passed (any skip = hard fail)**, runs the full `tests/Feature/Sca` suite, and ALWAYS drops the disposable DB (trap). Migrates in `APP_ENV=testing` (no prompt, no `--force`); never touches `sca_domain_test`/prod; preserves append-only model. Env-overridable for CI.
+- **Evidence (this host; auditor to re-run):** fail-closed verified (without `SCA_LOCK_DB` → `2 skipped`); via the runner (exit 0): disposable DB migrated, locking phase `Tests: 2 passed` (k1+k2 EXECUTED), full suite `1442 passed / 1 skipped / 0 failed` (k1/k2 also pass inside it; the 1 skip is the pre-existing unrelated one), disposable DB dropped afterward (SHOW DATABASES → 0).
+- **Full Phase 2 chain status:** id-watermark unread (same-second/backdated fixed) + migration backfill (b1–b4) + uniform `CollectorAccountLock` invariant closing the out-of-order-commit race (all eligible writers; accounts-first incl. transfer accept) + reproducible fail-closed concurrency execution. Prior docs: unread-semantics `d878820`; re-audit `cd0281e`; locking `8ed2528`; evidence/accounts-first `26018ef`; this runner result.
+
+**STOP — awaiting ChatGPT review of `fbbfdeb` (runner + evidence). Candidate unmerged/inactive; production NO-GO; prod-migration-incident (139/140) and off-host/DR remain separate open release gates.**
+
+---
+
+# (PRIOR) SCA UX PHASE 2 — UNREAD-LOCK RE-AUDIT: EVIDENCE STRENGTHENED + ACCOUNTS-FIRST TRANSFER LOCK; AWAITING CHATGPT RE-AUDIT
 
 **STATUS (2026-10-21):** Re-audit of `7344d75` (CHANGES REQUESTED; Finding 1 accepted) answered — the three Finding-2 evidence/clarity items are addressed. Evidence: `docs/SCA-STAFF-COLLECTOR-UX-PHASE2-UNREAD-LOCKING-REAUDIT-RESULT.md`. **NOT merged / NOT deployed.** No prod migrate/rollback/write, live-tree checkout, restart, backup/restore, Stripe/mail, pilot. `main 6022b75` + migr 139/140 untouched.
 - **New candidate branch `fix/sca-ux-phase2-unread-locking-2`, head `8656a40af6a0eaada4928ac6bd63e3ec6a48304e`** (on `7344d75`; pushed, UNMERGED). 3 files: `CollectorActivityService` docblock, `TransferService::accept` lock order, rewritten `CollectorActivityLockingTest`.
