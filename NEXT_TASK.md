@@ -1,4 +1,17 @@
-# SCA-OPTC — REVISED RUNNER + NON-DESTRUCTIVE SAFETY EVIDENCE DELIVERED; AWAITING CHATGPT AUDIT
+# SCA-OPTC — RE-AUDIT REMEDIATION (EFFECTIVE-LARAVEL VERIFY + BEHAVIORAL SELFTESTS); AWAITING CHATGPT REVIEW
+
+**STATUS (2026-10-22):** ChatGPT re-audit of `54c848e` → 3 findings (runner/self-test only; DB tests still NOT authorized). Addressed; revised runner + non-destructive evidence pushed. **NO focused/full DB test executed.** Evidence: `docs/SCA-OPTC-REMEDIATION-RESULT-2.md` + updated `docs/SCA-OPTC-REGRESSION-EVIDENCE.md`. Not merged/deployed; `main 6022b75` + `sca_krayin` untouched; candidate `feat/sca-optc-secure-claim` `54c848e`→**`5766f4e`** (pushed; 1 file, +91/−22, runner only, no app logic).
+- **F1 (effective Laravel conn):** in-container pre-migrate now `rm -f bootstrap/cache/config.php` (kill cached redirect; worktree only, live app never mounted) → boots the SAME kernel as the migrator (`bootstrap/app.php` + `Console\Kernel::bootstrap()`) → reads EFFECTIVE resolved DB name+host → live `SELECT DATABASE()` via that Laravel connection → requires EXACT == uniquely-created per-run DB, fail-closed (exit 3) before migrate; forbidden effective name (sca_krayin/sca_domain_test) also aborts.
+- **F2 (behavioral selftests):** `selftest` now runs REAL provision()/drop_db()/cleanup() vs a MOCKED db_sql (no docker/mysql/DB) proving: collision→abort+NO DROP+not registered; success→registers exactly created DB; cleanup drops only created; failed drop→fatal exit 4; prior test-failure status preserved over cleanup failure; forbidden name aborts before any DB op. Static audits retained, not sole evidence.
+- **F3:** regression-evidence doc keeps the 13-vs-12 comparison, reworded to NOT declare full PASS / NOT conclusively dismiss — status "failures present; no Option-C attribution demonstrated, pending reproducible confirmation" on the remediated runner once DB runs authorized.
+- **Evidence:** `selftest` → **35 passed / 0 failed, no DB/container touched**; `bash -n` OK.
+- **Deferred (still unauthorized):** focused+full on per-run unique DBs + baseline re-diff w/ fresh logs; migrate remaining ~93 inline guards→`guardDisposableDb()`.
+
+**STOP — revised runner + non-destructive safety evidence available for independent ChatGPT review. DO NOT run focused/full DB tests until this runner is independently reviewed. No merge/deploy/migrate/restart/activate.**
+
+---
+
+# (PRIOR) SCA-OPTC — REVISED RUNNER + NON-DESTRUCTIVE SAFETY EVIDENCE DELIVERED; AWAITING CHATGPT AUDIT
 
 **STATUS (2026-10-22):** ChatGPT approved the remediation plan with a required F1 DB-isolation correction (ownership by creation). The revised runner + its non-destructive safety self-tests are implemented and pushed. **NO focused/full database test executed** (per boundary). Evidence: `docs/SCA-OPTC-REMEDIATION-RESULT.md` + `docs/SCA-OPTC-REGRESSION-EVIDENCE.md`. Not merged/deployed; `main 6022b75` + `sca_krayin` untouched; candidate branch `feat/sca-optc-secure-claim` advanced `7b41e8d`→**`54c848e`** (pushed).
 - **F1 (ownership by creation):** runner CREATEs (no `IF NOT EXISTS`, abort on collision), never DROPs before CREATE, registers for cleanup only after successful create (drops only what it created), uses per-run unique DBs both phases (`sca_optc_test_<rand>` / `sca_optcfull_test_<rand>`), NEVER creates/targets/drops `sca_domain_test` or `sca_krayin`, and verifies the actual in-container connection schema/host before migrate.
