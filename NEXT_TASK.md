@@ -1,4 +1,19 @@
-# SCA-OPTC — READ-ONLY RELEASE-READINESS AUDIT DELIVERED; VERDICT NO-GO (code ready; release gated on ops/DR); AWAITING OWNER + CHATGPT
+# SCA-OPTC — RELEASE-REMEDIATION PLAN DELIVERED (PLAN ONLY); AWAITING OWNER + CHATGPT APPROVAL
+
+**STATUS (2026-10-22):** NO-GO confirmed; Option C code accepted at `1df81d5`. Minimal non-production remediation **PLAN** delivered: `docs/SCA-OPTC-RELEASE-REMEDIATION-PLAN.md`. **PLAN ONLY — nothing implemented, no tests run, no merge/deploy/migrate/restart/activation; no app-logic change in scope.** `main 6022b75` + `sca_krayin` untouched.
+- **§1 assertion fixes (test-only):** `CollectorHandleTest::h7` + `CertificateDocumentClassificationTest::d9` — keep all real-exposure checks ($ref/email/public_ref/path/checksum/subject_id); replace ONLY the bare-numeric-id substring checks with a context-bounded `assertDoesNotMatchRegularExpression` (`[/"'=:>]<id>(?![0-9A-Za-z])`) that still catches id-as-URL/JSON/attr but ignores `220px`.
+- **§2 harness (runner env/seed only; NO weakening):** seed canonical Krayin admin (user id 1) post-migrate (`getDefaultAdmin()`=`User::find(1)`); `-e CACHE_STORE=file` so the login throttle actually counts (observe real 429, successful-login test still passes); `-e APP_URL=https://verify.secondchanceauthenticators.com` for h8; isolation safeguards untouched (selftest stays 56/0).
+- **§3 verify sequence (when authorized):** selftest 56/0 → focused 68/0 → full (expect 0 after §1+§2) → baseline `6022b75` re-diff; residuals investigated, not dismissed.
+- **§4 rollback revised:** generic `migrate:rollback` is batch-scoped → can reach fragile batch 27 (139/140, orphaned 140 down() absent) → unsafe; Option C `down()` DROPS the fulfillment-release attestation (audit loss). Prefer FORWARD recovery / code-only rollback leaving the additive columns; targeted column-drop only if separately authorized + backed up; never touch 139/140.
+- **§5 backup checklist:** verified pre-deploy backup + restore-test + off-host copy (Hetzner rclone-sftp) + separate key/APP_KEY escrow + restore-from-offhost evidence (off-host DR = residual BLOCKER).
+- **§6 operational gates (distinct):** ACL grant `sca.eyewear.fulfillment.release`; private claim-card out-of-band delivery (no SMTP); live QR-to-claim acceptance.
+- **GO/NO-GO checklist G1-G9:** G1 code PASS; G5 migration-plan PASS; G2(verdict)/G3(h7+d9)/G4(backup-DR) NO-GO; G6-G9 DEFERRED. Overall NO-GO until G2-G4 clear + G6-G8 operational.
+
+**STOP — remediation plan delivered for owner + ChatGPT review. No implementation/tests/merge/deploy/migrate/restart/activation.**
+
+---
+
+# (PRIOR) SCA-OPTC — READ-ONLY RELEASE-READINESS AUDIT DELIVERED; VERDICT NO-GO (code ready; release gated on ops/DR); AWAITING OWNER + CHATGPT
 
 **STATUS (2026-10-22):** READ-ONLY release-readiness audit of candidate `1df81d5`. Evidence: `docs/SCA-OPTC-RELEASE-READINESS-AUDIT.md`. No code/merge/deploy/migration/test/restart/activation; `main 6022b75` + `sca_krayin` untouched. **VERDICT: NO-GO for deploy now — the CANDIDATE CODE is accepted/ready (no Option-C regression; focused 68/0), NO-GO is on release-dependency/ops gates.**
 - **(1) h7 verified:** bare-numeric-id substring fragility (`Not to contain: 220` vs `max-width:220px`); proposed narrow correction = contextual id check keeping the real-exposure assertions ($ref/email/public_ref/catalog/); NOT applied. Same pattern = `CertificateDocumentClassificationTest::d9` (`Not to contain: 10`, bare cert PK).
