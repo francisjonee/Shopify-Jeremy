@@ -1,4 +1,18 @@
-# SCA-OPTC — AUDIT REMEDIATION PLAN DELIVERED; AWAITING OWNER + CHATGPT APPROVAL (PLAN ONLY)
+# SCA-OPTC — REVISED RUNNER + NON-DESTRUCTIVE SAFETY EVIDENCE DELIVERED; AWAITING CHATGPT AUDIT
+
+**STATUS (2026-10-22):** ChatGPT approved the remediation plan with a required F1 DB-isolation correction (ownership by creation). The revised runner + its non-destructive safety self-tests are implemented and pushed. **NO focused/full database test executed** (per boundary). Evidence: `docs/SCA-OPTC-REMEDIATION-RESULT.md` + `docs/SCA-OPTC-REGRESSION-EVIDENCE.md`. Not merged/deployed; `main 6022b75` + `sca_krayin` untouched; candidate branch `feat/sca-optc-secure-claim` advanced `7b41e8d`→**`54c848e`** (pushed).
+- **F1 (ownership by creation):** runner CREATEs (no `IF NOT EXISTS`, abort on collision), never DROPs before CREATE, registers for cleanup only after successful create (drops only what it created), uses per-run unique DBs both phases (`sca_optc_test_<rand>` / `sca_optcfull_test_<rand>`), NEVER creates/targets/drops `sca_domain_test` or `sca_krayin`, and verifies the actual in-container connection schema/host before migrate.
+- **F2 (fatal cleanup):** EXIT trap captures incoming `$?`; `drop_db` returns real status; failed drop = loud + fatal (exit 4), but preserves a prior test-failure status.
+- **F4 (semantics):** docs-only — release documented as STAFF AUTHORIZATION attestation, not independent purchase/payment verification (service/controller/migration/confirm-view). No behaviour change.
+- **F3 (evidence):** `docs/SCA-OPTC-REGRESSION-EVIDENCE.md` — full candidate-13 vs baseline-12 failing-test diff + classification (all env/fragility; sole delta `CollectorHandleTest::h7` pre-existing id-substring fragility). NOT declared full PASS.
+- **Non-destructive evidence:** `scripts/run-optc-tests.sh selftest` → **26 passed / 0 failed, no DB or container touched**; `bash -n` OK.
+- **Deferred to the authorized DB-run task:** migrate the remaining ~93 SCA inline `sca_domain_test` setUp guards → `guardDisposableDb()`; then run focused + full on per-run unique DBs + baseline re-diff.
+
+**STOP — revised runner + non-destructive safety evidence available for independent ChatGPT audit. DO NOT run focused/full DB tests until the DB-isolation safeguards are independently reviewed. No merge/deploy/migrate/restart/activate.**
+
+---
+
+# (PRIOR) SCA-OPTC — AUDIT REMEDIATION PLAN DELIVERED; AWAITING OWNER + CHATGPT APPROVAL (PLAN ONLY)
 
 **STATUS (2026-10-22):** ChatGPT audit of candidate `7b41e8d` returned 4 findings (CHANGES REQUIRED). A minimal remediation **plan** + proposed test commands is delivered: `docs/SCA-OPTC-REMEDIATION-PLAN.md`. **PLAN ONLY — nothing implemented, no code changed, no test run executed.** Per the restriction, **no further destructive test run** until the revised DB-isolation safeguards are independently reviewed (the plan adds a no-DB `selftest` for that review first). Candidate branch `feat/sca-optc-secure-claim @ 7b41e8d` unchanged; `main 6022b75` + `sca_krayin` untouched.
 - **F1 (runner drops shared `sca_domain_test`):** runner → per-run unique DB for BOTH phases (`sca_optc_test_<rand>` + `sca_optcfull_test_<rand>`), remove `sca_domain_test` entirely; migrate the ~98 SCA inline `!== 'sca_domain_test'` setUp guards → existing fail-closed `guardDisposableDb()` (accepts per-run names, still hard-rejects `sca_krayin`). Rejected the advisory-lock-on-shared-DB alt (not "uniquely named").
