@@ -1,4 +1,17 @@
-# SCA-OPTC — AUTHORIZED FULL REGRESSION + BASELINE EXECUTED; NO OPTION-C REGRESSION; AWAITING CHATGPT REVIEW
+# SCA-OPTC — READ-ONLY RELEASE-READINESS AUDIT DELIVERED; VERDICT NO-GO (code ready; release gated on ops/DR); AWAITING OWNER + CHATGPT
+
+**STATUS (2026-10-22):** READ-ONLY release-readiness audit of candidate `1df81d5`. Evidence: `docs/SCA-OPTC-RELEASE-READINESS-AUDIT.md`. No code/merge/deploy/migration/test/restart/activation; `main 6022b75` + `sca_krayin` untouched. **VERDICT: NO-GO for deploy now — the CANDIDATE CODE is accepted/ready (no Option-C regression; focused 68/0), NO-GO is on release-dependency/ops gates.**
+- **(1) h7 verified:** bare-numeric-id substring fragility (`Not to contain: 220` vs `max-width:220px`); proposed narrow correction = contextual id check keeping the real-exposure assertions ($ref/email/public_ref/catalog/); NOT applied. Same pattern = `CertificateDocumentClassificationTest::d9` (`Not to contain: 10`, bare cert PK).
+- **(2) 7 shared failures classified:** 6 ENVIRONMENT (3 missing-admin-seed `getDefaultAdmin()` null→TypeError: AuthenticationTest×2+HelpTest; 2 throttle/cache rate-limit 429→200; 1 APP_URL-canonical h8) + 1 TEST-FRAGILITY (d9, same as h7). NONE a real app defect. Minimal harness fixes: seed admin; real throttle cache; set APP_URL; narrow d9/h7 assertions → reliable verdict.
+- **(3) Migration:** Option C `2026_10_23_000001` (additive/nullable) deploys as a NEW batch via `migrate` up; 139/140 (batch 27) rows untouched; branch lacks the orphaned 140 file → `migrate` up ignores it (no error); rollback of Option C needs only its own down(). Do NOT bundle with any batch-27 rollback. SAFE.
+- **(4) Diff scope:** only `app/packages/Sca/*` (15 prod files) + `app/tests/*` (100) + `scripts/*`; nothing outside; no dep/config/bootstrap/phpunit change. ✓
+- **(5/6) Checklist:** PASS = Option C code/behavior, diff scope, migration up-safety, rollout order, rollback. BLOCKED = backup/off-host-DR readiness ([[sca-backup-dr-remediation]]); reliable full-suite PASS (needs the 4 harness corrections). DEFERRED = ACL grant for `sca.eyewear.fulfillment.release`; private claim-card delivery (no SMTP, out-of-band); live QR-to-claim acceptance test; h7/d9 assertion hardening; separate 139/140 owner decision.
+
+**STOP — read-only NO-GO assessment delivered for owner + ChatGPT. No code/merge/deploy/migrate/test/restart/activation. Candidate `1df81d5` UNMERGED/undeployed.**
+
+---
+
+# (PRIOR) SCA-OPTC — AUTHORIZED FULL REGRESSION + BASELINE EXECUTED; NO OPTION-C REGRESSION; AWAITING CHATGPT REVIEW
 
 **STATUS (2026-10-22):** Owner-authorized full suite (candidate `1df81d5`) + clean `6022b75` baseline executed on isolated per-run disposable DBs. **No Option-C-attributable regression.** Evidence: `docs/SCA-OPTC-FULL-REGRESSION-EVIDENCE.md`. Not merged/deployed; `main 6022b75` + `sca_krayin` untouched (loopback 302; `sca_krayin.migrations` unchanged max_batch=27/total=140). STILL NO-GO.
 - **Candidate** full on unique `sca_optcfull_test_e59e2e91` (verified host-decision + in-container re-verify + XML-override-clean): **8 failed, 0 skipped, 7573 assertions**. **Baseline** `6022b75` on separate fresh `sca_domain_test`: **12 failed, 0 skipped, 7490 assertions**. (The ~1449/1437 "warnings" are pre-existing PHPUnit risky/deprecation warnings on passing tests, both runs.)
