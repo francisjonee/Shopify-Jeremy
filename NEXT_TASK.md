@@ -1,4 +1,14 @@
-# SCA-OPTC — AUTHORIZED FOCUSED TEST EXECUTED + PASSED; AWAITING CHATGPT REVIEW BEFORE FULL-SUITE AUTHORIZATION
+# SCA-OPTC — FULL-REGRESSION PREFLIGHT PASSED; HOLDING FOR EXPLICIT OWNER AUTHORIZATION TO RUN FULL + BASELINE
+
+**STATUS (2026-10-22):** ChatGPT accepted the focused-test evidence (68/333/0). Owner sent the full-regression scope as an AUTHORIZATION REQUEST whose controlling line is "Do not execute full or baseline database tests until the owner explicitly authorizes." → Read-only preflight done; **NOT executed. Holding for explicit owner go.** No worktree left behind; `main 6022b75` + `sca_krayin` untouched (loopback 302; only `sca_krayin` present).
+- **Preflight (read-only, passed):** candidate SHA `1df81d5` in an isolated non-mounted worktree; `kr-mariadb` = mariadb:10.11.18 (id b36c8e36e041) on `sca_internal`, root creds verified; only `sca_krayin` exists (no `sca_optc*_test_*` → the full-run unique DB cannot collide with or delete an existing disposable DB); runner full phase uses `sca_optcfull_test_<rand>` with CREATE-not-drop + register-after-create + reject sca_krayin/sca_domain_test; `selftest` 56/0.
+- **On explicit authorization, execute ONLY:** `scripts/run-optc-tests.sh full` (per-run unique DB; exercises the parameterized concurrency tests + secondary connections + spawned workers), then a clean `6022b75` baseline run in the same isolated harness on an INDEPENDENT disposable DB; diff failing sets; investigate any candidate-only failure with evidence (do not dismiss); confirm cleanup (no residual disposable DBs); record in governance. Prerequisite at run time: build the dev vendor in the worktree (composer install; no DB). Fail closed on any isolation check.
+
+**STOP — preflight delivered; awaiting the owner's EXPLICIT authorization to run the full suite + baseline. No merge/deploy/migrate/restart/activation.**
+
+---
+
+# (PRIOR) SCA-OPTC — AUTHORIZED FOCUSED TEST EXECUTED + PASSED; AWAITING CHATGPT REVIEW BEFORE FULL-SUITE AUTHORIZATION
 
 **STATUS (2026-10-22):** Owner-authorized isolated focused run executed (only `scripts/run-optc-tests.sh focused`) on candidate `1df81d5`. **PASSED: 68 tests / 333 assertions / 0 failures.** Full suite NOT run. Evidence: `docs/SCA-OPTC-FOCUSED-TEST-EVIDENCE.md`. Not merged/deployed; `main 6022b75` + `sca_krayin` untouched (prod `migrations` unchanged max_batch=27/total=140; loopback 302).
 - **Preflight (all passed):** SHA 1df81d5 in isolated worktree; only `sca_krayin` pre-existed (no disposable DB to collide/delete); `kr-mariadb` mariadb:10.11 on sca_internal, root creds verified; assert_disposable + verify_effective reject sca_krayin AND sca_domain_test; create-not-drop + register-after-create (no existing DB deleted); focused set spawns NO workers; selftest 56/0.
