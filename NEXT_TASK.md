@@ -1,4 +1,15 @@
-# SCA-OPTC — COMPLETE TEST-SAFETY PREP (XML-AWARE OVERRIDE VALIDATOR + IN-CONTAINER RE-VERIFY + FULL PER-RUN PARAMETERIZATION); AWAITING FINAL CHATGPT REVIEW
+# SCA-OPTC — AUTHORIZED FOCUSED TEST EXECUTED + PASSED; AWAITING CHATGPT REVIEW BEFORE FULL-SUITE AUTHORIZATION
+
+**STATUS (2026-10-22):** Owner-authorized isolated focused run executed (only `scripts/run-optc-tests.sh focused`) on candidate `1df81d5`. **PASSED: 68 tests / 333 assertions / 0 failures.** Full suite NOT run. Evidence: `docs/SCA-OPTC-FOCUSED-TEST-EVIDENCE.md`. Not merged/deployed; `main 6022b75` + `sca_krayin` untouched (prod `migrations` unchanged max_batch=27/total=140; loopback 302).
+- **Preflight (all passed):** SHA 1df81d5 in isolated worktree; only `sca_krayin` pre-existed (no disposable DB to collide/delete); `kr-mariadb` mariadb:10.11 on sca_internal, root creds verified; assert_disposable + verify_effective reject sca_krayin AND sca_domain_test; create-not-drop + register-after-create (no existing DB deleted); focused set spawns NO workers; selftest 56/0.
+- **Run:** disposable DB `sca_optc_test_8e70d5c6` (created+dropped). Effective-conn verified (host decision) + XML override check (`no DB override`) + in-container re-verify, all `db=sca_optc_test_8e70d5c6 host=kr-mariadb live=sca_optc_test_8e70d5c6`. Migrations applied incl. `2026_10_23_000001_add_fulfillment_release … DONE`. **phpunit 68/333/0, exit 0.** Cleanup: only `sca_krayin` remains (disposable dropped).
+- **NEXT (needs explicit owner authorization):** full suite `scripts/run-optc-tests.sh full` on a per-run unique DB (exercises the parameterized concurrency tests + workers) + clean `6022b75` baseline re-diff (F3 reproducible confirmation; the pre-existing `CollectorHandleTest::h7` id-substring fragility).
+
+**STOP — focused-test evidence delivered for independent ChatGPT review. Do NOT run the full suite until authorized. No merge/deploy/migrate/restart/activation.**
+
+---
+
+# (PRIOR) SCA-OPTC — COMPLETE TEST-SAFETY PREP (XML-AWARE OVERRIDE VALIDATOR + IN-CONTAINER RE-VERIFY + FULL PER-RUN PARAMETERIZATION); AWAITING FINAL CHATGPT REVIEW
 
 **STATUS (2026-10-22):** Final review of `254d876` accepted the DB lifecycle/cleanup/effective-check in principle, with a complete-preparation list before DB tests are authorized. Done; pushed. **NO focused/full DB test executed; no Option C app logic changed** (all files under app/tests/ or scripts/). Evidence: `docs/SCA-OPTC-REMEDIATION-RESULT-4.md`. Not merged/deployed; `main 6022b75` + `sca_krayin` untouched; candidate `feat/sca-optc-secure-claim` `254d876`→**`1df81d5`** (1 commit, 16 files).
 - **(1) XML-aware override validator:** new `scripts/assert-no-db-override.php` (DOMDocument) rejects any `DB_*`/`DATABASE_URL` `<env>/<server>/<const>/<var>` regardless of quote style/attr order/multiline; unparseable→fail closed. Replaces the text regex; invoked in-container before migrate.
