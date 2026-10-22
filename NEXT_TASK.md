@@ -1,4 +1,16 @@
-# SCA-OPTC — FULL-REGRESSION PREFLIGHT PASSED; HOLDING FOR EXPLICIT OWNER AUTHORIZATION TO RUN FULL + BASELINE
+# SCA-OPTC — AUTHORIZED FULL REGRESSION + BASELINE EXECUTED; NO OPTION-C REGRESSION; AWAITING CHATGPT REVIEW
+
+**STATUS (2026-10-22):** Owner-authorized full suite (candidate `1df81d5`) + clean `6022b75` baseline executed on isolated per-run disposable DBs. **No Option-C-attributable regression.** Evidence: `docs/SCA-OPTC-FULL-REGRESSION-EVIDENCE.md`. Not merged/deployed; `main 6022b75` + `sca_krayin` untouched (loopback 302; `sca_krayin.migrations` unchanged max_batch=27/total=140). STILL NO-GO.
+- **Candidate** full on unique `sca_optcfull_test_e59e2e91` (verified host-decision + in-container re-verify + XML-override-clean): **8 failed, 0 skipped, 7573 assertions**. **Baseline** `6022b75` on separate fresh `sca_domain_test`: **12 failed, 0 skipped, 7490 assertions**. (The ~1449/1437 "warnings" are pre-existing PHPUnit risky/deprecation warnings on passing tests, both runs.)
+- **Diff:** SHARED 7 env/fragility (auth dashboard/logout TypeError, Help, cert-doc d9, email-canonical h8, 2× rate-limit). **BASELINE-only 5 = candidate FIXED them** (CollectorCollection cc1a/cc1b/cc2, MarketReference cc mr1, ServiceCorrection cc sc1 — parameterized concurrency/workers now pass on the per-run DB). **CANDIDATE-only 1 = `CollectorHandleTest::h7`**, investigated: `Not to contain: 220` (bare id vs `max-width:220px` preview CSS); pre-existing numeric-id-substring fragility (also fails isolated on id 1); Option C touches NO collector-handle code; added test rows shift the id → surfaces the coincidence. Tracked separately, out of scope.
+- **Secondary/workers (auth pt 3):** the 7 concurrency tests + 3 workers ran+passed on `sca_optcfull_test_e59e2e91` → every secondary connection + worker bound only to the assigned disposable DB.
+- **Cleanup:** both disposable DBs dropped; only `sca_krayin` remains. **Prod untouched.**
+
+**STOP — full-regression + baseline evidence delivered for independent ChatGPT review. No merge/deploy/migrate/restart/activation.**
+
+---
+
+# (PRIOR) SCA-OPTC — FULL-REGRESSION PREFLIGHT PASSED; HOLDING FOR EXPLICIT OWNER AUTHORIZATION TO RUN FULL + BASELINE
 
 **STATUS (2026-10-22):** ChatGPT accepted the focused-test evidence (68/333/0). Owner sent the full-regression scope as an AUTHORIZATION REQUEST whose controlling line is "Do not execute full or baseline database tests until the owner explicitly authorizes." → Read-only preflight done; **NOT executed. Holding for explicit owner go.** No worktree left behind; `main 6022b75` + `sca_krayin` untouched (loopback 302; only `sca_krayin` present).
 - **Preflight (read-only, passed):** candidate SHA `1df81d5` in an isolated non-mounted worktree; `kr-mariadb` = mariadb:10.11.18 (id b36c8e36e041) on `sca_internal`, root creds verified; only `sca_krayin` exists (no `sca_optc*_test_*` → the full-run unique DB cannot collide with or delete an existing disposable DB); runner full phase uses `sca_optcfull_test_<rand>` with CREATE-not-drop + register-after-create + reject sca_krayin/sca_domain_test; `selftest` 56/0.
