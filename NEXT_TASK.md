@@ -1,4 +1,20 @@
-# SCA — BACKUP FIX 268c637 READ-ONLY VERIFICATION: PASS, releasable independently; recommend MERGE+deploy (owner); AWAITING CHATGPT
+# SCA — BACKUP FIX 268c637 FINAL VERIFICATION GATE: PASS (11/11 synthetic verify); recommend MERGE+deploy, gate on restore-proof; AWAITING CHATGPT
+
+**STATUS (2026-10-26):** Non-destructive FINAL verification gate (tasks 1–8) on backup doc-consistency fix `268c637` vs main `6022b75`. Evidence: `docs/SCA-OPTC-BACKUP-FIX-268C637-FINAL-GATE.md`. Nothing merged/deployed; no prod backup/restore, no DB test/migration, no config/restart/activation; prod untouched (app 3b30a0f/migr138, DB sca_krayin).
+- **[1] Realistic dump formats — `verify_db_document_refs` 11/11 synthetic fixtures PASS** (A zero-ref, B multi-row extended, C one-per-insert, D escaped values, E traversal→5, F missing→6, G corrupt→8, H NULL/unquoted path count-mismatch→5, I mixed disks, J generated, K missing-among-many→6). No DB touched (offline gzipped-dump fixtures).
+- **[2] No silent omission PASS:** `localcount==pathcount` guard → mismatch fails closed (H); missing doc among many caught (K); PIPESTATUS checks → "no refs" can't disguise a read error.
+- **[3] Syntax/self-tests PASS:** `bash -n` clean on backup-run.sh / lib-docsnapshot.sh / backup-verify-restore.sh; 11-fixture run = synthetic self-test. DB-touching selftest/verify deferred to Task 6 (separately authorized).
+- **[4] Atomic publication PASS:** fail-closed put/move (delete temp, throw); attach/generated use unique random final names (no same-path concurrency); only `restoreGeneratedMedia` has a shared `.part` (fixed recorded path) — rare, admin-serialized, idempotent canonical bytes → benign; FLAGGED minor hardening (`.part.<rand>`), not a blocker.
+- **[5] Retention unchanged PASS:** only `rm -f "${OUT}.part"` added; mapfile/RETAIN_DAYS(14)/RETAIN_MIN(7) loop byte-identical to main; no existing artifact deleted.
+- **[6] Restore-proof PREPARED** (selftest + `verify <artifact>` → disposable DB, guard_target refuses live; capture counts/refs; drop) — separately authorized, not run.
+- **[7] Rollback PREPARED:** code-only → `git revert`/checkout 3 scripts to pre-268c637; NO DB rollback; DocumentService change forward-safe (may stay); revert-forward only, never reset shared main.
+- **[8] Recommendation: MERGE 268c637→main (code-only) → deploy app+scripts together → gate on Task-6 restore-proof vs current prod data FIRST (R1).** Independent of Option C + 139/140 (zero overlap, no migration). Closes B5; off-host B1–B4 + B6 remain. One HARNESS (not product) correction: `$'…'` quote-escaping bug in first fixture builder → rebuilt with double-quoted SQL → 11/11.
+
+**STOP — final verification (PASS) delivered for independent ChatGPT review. No merge/deploy/backup/restore/config/migration/restart/activation.**
+
+---
+
+# (PRIOR) SCA — BACKUP FIX 268c637 READ-ONLY VERIFICATION: PASS, releasable independently; recommend MERGE+deploy (owner); AWAITING CHATGPT
 
 **STATUS (2026-10-26):** READ-ONLY diff review of backup document-consistency fix `268c637` vs main `6022b75`. Evidence: `docs/SCA-OPTC-BACKUP-FIX-268C637-VERIFICATION.md`. Nothing merged/deployed; no backup/restore/config/rclone/credential/migration/restart/activation; prod untouched.
 - **Diff:** branch sits directly on `6022b75` (merge-base=6022b75); 6 commits; **5 files, +629/−27**: `DocumentService.php` (app, +50), new `BackupDocumentAtomicityTest`, `backup-run.sh`, `backup-verify-restore.sh`, new `lib-docsnapshot.sh`. **NO migration/schema/composer/config/bootstrap change; retention unchanged.**
