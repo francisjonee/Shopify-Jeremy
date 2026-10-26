@@ -1,4 +1,15 @@
-# SCA-OPTC — AUTHORIZED FOCUSED + ASSERT TESTS EXECUTED + PASSED; AWAITING CHATGPT REVIEW (full/baseline still unauthorized)
+# SCA-OPTC — FULL-REGRESSION PREFLIGHT PASSED; HOLDING FOR EXPLICIT OWNER AUTH TO RUN FULL + BASELINE
+
+**STATUS (2026-10-26):** Full-regression gate received "subject to explicit owner authorization" + "Do not execute full or baseline database tests without explicit owner authorization" → read-only preflight done; **NOT executed. Holding for the explicit go** (same pattern as the earlier full-regression gate). No worktree left; `main 6022b75`+`sca_krayin`+139/140 untouched.
+- **Preflight PASS (read-only):** candidate SHA `0f41e2e` in an isolated non-mounted worktree; kr-mariadb mariadb:10.11.18 on sca_internal; only `sca_krayin` present (no disposable DB to collide/delete); prod healthy (6022b75, loopback 302, migrations max_batch=27/total=140); runner create-not-drop + reject sca_krayin/sca_domain_test intact.
+- **On explicit authorization, execute ONLY:** `scripts/run-optc-tests.sh full` (own unique `sca_optcfull_test_<rand>`; captures failures/warnings/skips; concurrency workers + secondary connections isolated to that DB) → then a clean `6022b75` baseline via a manual invocation on a **freshly-created, confirmed-absent, exclusively-owned** `sca_domain_test` (never overwrite an existing DB) → diff, separating harness-config differences from real app regressions → confirm cleanup + `sca_krayin` unchanged → record in gov. Build dev vendor (composer install, no DB) at run time. Fail closed on any isolation check.
+- **Prior authorized result (accepted):** selftest 65/0; focused 68/333/0; assert 60/182/0 (h7+d9 pass); both disposable DBs cleaned (gov `ff8dd7b`, `docs/SCA-OPTC-FOCUSED-ASSERT-TEST-EVIDENCE.md`).
+
+**STOP — preflight delivered; awaiting the owner's EXPLICIT authorization to run the full suite + baseline. No merge/deploy/migrate/restart/activation.**
+
+---
+
+# (PRIOR) SCA-OPTC — AUTHORIZED FOCUSED + ASSERT TESTS EXECUTED + PASSED; AWAITING CHATGPT REVIEW (full/baseline still unauthorized)
 
 **STATUS (2026-10-26):** Owner-authorized `selftest`+`focused`+`assert` executed on candidate `0f41e2e`; all PASSED. Evidence: `docs/SCA-OPTC-FOCUSED-ASSERT-TEST-EVIDENCE.md`. Not merged/deployed; `main 6022b75`+`sca_krayin`+139/140 untouched.
 - **Preflight PASS:** SHA 0f41e2e isolated worktree; kr-mariadb mariadb:10.11 sca_internal; only sca_krayin pre-existed; prod migrations baseline max_batch=27/total=140. selftest **65/0** (no DB).
