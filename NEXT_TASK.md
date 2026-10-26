@@ -1,4 +1,17 @@
-# SCA-OPTC — SEEDER VERIFICATION HARDENED; AWAITING OWNER DB-EXECUTION AUTH (focused+assert ONLY, then STOP)
+# SCA-OPTC — AUTHORIZED FOCUSED + ASSERT TESTS EXECUTED + PASSED; AWAITING CHATGPT REVIEW (full/baseline still unauthorized)
+
+**STATUS (2026-10-26):** Owner-authorized `selftest`+`focused`+`assert` executed on candidate `0f41e2e`; all PASSED. Evidence: `docs/SCA-OPTC-FOCUSED-ASSERT-TEST-EVIDENCE.md`. Not merged/deployed; `main 6022b75`+`sca_krayin`+139/140 untouched.
+- **Preflight PASS:** SHA 0f41e2e isolated worktree; kr-mariadb mariadb:10.11 sca_internal; only sca_krayin pre-existed; prod migrations baseline max_batch=27/total=140. selftest **65/0** (no DB).
+- **focused** → DB `sca_optc_test_fd9692cc` (own unique; created+verified+dropped): effective-conn verified x2 + XML-clean + admin-seed verified (id=1 active role_id=1 permission_type=all); 141 migrations incl. `2026_10_23_000001`; **68 tests/333 assertions/0 fail**, exit 0.
+- **assert** → DB `sca_optcassert_test_b3531254` (SEPARATE unique; created+verified+dropped): **60 tests/182 assertions/0 fail**, exit 0 — **h7 (CollectorHandleTest) + d9 (CertificateDocumentClassificationTest) now PASS** on a real DB.
+- **Cleanup:** only `sca_krayin` remains (both disposable DBs dropped). **Prod unchanged:** 6022b75; loopback 302; sca_krayin.migrations max_batch=27/total=140 (identical to baseline).
+- **NOT run (unauthorized):** full regression + clean baseline DB tests. No merge/deploy/migrate/restart/activation.
+
+**STOP — focused+assert evidence delivered for independent ChatGPT review. Full suite + baseline remain a separate authorization.**
+
+---
+
+# (PRIOR) SCA-OPTC — SEEDER VERIFICATION HARDENED; AWAITING OWNER DB-EXECUTION AUTH (focused+assert ONLY, then STOP)
 
 **STATUS (2026-10-26):** Minor ChatGPT correction applied — `seed-test-admin.php` now fail-closes (exit 3) unless admin **id=1 EXISTS + is ACTIVE (status=1) + its role EXISTS + role permission_type='all'**. Test harness only (2 files: seed-test-admin.php + runner selftest [14]); no app logic/auth change. All DB safety, id-exposure (context-aware detector), and per-run tmpfs cache isolation PRESERVED. Candidate `5eb8708`→**`0f41e2e`** (pushed). Evidence: bash -n OK; php -l clean; **selftest 65/0**. NO DB test executed; `main 6022b75`+`sca_krayin`+139/140 untouched. Gov evidence: `docs/SCA-OPTC-TEST-AUDIT-CORRECTIONS.md` (+ this entry).
 - **NEXT TESTING GATE (owner-stated):** once owner EXPLICITLY authorizes DB execution, run the isolated **focused** + **assert** phases FIRST (`scripts/run-optc-tests.sh focused` then `… assert`). Do NOT run full or baseline in the same authorization. Preflight (SHA/worktree, kr-mariadb identity, create-not-drop, prod/shared excluded, no existing disposable DB deleted) then STOP after reporting test results + DB cleanup + production-isolation evidence. No app change/merge/deploy/migrate/restart/activation.
