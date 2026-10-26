@@ -1,4 +1,19 @@
-# SCA-OPTC — RELEASE-REMEDIATION PLAN DELIVERED (PLAN ONLY); AWAITING OWNER + CHATGPT APPROVAL
+# SCA-OPTC — TEST-ONLY REMEDIATION IMPLEMENTED (h7/d9 + harness); NON-DESTRUCTIVE EVIDENCE; AWAITING CHATGPT AUDIT
+
+**STATUS (2026-10-26):** Authorized TEST-ONLY remediation implemented on the candidate branch. **NO focused/full/baseline DB test executed; no app logic changed** (6 files, all under app/tests/ or scripts/). Evidence: `docs/SCA-OPTC-TEST-REMEDIATION-RESULT.md`. Not merged/deployed; `main 6022b75`+`sca_krayin` untouched; 139/140 untouched. Candidate `1df81d5`→**`1361357`** (pushed).
+- **§1 h7/d9 (test-only):** new pure DB-free `app/tests/Support/id_exposure.php::sca_detect_id_exposure` (flags id only as a quoted `"<id>"` value OR alpha-route `/<route>/<id>` path; ignores CSS/px/scale/version/slash-date); `TestCase::assertIdNotExposed()`; h7 + d9 use it for numeric PKs; ALL genuine checks ($ref/email/public_ref/catalog/storage_path/checksum/subject_id/qr_token) unchanged.
+- **§2 controls:** selftest [13] runs the REAL detector in a `--network none` no-DB container — positives (data-id="id", /items/id/, "collector_id":"id") detected; negatives (max-width:Npx, initial-scale=1, 2026/10/26, v4.2.N, z-index:N}, padding:N 0) pass → CONTROLS-OK.
+- **§3 harness (runner env/seed only; NO weakening):** `scripts/seed-test-admin.php` seeds canonical default admin (user id 1; idempotent; disposable-DB-guarded; random pw→actingAs) → AuthenticationTest×2+HelpTest; `CACHE_STORE=file` so the RateLimiter accumulates (limiter/thresholds unchanged) → 2 AuthenticationHardening rate-limit tests; `APP_URL=https://verify.secondchanceauthenticators.com` → h8.
+- **§5 isolation preserved:** create-not-drop, verify_effective, XML validator, perRunDbName/sca_is_per_run_db untouched; selftest 63/0.
+- **§6 verify plan:** h7/d9 NOT in the 5-file focused set → NEW `assert` runner phase runs them separately. Baseline run stays a manual invocation on a fresh exclusive `sca_domain_test` (never drop an existing DB); comparability explained.
+- **Evidence:** bash -n OK; **selftest 63/0** (incl [13] controls + [14] wiring); php -l clean on all 6 files.
+- **Verification sequence to run when authorized:** selftest(63/0)→focused(68/0)→assert(h7/d9 pass)→full(expect 0; residuals investigated)→baseline manual re-diff.
+
+**STOP — test-only remediation + non-destructive evidence for independent ChatGPT audit before DB-test authorization. No merge/deploy/migrate/restart/activation; backup/DR + ops readiness are separate workstreams.**
+
+---
+
+# (PRIOR) SCA-OPTC — RELEASE-REMEDIATION PLAN DELIVERED (PLAN ONLY); AWAITING OWNER + CHATGPT APPROVAL
 
 **STATUS (2026-10-22):** NO-GO confirmed; Option C code accepted at `1df81d5`. Minimal non-production remediation **PLAN** delivered: `docs/SCA-OPTC-RELEASE-REMEDIATION-PLAN.md`. **PLAN ONLY — nothing implemented, no tests run, no merge/deploy/migrate/restart/activation; no app-logic change in scope.** `main 6022b75` + `sca_krayin` untouched.
 - **§1 assertion fixes (test-only):** `CollectorHandleTest::h7` + `CertificateDocumentClassificationTest::d9` — keep all real-exposure checks ($ref/email/public_ref/path/checksum/subject_id); replace ONLY the bare-numeric-id substring checks with a context-bounded `assertDoesNotMatchRegularExpression` (`[/"'=:>]<id>(?![0-9A-Za-z])`) that still catches id-as-URL/JSON/attr but ignores `220px`.
