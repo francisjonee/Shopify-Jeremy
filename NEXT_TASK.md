@@ -1,4 +1,17 @@
-# SCA-OPTC — TEST-ONLY REMEDIATION IMPLEMENTED (h7/d9 + harness); NON-DESTRUCTIVE EVIDENCE; AWAITING CHATGPT AUDIT
+# SCA-OPTC — FINAL TEST-ONLY AUDIT CORRECTIONS APPLIED (context-aware detector + seed verify + cache isolation); AWAITING CHATGPT REVIEW
+
+**STATUS (2026-10-26):** Three ChatGPT audit corrections implemented (test files + runner only; no app logic). **NO focused/assert/full/baseline DB test executed.** Evidence: `docs/SCA-OPTC-TEST-AUDIT-CORRECTIONS.md`. Not merged/deployed; `main 6022b75`+`sca_krayin`+139/140 untouched. Candidate `1361357`→**`5eb8708`** (pushed; 3 files: id_exposure.php, seed-test-admin.php, run-optc-tests.sh).
+- **(1) context-aware `sca_detect_id_exposure`:** added (c) numeric JSON id field `"..._id":<id>`/`"id": <id>` and (d) unquoted id attr `id=`/`data-id=`/`item-id=`/`item_id=` (name must be id/…-id/…_id, opt data-); keeps (a) quoted + (b) alpha-route path; still ignores width=/count:/maxlength=/data-count=/grid:/CSS/date/version. Genuine sensitive-string checks unchanged. selftest [13] controls extended (9 positive + 11 negative) → CONTROLS-OK.
+- **(2) seed verify:** seed-test-admin.php ALWAYS fail-closes (exit 3) unless `User::find(1)` exists with a valid role (both create + already-present paths). No auth logic changed.
+- **(3) cache isolation:** `--tmpfs /var/www/html/storage/framework/cache` → throttle/cache state per-run only, discarded on exit, no leak between runs/worktree; limiter/thresholds unchanged.
+- Unchanged: create-not-drop, effective-conn verify, XML validator, cleanup. **selftest 65/0; bash -n OK; php -l clean.**
+- **Verification sequence when authorized:** selftest(65/0)→focused(68/0)→assert(h7/d9)→full(expect 0; residuals investigated)→baseline manual re-diff (fresh exclusive sca_domain_test).
+
+**STOP — final test-only corrections + non-destructive evidence for independent ChatGPT review before DB-test authorization. No merge/deploy/migrate/restart/activation.**
+
+---
+
+# (PRIOR) SCA-OPTC — TEST-ONLY REMEDIATION IMPLEMENTED (h7/d9 + harness); NON-DESTRUCTIVE EVIDENCE; AWAITING CHATGPT AUDIT
 
 **STATUS (2026-10-26):** Authorized TEST-ONLY remediation implemented on the candidate branch. **NO focused/full/baseline DB test executed; no app logic changed** (6 files, all under app/tests/ or scripts/). Evidence: `docs/SCA-OPTC-TEST-REMEDIATION-RESULT.md`. Not merged/deployed; `main 6022b75`+`sca_krayin` untouched; 139/140 untouched. Candidate `1df81d5`→**`1361357`** (pushed).
 - **§1 h7/d9 (test-only):** new pure DB-free `app/tests/Support/id_exposure.php::sca_detect_id_exposure` (flags id only as a quoted `"<id>"` value OR alpha-route `/<route>/<id>` path; ignores CSS/px/scale/version/slash-date); `TestCase::assertIdNotExposed()`; h7 + d9 use it for numeric PKs; ALL genuine checks ($ref/email/public_ref/catalog/storage_path/checksum/subject_id/qr_token) unchanged.
