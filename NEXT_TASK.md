@@ -1,4 +1,14 @@
-# SCA-OPTC — FINAL TEST-ONLY AUDIT CORRECTIONS APPLIED (context-aware detector + seed verify + cache isolation); AWAITING CHATGPT REVIEW
+# SCA-OPTC — SEEDER VERIFICATION HARDENED; AWAITING OWNER DB-EXECUTION AUTH (focused+assert ONLY, then STOP)
+
+**STATUS (2026-10-26):** Minor ChatGPT correction applied — `seed-test-admin.php` now fail-closes (exit 3) unless admin **id=1 EXISTS + is ACTIVE (status=1) + its role EXISTS + role permission_type='all'**. Test harness only (2 files: seed-test-admin.php + runner selftest [14]); no app logic/auth change. All DB safety, id-exposure (context-aware detector), and per-run tmpfs cache isolation PRESERVED. Candidate `5eb8708`→**`0f41e2e`** (pushed). Evidence: bash -n OK; php -l clean; **selftest 65/0**. NO DB test executed; `main 6022b75`+`sca_krayin`+139/140 untouched. Gov evidence: `docs/SCA-OPTC-TEST-AUDIT-CORRECTIONS.md` (+ this entry).
+- **NEXT TESTING GATE (owner-stated):** once owner EXPLICITLY authorizes DB execution, run the isolated **focused** + **assert** phases FIRST (`scripts/run-optc-tests.sh focused` then `… assert`). Do NOT run full or baseline in the same authorization. Preflight (SHA/worktree, kr-mariadb identity, create-not-drop, prod/shared excluded, no existing disposable DB deleted) then STOP after reporting test results + DB cleanup + production-isolation evidence. No app change/merge/deploy/migrate/restart/activation.
+- **Expected:** focused 68/0; assert = h7 (CollectorHandleTest) + d9 (CertificateDocumentClassificationTest) PASS (admin seed + context-aware id assertions + file cache). Build dev vendor (composer install, no DB) at run time.
+
+**STOP — seeder correction + non-destructive evidence delivered. Awaiting owner EXPLICIT DB-execution authorization for focused+assert only.**
+
+---
+
+# (PRIOR) SCA-OPTC — FINAL TEST-ONLY AUDIT CORRECTIONS APPLIED (context-aware detector + seed verify + cache isolation); AWAITING CHATGPT REVIEW
 
 **STATUS (2026-10-26):** Three ChatGPT audit corrections implemented (test files + runner only; no app logic). **NO focused/assert/full/baseline DB test executed.** Evidence: `docs/SCA-OPTC-TEST-AUDIT-CORRECTIONS.md`. Not merged/deployed; `main 6022b75`+`sca_krayin`+139/140 untouched. Candidate `1361357`→**`5eb8708`** (pushed; 3 files: id_exposure.php, seed-test-admin.php, run-optc-tests.sh).
 - **(1) context-aware `sca_detect_id_exposure`:** added (c) numeric JSON id field `"..._id":<id>`/`"id": <id>` and (d) unquoted id attr `id=`/`data-id=`/`item-id=`/`item_id=` (name must be id/…-id/…_id, opt data-); keeps (a) quoted + (b) alpha-route path; still ignores width=/count:/maxlength=/data-count=/grid:/CSS/date/version. Genuine sensitive-string checks unchanged. selftest [13] controls extended (9 positive + 11 negative) → CONTROLS-OK.
