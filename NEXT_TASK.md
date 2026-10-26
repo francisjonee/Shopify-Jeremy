@@ -1,4 +1,20 @@
-# SCA — BACKUP FIX 268c637 FINAL VERIFICATION GATE: PASS (11/11 synthetic verify); recommend MERGE+deploy, gate on restore-proof; AWAITING CHATGPT
+# SCA — BACKUP FIX 268c637 STANDALONE RELEASE ALIGNMENT: isolability GO, deploy CONDITIONAL; MATERIAL FINDING live app = 6022b75 (not 3b30a0f); AWAITING OWNER+CHATGPT
+
+**STATUS (2026-10-26):** READ-ONLY release alignment of backup fix `268c637` vs current main + deployed prod. Evidence: `docs/SCA-OPTC-BACKUP-FIX-268C637-RELEASE-ALIGNMENT.md`. Nothing implemented/cherry-picked/merged/deployed/restored/migrated/restarted; no prod config change.
+- **⚠️ MATERIAL FINDING — "prod = 3b30a0f" is STALE.** Production `kr-app` bind-mounts `/opt/sca-platform/app` → `/var/www/html` **rw** (live docroot); working tree = `main 6022b75`, CLEAN; spot-check of 8 post-3b30a0f UX-Phase-1 files (63177b1) all match 6022b75, differ from 3b30a0f ⇒ **LIVE APP CODE IS 6022b75, not 3b30a0f.** The 3b30a0f/migr138 figure is a stale deploy-baseline label. DB-migration axis separate (backup fix has NO migration).
+- **[1] SHAs:** impl origin/main = local main = working-tree HEAD = `6022b75` (clean); branch (local==origin) = `268c637`; gov main `07caa1c`.
+- **[8] Ancestry:** linear `3b30a0f`→pilot-docs→rg8→QR-reason(139)→auth/cert→UX-P1(73b6c22)→backup-staging(ee3b014/6022b75). `merge-base(main,branch)=6022b75` ⇒ branch sits DIRECTLY on current main ⇒ diff-vs-main == diff-vs-original-baseline (identical 5 files, +629/−27).
+- **[2,3,4] Isolation:** DocumentService.php + lib-docsnapshot.sh + BackupDocumentAtomicityTest byte-IDENTICAL at 3b30a0f & 6022b75 → apply to either; backup-run.sh (24+/1-) + backup-verify-restore.sh (7+/0-) differ ONLY by already-merged/already-live staging fix ee3b014 (ancestor) → NO conflict. NO migration/composer/config/bootstrap. Only 5 files; NO unexpected app change. **Conflicts: NONE.**
+- **[5] Standalone:** because live app already = 6022b75, advancing to merged backup fix introduces ONLY the 5-file delta (NO UX-P1/auth-cert/QR-reason drag — already live). Deploy surfaces: DocumentService.php live via bind-mount on working-tree advance + **opcache/PHP reload**; 3 host scripts for next cron. Deploy together.
+- **[6] Pre-deploy:** restore-proof current `.gpg` via `backup-verify-restore.sh selftest`+`verify`→disposable DB (guard refuses sca_krayin) BEFORE stricter verify goes live (clears R1). Separately authorized.
+- **[7] Preserved:** cron 03:17 UTC unchanged; retention 14d/min7 byte-identical (only `.part` cleanup added, no artifact deleted); live DB untouched.
+- **GO/NO-GO:** isolability/standalone/preservation = **GO**; deploy execution = **CONDITIONAL/NO-GO** until (a) restore-proof PASSES, (b) owner reconciles stale 3b30a0f label + accepts opcache reload, (c) owner authorizes.
+
+**STOP — read-only alignment delivered for owner + ChatGPT. No implement/cherry-pick/merge/deploy/restore/migrate/restart/config change.**
+
+---
+
+# (PRIOR) SCA — BACKUP FIX 268c637 FINAL VERIFICATION GATE: PASS (11/11 synthetic verify); recommend MERGE+deploy, gate on restore-proof; AWAITING CHATGPT
 
 **STATUS (2026-10-26):** Non-destructive FINAL verification gate (tasks 1–8) on backup doc-consistency fix `268c637` vs main `6022b75`. Evidence: `docs/SCA-OPTC-BACKUP-FIX-268C637-FINAL-GATE.md`. Nothing merged/deployed; no prod backup/restore, no DB test/migration, no config/restart/activation; prod untouched (app 3b30a0f/migr138, DB sca_krayin).
 - **[1] Realistic dump formats — `verify_db_document_refs` 11/11 synthetic fixtures PASS** (A zero-ref, B multi-row extended, C one-per-insert, D escaped values, E traversal→5, F missing→6, G corrupt→8, H NULL/unquoted path count-mismatch→5, I mixed disks, J generated, K missing-among-many→6). No DB touched (offline gzipped-dump fixtures).
