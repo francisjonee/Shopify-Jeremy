@@ -1,4 +1,17 @@
-# SCA-OPTC — AUTHORIZED FULL REGRESSION + BASELINE EXECUTED (post-remediation); NO OPTION-C REGRESSION; AWAITING CHATGPT REVIEW
+# SCA-OPTC — READ-ONLY BACKUP/RELEASE-SAFETY PREFLIGHT DELIVERED; backup/DR NO-GO; AWAITING OWNER + CHATGPT
+
+**STATUS (2026-10-26):** READ-ONLY backup & release-safety preflight. Evidence: `docs/SCA-OPTC-BACKUP-RELEASE-SAFETY-PREFLIGHT.md`. No backup/restore run, no DB test, no config/merge/deploy/migrate/restart/activation; `main 6022b75`+`sca_krayin`+139/140 untouched.
+- **On-host nightly backup HEALTHY (corrects prior "not installed" note):** `/etc/cron.d/sca-backup` INSTALLED; `secrets/backup.key` present; daily 03:17 UTC; today `20261026T021703Z OK 4.3G` (db=sca_krayin, docs=4605MB); GPG AES-256; disk 322G free; retention 14d/min7. restore tool `backup-verify-restore.sh` (verify/selftest/offsite-selftest) exists.
+- **Blockers to a VERIFIED OFF-HOST backup:** B1 `SCA_BACKUP_REMOTE` unset (every run OFFSITE_DEFERRED, local-only→not durable); B2 no uploader (rclone AND aws absent); B3 no remote creds/config; B4 recovery key NOT escrowed — `secrets/backup.key`+`app/.env`APP_KEY co-located with backups on the single host; B5 doc-consistency fix `268c637` UNMERGED (running backup lacks publishAtomically/snapshot_documents/verify_db_document_refs → deletion-window race); B6 no recent restore-proof vs a real artifact.
+- **Smallest plan:** install rclone + Hetzner Storage Box sftp remote → set SCA_OFFSITE_UPLOADER=rclone + SCA_BACKUP_REMOTE; escrow backup.key+APP_KEY SEPARATELY; merge+deploy 268c637; run `backup-verify-restore.sh verify` + restore-FROM-off-host (disposable DB, separately authorized). Owner decisions: provider/account/creds + escrow location + 268c637 merge.
+- **GO/NO-GO:** on-host nightly PASS; doc-consistency BLOCKED (268c637); restore-proof NO-GO; off-host copy BLOCKED; key escrow BLOCKED; restore-from-off-host NO-GO → **overall backup/DR NO-GO.**
+- **Recorded unresolved test concerns:** rate-limit ×2 (env, both runs) + QrPrintLabelTest::ql3 QR-decoder flake (unconfirmed, not re-run). Option C forward-recovery preserved; 139/140 untouched.
+
+**STOP — read-only assessment delivered for owner + ChatGPT. No create/restore backup, DB test, config change, or release action.**
+
+---
+
+# (PRIOR) SCA-OPTC — AUTHORIZED FULL REGRESSION + BASELINE EXECUTED (post-remediation); NO OPTION-C REGRESSION; AWAITING CHATGPT REVIEW
 
 **STATUS (2026-10-26):** Owner-authorized full candidate suite + clean `6022b75` baseline executed on separate per-run disposable DBs. **No genuine Option-C application regression.** Evidence: `docs/SCA-OPTC-FULL-REGRESSION-EVIDENCE-2.md`. Not merged/deployed; `main 6022b75`+`sca_krayin`+139/140 untouched (loopback 302; migrations 27/140 unchanged).
 - **Candidate `0f41e2e`** on unique `sca_optcfull_test_cb83eb4a` (effective-conn verified x2, admin-seed verified id=1 active all-perm): **3 failed / 0 skipped / 7595 assertions**. **Baseline `6022b75`** on fresh exclusive `sca_domain_test`, EQUIVALENT harness (same APP_URL/file-cache/admin-seed/vendor): **8 failed / 0 skipped / 7507 assertions**.
