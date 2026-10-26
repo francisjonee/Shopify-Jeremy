@@ -1,4 +1,17 @@
-# SCA-OPTC — FULL-REGRESSION PREFLIGHT PASSED; HOLDING FOR EXPLICIT OWNER AUTH TO RUN FULL + BASELINE
+# SCA-OPTC — AUTHORIZED FULL REGRESSION + BASELINE EXECUTED (post-remediation); NO OPTION-C REGRESSION; AWAITING CHATGPT REVIEW
+
+**STATUS (2026-10-26):** Owner-authorized full candidate suite + clean `6022b75` baseline executed on separate per-run disposable DBs. **No genuine Option-C application regression.** Evidence: `docs/SCA-OPTC-FULL-REGRESSION-EVIDENCE-2.md`. Not merged/deployed; `main 6022b75`+`sca_krayin`+139/140 untouched (loopback 302; migrations 27/140 unchanged).
+- **Candidate `0f41e2e`** on unique `sca_optcfull_test_cb83eb4a` (effective-conn verified x2, admin-seed verified id=1 active all-perm): **3 failed / 0 skipped / 7595 assertions**. **Baseline `6022b75`** on fresh exclusive `sca_domain_test`, EQUIVALENT harness (same APP_URL/file-cache/admin-seed/vendor): **8 failed / 0 skipped / 7507 assertions**.
+- **Diff:** SHARED 2 = `AuthenticationHardeningTest` rate-limit ×2 (throttle doesn't trip in harness even w/ file-cache; env, not Option C, present on baseline). BASELINE-only 6 = candidate **FIXES** them: `d9` (context-aware id assertion) + 5 concurrency (cc1a/cc1b/cc2/ccmr1/ccsc1, per-run parameterization). CANDIDATE-only 1 = `QrPrintLabelTest::ql3` `DECODE_FAILED: checkAndNudgePoints…` = known non-deterministic QR-decoder FLAKE (same class as rg2/rg8); **Option C diff touches NO QR code** → not a regression; NOT re-run (authorization = no additional DB runs); classified w/ evidence, not dismissed.
+- **Concurrency/workers (pt 4):** 7 concurrency tests + 3 workers passed on the single per-run DB → bound only to the assigned disposable DB.
+- **Cleanup:** both disposable DBs dropped; only `sca_krayin` remains. **Prod unchanged.**
+- The admin-seed/APP_URL/id-assertion remediation resolved the prior candidate failures (AuthenticationTest×2/HelpTest/h8/h7/d9); rate-limit remains an env limitation (both runs); ql3 is a flake.
+
+**STOP — full-regression + baseline evidence delivered for independent ChatGPT review. No merge/deploy/migrate/restart/activation. Release still gated on backup/DR + ops (release-readiness audit); candidate UNMERGED.**
+
+---
+
+# (PRIOR) SCA-OPTC — FULL-REGRESSION PREFLIGHT PASSED; HOLDING FOR EXPLICIT OWNER AUTH TO RUN FULL + BASELINE
 
 **STATUS (2026-10-26):** Full-regression gate received "subject to explicit owner authorization" + "Do not execute full or baseline database tests without explicit owner authorization" → read-only preflight done; **NOT executed. Holding for the explicit go** (same pattern as the earlier full-regression gate). No worktree left; `main 6022b75`+`sca_krayin`+139/140 untouched.
 - **Preflight PASS (read-only):** candidate SHA `0f41e2e` in an isolated non-mounted worktree; kr-mariadb mariadb:10.11.18 on sca_internal; only `sca_krayin` present (no disposable DB to collide/delete); prod healthy (6022b75, loopback 302, migrations max_batch=27/total=140); runner create-not-drop + reject sca_krayin/sca_domain_test intact.
