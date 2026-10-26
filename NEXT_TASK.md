@@ -1,4 +1,18 @@
-# SCA-OPTC — READ-ONLY BACKUP/RELEASE-SAFETY PREFLIGHT DELIVERED; backup/DR NO-GO; AWAITING OWNER + CHATGPT
+# SCA — BACKUP FIX 268c637 READ-ONLY VERIFICATION: PASS, releasable independently; recommend MERGE+deploy (owner); AWAITING CHATGPT
+
+**STATUS (2026-10-26):** READ-ONLY diff review of backup document-consistency fix `268c637` vs main `6022b75`. Evidence: `docs/SCA-OPTC-BACKUP-FIX-268C637-VERIFICATION.md`. Nothing merged/deployed; no backup/restore/config/rclone/credential/migration/restart/activation; prod untouched.
+- **Diff:** branch sits directly on `6022b75` (merge-base=6022b75); 6 commits; **5 files, +629/−27**: `DocumentService.php` (app, +50), new `BackupDocumentAtomicityTest`, `backup-run.sh`, `backup-verify-restore.sh`, new `lib-docsnapshot.sh`. **NO migration/schema/composer/config/bootstrap change; retention unchanged.**
+- **[2] app change** = narrow/intended ONLY: document writes (attach/generated/restore) publish via `.part`+`Storage::move` (rename, local same-fs) fail-closed; final path layout/DB rows/reads/ACL/Option-C logic unchanged.
+- **[3] PASS:** atomic publication (`publishAtomically` temp→rename, fail-closed); snapshot consistency (`snapshot_documents` non-.part only, enumeration + cp fail-closed incl source-vanished, .part-leak check, symlinks excluded); fail-closed verify (`verify_db_document_refs`: corrupt-dump/read-error/non-canonical/traversal/missing-ref all fail closed; traversal-safe canonical grammar; 0 refs⇒pass).
+- **[5] independent:** disjoint files from Option C; no migration → 139/140 untouched; mergeable standalone either order.
+- **[4] risks:** R1 new fail-closed verify could reject a backup if existing prod data has a non-canonical path/missing doc → run restore-proof FIRST; R2 `.part` orphans harmless; R3 rename assumes local disk; R4 app deploy (no restart).
+- **[6] recommendation:** MERGE 268c637→main (code-only) → deploy app+scripts together → gate on `backup-verify-restore.sh selftest`+`verify` (disposable DB, separately authorized) → closes backup blocker B5; off-host (B1-B4)+restore-from-offhost (B6) remain separate.
+
+**STOP — read-only verification (PASS) delivered for owner + ChatGPT. No merge/deploy/backup/config/migration/restart/activation.**
+
+---
+
+# (PRIOR) SCA-OPTC — READ-ONLY BACKUP/RELEASE-SAFETY PREFLIGHT DELIVERED; backup/DR NO-GO; AWAITING OWNER + CHATGPT
 
 **STATUS (2026-10-26):** READ-ONLY backup & release-safety preflight. Evidence: `docs/SCA-OPTC-BACKUP-RELEASE-SAFETY-PREFLIGHT.md`. No backup/restore run, no DB test, no config/merge/deploy/migrate/restart/activation; `main 6022b75`+`sca_krayin`+139/140 untouched.
 - **On-host nightly backup HEALTHY (corrects prior "not installed" note):** `/etc/cron.d/sca-backup` INSTALLED; `secrets/backup.key` present; daily 03:17 UTC; today `20261026T021703Z OK 4.3G` (db=sca_krayin, docs=4605MB); GPG AES-256; disk 322G free; retention 14d/min7. restore tool `backup-verify-restore.sh` (verify/selftest/offsite-selftest) exists.
