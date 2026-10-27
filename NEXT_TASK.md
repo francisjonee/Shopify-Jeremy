@@ -1,4 +1,17 @@
-# SCA — SHOPIFY PRODUCT WEBHOOKS: SCA receiver PROVEN; registration is owner app-version action; AWAITING owner release
+# SCA — SHOPIFY PRODUCT WEBHOOK CONFIG PROPOSAL ready (shopify.app.toml); AWAITING owner deploy+release of new app version
+
+**STATUS (2026-10-27):** Config proposal prepared (NOT released). Evidence: `docs/SCA-SHOPIFY-PRODUCT-WEBHOOK-CONFIG-PROPOSAL.md`. No app version deployed/released, no new app, no SCA server/inventory change.
+- **[4] Reuse existing app** (active version sca-eyewear-registry-5): adding subs = edit same app config + new version (auto sca-eyewear-registry-6), NOT a new app. Reuse the linked shopify.app.toml project (or Dev Dashboard).
+- **[5] Change = append ONE `[[webhooks.subscriptions]]` block:** topics=["products/create","products/update","products/delete"], uri=https://verify.secondchanceauthenticators.com/sca/shopify/webhook. Keep existing orders/paid|cancelled+refunds/create block(s). `[webhooks] api_version="2026-07"` unchanged; `[access_scopes] scopes="read_orders,read_products"` unchanged; `[auth] redirect_urls=[.../sca/shopify/oauth/callback]` unchanged.
+- **Deploy (owner):** `shopify app config link` (existing app) → edit toml → `shopify app deploy` (review diff: +3 product topics ONLY, scopes/api/redirect unchanged) → release. Dev Dashboard alt = add 3 subs to same endpoint, keep order subs, release.
+- **[1][2][3] preserved:** 3 order/refund subs, scopes, api 2026-07, oauth callback, endpoint. [6] no new app. [7] not released. [8] no SCA change (catalog 4565/5330).
+- SCA receiver already proven (bad-sig 401 / valid 200 processed+upsert / replay idempotent) → deliveries will work once released.
+
+**STOP — owner reviews diff + releases the new app version (6 managed subs). After release: confirm a delivered products/* receipt (processed) + catalog update + provenance unchanged. Reconcile UNscheduled.**
+
+---
+
+# (PRIOR) SCA — SHOPIFY PRODUCT WEBHOOKS: SCA receiver PROVEN; registration is owner app-version action
 
 **STATUS (2026-10-27):** Receiver validated; subscription registration owner-gated. Evidence: `docs/SCA-SHOPIFY-PRODUCT-WEBHOOK-ACTIVATION.md`. No real Shopify product change, passport/ownership/auth, reconcile schedule, code deploy/migration.
 - **[1] confirmed:** SHA 905ea7d; scope read_orders,read_products.
