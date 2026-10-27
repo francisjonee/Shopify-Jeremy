@@ -1,4 +1,16 @@
-# SCA — BACKUP FIX 268c637 RESTORE-VERIFICATION PREP (READ-ONLY): procedure ready; AWAITING EXPLICIT OWNER AUTH before any DB restore
+# SCA — RESTORE-VERIFY TOOLING SAFETY CORRECTIONS DONE (branch b14439c; mocked tests 22/22); NO real restore; AWAITING CHATGPT + OWNER AUTH
+
+**STATUS (2026-10-27):** Isolated safety corrections to `scripts/backup-verify-restore.sh` + mocked tests. Evidence: `docs/SCA-OPTC-BACKUP-FIX-268C637-RESTORE-SAFETY-CORRECTIONS.md`. Done in a git WORKTREE (live checkout untouched = main 6022b75 clean). NO real restore/merge/deploy/migration/service/backup-config change.
+- **SHA:** branch `fix/sca-backup-document-consistency` `268c637`→**`b14439cf819ac25a3dea07dfd8412671d00f009e`** (pushed origin github-sca-platform). Changed `scripts/backup-verify-restore.sh` (+77/−19); added `scripts/test-restore-verify-safety.sh`. backup-run.sh/lib-docsnapshot.sh/DocumentService.php UNTOUCHED.
+- **10 corrections:** (1) unique per-run DB names `*_<12hex RUN_TAG>`; (2) CREATE no-DROP + abort-if-exists (pre-check + CREATE-no-IF-NOT-EXISTS); (3) register CREATED_DBS only after success; (4) cleanup drops only CREATED_DBS; (5) can't touch pre-existing DB (1-4 + guard_target); (6) scoped `REVOKE SELECT` on own per-run DB only if granted — removed `REVOKE ALL`; (7) doc extraction fail-closed (removed `2>/dev/null||true`→`||die`); (8) nonzero verify_db_document_refs→die (EXIT trap still cleans); (9) verify mode now runs verify_db_document_refs on the RESTORED artifact; (10) off-checkout staging via SCA_ENV_FILE + app-read via `docker exec kr-app` (not `docker compose exec`).
+- **Mocked tests 22/22 PASS** (`bash scripts/test-restore-verify-safety.sh scripts/backup-verify-restore.sh`): T1 pre-exist collision→no CREATE/DROP; T2 CREATE race→no DROP; T3 cleanup drops only created + scoped revoke + no REVOKE ALL; T4 unique names; T5 extraction fail-closed; T6 nonzero-refs stop; static asserts. bash -n clean.
+- **Corrected procedure:** worktree-staged (outside live app/), pre-flight (MARIADB_DATABASE==sca_krayin, kr-mariadb+kr-app running), selftest + doc-consistency-selftest + `verify <artifact>` (self-runs verifier on restored artifact), auto-cleanup, worktree remove. Current artifact sca-backup-20261027T021703Z (sha 42e7aadd…).
+
+**STOP — corrected tooling + mocked tests delivered for independent ChatGPT review. Do NOT execute real restore; await explicit owner authorization. No merge/deploy/migration/service/backup-config change.**
+
+---
+
+# (PRIOR) SCA — BACKUP FIX 268c637 RESTORE-VERIFICATION PREP (READ-ONLY): procedure ready; AWAITING EXPLICIT OWNER AUTH before any DB restore
 
 **STATUS (2026-10-27):** READ-ONLY preparation of the isolated restore-verification for the current encrypted backup. Evidence: `docs/SCA-OPTC-BACKUP-FIX-268C637-RESTORE-VERIFICATION-PREP.md`. NO restore executed; no merge/deploy/migration/prod/service/backup-setting/integration change.
 - **[1] Current artifact:** `backups/sca-backup-20261027T021703Z.tar.gz.gpg`, 4,576,491,854 B, sha256 `42e7aadd…875fed` (sidecar + backup.log match; docs=4605; nightly OK, OFFSITE_DEFERRED). Prereqs: key 0600 present; 317G free; DB kr-mariadb (project sca); repo-root .env supplies MARIADB_*; disk-backed staging `backups/.work`. **Script-version prereq: main's backup-verify-restore.sh has 0 `verify_db_document_refs` → MUST use BRANCH (268c637) scripts, staged read-only.**
