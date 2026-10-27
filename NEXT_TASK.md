@@ -1,4 +1,18 @@
-# SCA — INITIAL SHOPIFY CATALOG IMPORT DONE: 4565 products / 5330 variants; prod provenance UNCHANGED; next = products/* webhooks (owner-gated)
+# SCA — SHOPIFY PRODUCT WEBHOOKS: SCA receiver PROVEN; registration is owner app-version action; AWAITING owner release
+
+**STATUS (2026-10-27):** Receiver validated; subscription registration owner-gated. Evidence: `docs/SCA-SHOPIFY-PRODUCT-WEBHOOK-ACTIVATION.md`. No real Shopify product change, passport/ownership/auth, reconcile schedule, code deploy/migration.
+- **[1] confirmed:** SHA 905ea7d; scope read_orders,read_products.
+- **[2] KEY FINDING:** Admin API `webhooks.json` = 0 → existing orders/refunds subs are APP-CONFIG (managed), NOT API-registered (config-based subs don't appear in webhooks.json). So product subs must be added in the APP VERSION config too.
+- **[3][6] OWNER ACTION (cannot do server-side):** add products/create|update|delete to the app version (shopify.app.toml `[[webhooks.subscriptions]]` topics + uri=https://verify.secondchanceauthenticators.com/sca/shopify/webhook, api 2026-07; OR Dev Dashboard) KEEPING orders/paid|cancelled+refunds/create → `shopify app deploy`/release → verify 6 topics in active version (won't show in webhooks.json). SCA client is read-only by design + no-deploy → can't register from server. STOP before release.
+- **[4][5] preserved:** 3 order/refund subs, endpoint, api 2026-07, HMAC (client secret).
+- **[7][8] SCA RECEIVER PROVEN (local synthetic signed test, secret not printed, synthetic ids cleaned):** bad-sig→401; valid products/update→200 receipt processed + catalog upsert; replay→200 1 receipt (idempotent). Signature+receipt+idempotency+catalog processing PASS.
+- **[9] counts restored** (products 4565 / variants 5330 / receipts 108) + provenance UNCHANGED (3/3/5/4/3/1); app 200.
+
+**STOP — owner adds the 3 product subscriptions to the Shopify app version + releases (instructions in gov doc). After release: confirm a delivered products/* receipt (processed) + catalog update + provenance unchanged. Reconcile stays unscheduled.**
+
+---
+
+# (PRIOR) SCA — INITIAL SHOPIFY CATALOG IMPORT DONE: 4565 products / 5330 variants; prod provenance UNCHANGED
 
 **STATUS (2026-10-27):** Authorized ONE import executed + verified. Evidence: `docs/SCA-SHOPIFY-CATALOG-IMPORT-RESULT.md`. No webhook register / reconcile schedule / code / migration / Shopify modification / Option C.
 - **Preflight:** SHA 905ea7d; scope read_orders,read_products; catalog empty 0/0; baseline prov items3/state3/own5/cert4/qr3/grant1/batch28; backup OK; app 200.
