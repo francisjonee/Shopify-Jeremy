@@ -1,4 +1,18 @@
-# SCA — SHOPIFY INVENTORY SYNC PHASE 1 IMPLEMENTED (branch 312927d); non-destructive checks PASS; DB tests NOT run; AWAITING CHATGPT + separate auth
+# SCA — SHOPIFY INVENTORY SYNC PHASE 1 CORRECTIONS applied (branch 5f53bec); non-destructive PASS; DB tests NOT run; AWAITING CHATGPT + separate auth
+
+**STATUS (2026-10-27):** 3 reviewed correctness fixes on feat/sca-shopify-inventory-sync (worktree; live main 6ebe968 untouched). Evidence: `docs/SCA-SHOPIFY-INVENTORY-SYNC-PHASE1-CORRECTIONS.md`. No prod/merge/deploy/live-Shopify/OAuth-scope/webhook-register; order webhooks+sale-link UNCHANGED; Option C+139/140 untouched.
+- **SHA:** `312927d`→**`5f53bec1b30049d4272c1019831c38e8f781a45a`** (pushed). 6 files.
+- **(1) Trusted snapshot:** syncVariants archives removed-variant ONLY when variants is a PRESENT array w/ ≥1 valid variant seen on a FRESH event; missing/null/malformed/EMPTY never archives existing variants.
+- **(2) Reversible delete + authoritative reconcile:** products/delete (no Shopify ts) → reversible `pending_delete`+delete_requested_at (NOT archive, variants kept); later fresh event → `revived`; new `ProductCatalogService::archiveConfirmedDeletions(shop,seenIds)` (called by reconcile after live sweep) archives ONLY pending_delete still-absent → old/out-of-order delete can't overwrite newer state. status col adds pending_delete + delete_requested_at (migration still unmerged).
+- **(3) Fail-closed freshness:** new tsOrNull()+freshness()→fresh|stale|indeterminate; overwrite ONLY on fresh (valid incoming updated_at ≥ stored); missing/invalid/unorderable→indeterminate (no overwrite), older→stale; applies product-level AND per-variant. Replaces permissive isStale(). WebhookAuditRecorder: +revived/pending_delete actionable, +indeterminate noop.
+- **Non-destructive:** php -l clean (6 files); freshness+trusted-snapshot logic smokes 11/11. DB tests WRITTEN NOT RUN (+7 new: incomplete/empty variant collections, reversible delete, revive, reconcile-confirm absent-only, missing/invalid ts no-overwrite, per-variant unorderable ts).
+- **Remaining activation (owner):** run DB tests on disposable DB (SEP AUTH); read_products scope + OAuth re-consent; register products/* webhooks; deploy+import; reconcile schedule later.
+
+**STOP — corrections delivered for ChatGPT review. Do NOT run DB tests / merge / deploy / change scopes / reauth / register webhooks until authorized.**
+
+---
+
+# (PRIOR) SCA — SHOPIFY INVENTORY SYNC PHASE 1 IMPLEMENTED (branch 312927d)
 
 **STATUS (2026-10-27):** Phase 1 catalog sync implemented on feat/sca-shopify-inventory-sync (worktree; live tree main 6ebe968 untouched). Evidence: `docs/SCA-SHOPIFY-INVENTORY-SYNC-PHASE1-IMPLEMENTATION.md`. No prod/merge/deploy/live-connect/webhook-register/scope-change/OAuth-reauth; Option C + 139/140 untouched.
 - **SHA:** `6ebe968`→**`312927ddc0a8de7c8b64415a837cf9c59931a70d`** (pushed origin). 16 files (10 new/5 edit/1 test).
