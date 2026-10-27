@@ -1,4 +1,16 @@
-# SCA — ADMIN 403 FIX PROPOSAL (READ-ONLY): add owner IP to Caddy @staff allowlist via zero-downtime reload; AWAITING owner IP + approval
+# SCA — ADMIN ACCESS RESTORED: owner IP 103.200.35.3/32 added to Caddy @staff allowlist (graceful reload); OAuth Step 1 can resume
+
+**STATUS (2026-10-27):** Authorized minimal change EXECUTED + verified. Evidence: `docs/SCA-ADMIN-403-ALLOWLIST-FIX-RESULT.md`. Allowlist NOT disabled; both existing staff IPs preserved; admin NOT public; no recreate/restart; smsrocket uninterrupted; no Shopify change.
+- Added `103.200.35.3/32` (valid public IPv4) to `@staff remote_ip` (2→3 IPs, append-only). Backup `/opt/smsrocket-stack/Caddyfile.bak.20261027T172637Z`.
+- Procedure: validate edited copy (`caddy validate`=Valid) → `cat new > Caddyfile` IN PLACE (inode 777641 preserved) → `docker exec sr-caddy caddy reload` (graceful, no recreate; StartedAt 2026-10-18 unchanged).
+- Verified: admin API /config/ 200; running config contains 103.200.35.3/32 + both existing (3 staff IPs; the 4th IPv4 in JSON = admin 127.0.0.1); NO 0.0.0.0/0; smsrocket.io 302 healthy; verify passport /p 200; /admin/login from a NON-staff IP still 403 (allowlist intact). Rollback = cat backup > Caddyfile + caddy reload.
+- **ZERO-DOWNTIME CADDY RELOAD CONFIRMED WORKING** (admin API localhost:2019; in-place cat> preserves inode → reload sees it). Supersedes the force-recreate gotcha (that only applies when an edit REPLACES the inode).
+
+**NEXT (owner): from 103.200.35.3 open https://verify.secondchanceauthenticators.com/admin/sca/shopify/connect → merchant approves read_products → then verify sca_shopify_credentials.scope includes read_products + read-only product probe (NO import). Then (separate auth) register products/* webhooks; run import.** OAuth scope already live (read_orders,read_products); token still read_orders pending approval.
+
+---
+
+# (PRIOR) SCA — ADMIN 403 FIX PROPOSAL (READ-ONLY): add owner IP to Caddy @staff allowlist
 
 **STATUS (2026-10-27):** Change proposal prepared, NOTHING applied. Evidence: `docs/SCA-ADMIN-403-ALLOWLIST-FIX-PROPOSAL.md`. No config change/recreate/restart/reload; allowlist NOT disabled; admin NOT opened to all.
 - **[1] Owner IP:** NOT in edge logs (deny handler logs no harvestable IP) → owner must self-capture from their device/network (`curl -s https://api.ipify.org`), provide for approval. NOT guessed.
