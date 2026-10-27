@@ -1,4 +1,16 @@
-# SCA — SHOPIFY INVENTORY SYNC PHASE 1 CORRECTIONS applied (branch 5f53bec); non-destructive PASS; DB tests NOT run; AWAITING CHATGPT + separate auth
+# SCA — SHOPIFY INVENTORY SYNC PHASE 1 FINAL SNAPSHOT CORRECTION (branch e96700b); non-destructive PASS; DB tests NOT run; AWAITING CHATGPT + separate auth
+
+**STATUS (2026-10-27):** Final variant-snapshot fix on feat/sca-shopify-inventory-sync (worktree; live main 6ebe968 untouched). Evidence: `docs/SCA-SHOPIFY-INVENTORY-SYNC-PHASE1-SNAPSHOT-CORRECTION.md`. No prod/merge/deploy/live-Shopify/OAuth/webhook-register; all other Phase 1 behavior preserved.
+- **SHA:** `5f53bec`→**`e96700b9a369ac259cd8a14c1162622fb16e6898`** (pushed). 2 files (ProductCatalogService::syncVariants + test).
+- **FIX:** removed-variant archival now requires ENTIRE snapshot complete+valid. New `snapshotComplete` flag (seeded from trustedSnapshot) → ANY non-array entry / missing-invalid id / DUPLICATE id disables archival for that event; archive gated on `snapshotComplete && count(seen)>0`. Valid variants still upsert (fail-closed per-variant freshness). Empty/null/missing/malformed protection intact; fully-valid snapshot still archives removed variant. Added 'duplicate' counter.
+- **Non-destructive:** php -l clean (2 files); snapshot-completeness logic smoke 8/8. +4 DB tests (partially-malformed, non-array entry, duplicate id, fully-valid regression) WRITTEN NOT RUN.
+- **Remaining activation (owner):** run DB tests on disposable DB (SEP AUTH); read_products scope + OAuth re-consent; register products/* webhooks; deploy+import; reconcile schedule later.
+
+**STOP — correction delivered for ChatGPT review. Do NOT run DB tests / merge / deploy / change scopes / reauth / register webhooks until authorized.**
+
+---
+
+# (PRIOR) SCA — SHOPIFY INVENTORY SYNC PHASE 1 CORRECTIONS applied (branch 5f53bec)
 
 **STATUS (2026-10-27):** 3 reviewed correctness fixes on feat/sca-shopify-inventory-sync (worktree; live main 6ebe968 untouched). Evidence: `docs/SCA-SHOPIFY-INVENTORY-SYNC-PHASE1-CORRECTIONS.md`. No prod/merge/deploy/live-Shopify/OAuth-scope/webhook-register; order webhooks+sale-link UNCHANGED; Option C+139/140 untouched.
 - **SHA:** `312927d`→**`5f53bec1b30049d4272c1019831c38e8f781a45a`** (pushed). 6 files.
