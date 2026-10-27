@@ -1,4 +1,18 @@
-# SCA — ADMIN /admin/login 403 DIAGNOSED (READ-ONLY): edge IP-allowlist by design; fix = initiate from a staff IP; AWAITING owner
+# SCA — ADMIN 403 FIX PROPOSAL (READ-ONLY): add owner IP to Caddy @staff allowlist via zero-downtime reload; AWAITING owner IP + approval
+
+**STATUS (2026-10-27):** Change proposal prepared, NOTHING applied. Evidence: `docs/SCA-ADMIN-403-ALLOWLIST-FIX-PROPOSAL.md`. No config change/recreate/restart/reload; allowlist NOT disabled; admin NOT opened to all.
+- **[1] Owner IP:** NOT in edge logs (deny handler logs no harvestable IP) → owner must self-capture from their device/network (`curl -s https://api.ipify.org`), provide for approval. NOT guessed.
+- **[2] Compare:** `@staff remote_ip` currently = the 2 authorized staff IPs (values redacted). On approval confirm owner IP is valid, not already listed, add as /32.
+- **[3][4] Change:** append ONLY the owner IP to that one line: `@staff remote_ip <IP_A> <IP_B> <OWNER_IP>`; both existing preserved; allowlist stays default-deny.
+- **[5] Reload WITHOUT recreate = YES:** admin API enabled (localhost:2019 /config/→200), `caddy reload` is graceful/atomic/zero-downtime, smsrocket NOT interrupted. CLAUDE.md force-recreate gotcha ONLY applies if the edit REPLACES the inode (sed -i/mv/editor) — Caddyfile is a file bind mount (inode 777641). AVOID by editing IN PLACE (`cat new > Caddyfile` or `cp`, preserves inode) then `docker exec sr-caddy caddy reload --config /etc/caddy/Caddyfile --adapter caddyfile`.
+- **[6] Validate first:** `caddy validate` works (current=Valid); validate the EDITED copy before writing live.
+- **[7] Apply procedure + risk** in the doc (backup → awk-append → validate copy → `cat > ` in place → reload → verify). Risk: smsrocket none (graceful); validate gates syntax; inode foot-gun avoided by cat>; fallback force-recreate only if reload says "unchanged".
+
+**STOP — await owner's verified public IP + approval. Then apply per [7] (or owner adds a stable office/VPN /32). After admin reachable: resume OAuth Step 1 approval (scope already read_orders,read_products; token still read_orders pending merchant approve).**
+
+---
+
+# (PRIOR) SCA — ADMIN /admin/login 403 DIAGNOSED (READ-ONLY): edge IP-allowlist by design
 
 **STATUS (2026-10-27):** READ-ONLY diagnosis of the /admin/login "Forbidden". Evidence: `docs/SCA-ADMIN-LOGIN-403-DIAGNOSIS.md`. No firewall/auth/config/permission/code/service change; no protection disabled.
 - **ROOT CAUSE (working-as-designed, NOT a bug):** sr-caddy verify.* block has `@admin path /admin /admin/*` → `@staff remote_ip <two authorized staff IPs>`; non-staff IPs get edge `respond "Forbidden" 403` BEFORE kr-app. Public /admin/login = 403 (server: Caddy, text/plain "Forbidden"); loopback 127.0.0.1:8080/admin/login = 200 (Apache/Laravel full Sign In). So 403 is at the EDGE, not Apache/Laravel/ACL.
