@@ -1,4 +1,17 @@
-# SCA — FIRST POST-DEPLOY NIGHTLY = PENDING (read-only); re-check after 2026-10-28 02:17 UTC
+# SCA — SHOPIFY INVENTORY SYNC PHASE 1: AUDIT + PLAN delivered (no code); AWAITING OWNER + CHATGPT before DB-changing tests
+
+**STATUS (2026-10-27):** Read-only audit + implementation plan for Shopify product→SCA sync. Evidence: `docs/SCA-SHOPIFY-INVENTORY-SYNC-PHASE1-PLAN.md`. Branch `feat/sca-shopify-inventory-sync` created at `6ebe968` (LOCAL ref, NO code, live tree stays on main). No code written, no DB test, no merge/deploy/live-connect/webhook-register/prod-migrate.
+- **CORE DECISION (needs sign-off):** Shopify variant = catalog SKU w/ qty ≠ physical pair. Phase 1 = CATALOG sync into NEW tables `sca_shopify_products`+`sca_shopify_variants` (UNIQUE shop+product_id / shop+variant_id = DB dup protection); sync NEVER creates sca_eyewear_items/passport/QR/ownership/auth/claim-link (objective #6 + IMPORTANT). Physical-pair individuation + item↔variant link DEFERRED. ItemService reused only at that future step.
+- **Reuse:** WebhookController atomic/idempotent/replay boundary (idempotency_key UNIQUE), WebhookVerifier HMAC, receipts table — all inherited; add product topics to WebhookTopics + new ProductSyncEventProcessor (mirrors SaleLinkEventProcessor). ShopifyClient: add read-only getProduct/listProducts (cursor pagination, same fail-closed contract).
+- **⚠️ PERMISSION BLOCKER:** prod app/.env `SHOPIFY_SCOPES=read_orders` — read_products NOT granted → product reads 403 until **SHOPIFY_SCOPES=read_orders,read_products + merchant OAuth RE-CONSENT/RE-INSTALL** (owner action). read_inventory/read_locations only if authoritative stock-level sync later (deferred). Webhook topic registration = deploy-time (not this task). SHOP_DOMAIN=second-chance-eyewear-accessories.myshopify.com, api 2026-07 unchanged.
+- **Tests planned (AFTER approval, disposable DB):** duplicates, updates (+assert no item/ownership touched), missing ids, archival soft, failure recovery/replay, variant qty>1 → 1 catalog row + 0 items.
+
+**STOP — plan delivered for owner + ChatGPT. Do NOT write code or run DB-changing tests until approved (esp. §2 catalog-vs-item decision + §7 read_products re-consent).**
+
+---
+
+# (PRIOR) SCA — FIRST POST-DEPLOY NIGHTLY = PENDING (read-only); re-check after 2026-10-28 02:17 UTC
+(Still open: re-verify the first post-deploy nightly backup after 2026-10-28 02:17 UTC — see `docs/SCA-OPTC-BACKUP-FIRST-NIGHTLY-OBSERVATION.md`.)
 
 **STATUS (2026-10-27T14:14Z):** READ-ONLY observation of the first nightly after deploy 6ebe968. Evidence: `docs/SCA-OPTC-BACKUP-FIRST-NIGHTLY-OBSERVATION.md`. No backup triggered; no restore/merge/deploy/restart/config.
 - **PENDING:** deploy landed ~14:09 UTC 2026-10-27; cron `17 3 * * *` = host TZ UTC+1 ⇒ **02:17 UTC** daily. Last run 2026-10-27 02:17 UTC was BEFORE deploy (old code). **First post-deploy nightly = 2026-10-28 02:17 UTC (not yet occurred).** Did NOT trigger a manual backup.
