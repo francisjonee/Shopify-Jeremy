@@ -1,4 +1,17 @@
-# SCA — SHOPIFY OAUTH "INSUFFICIENT SCOPE" DIAGNOSED (READ-ONLY): Shopify app-config missing read_products; owner must declare+release scope; AWAITING owner
+# SCA — SHOPIFY PRODUCT ACCESS VERIFIED (read_products LIVE); connection activated; next = webhooks + import (owner-gated)
+
+**STATUS (2026-10-27):** READ-ONLY post-OAuth verification PASS. Evidence: `docs/SCA-SHOPIFY-OAUTH-PRODUCT-ACCESS-VERIFICATION.md`. No import/webhook/product-change/migration; no token/credential/PII revealed.
+- **[1] Credential:** sca_shopify_credentials scope=`read_orders,read_products`, has_token=1, updated_at 2026-10-27 18:22:03 (re-consent stored both-scope token). Owner's Dev Dashboard scope declare+release worked.
+- **[2][3][4] Products:** ShopifyClient::isConfigured=yes; listProducts(null,5) → first_page_count=5, pagination_next=yes, NO auth error; getShop OK (domain match, plan professional); sample product id 9789314269471 variants=1.
+- **[5] Orders still work:** getOrder(8019293831455) OK (financial_status=refunded, 1 line item) — read_orders intact, no PII printed.
+- **[6] Catalog tables still EMPTY (0/0)** — nothing imported; live-but-dormant.
+- **Connection-level activation VERIFIED.** Remaining owner-gated (NOT done): register products/create|update|delete webhooks → run `sca:shopify:import-catalog` (idempotent) → verify catalog rows + provenance unchanged; reconcile-catalog stays unscheduled.
+
+**STOP — product access live & verified. Next activation steps (each separate auth): [A] register products/* webhooks (edge already routes POST /sca/shopify/webhook; verify HMAC=client_secret); [B] run initial catalog import.**
+
+---
+
+# (PRIOR) SCA — SHOPIFY OAUTH "INSUFFICIENT SCOPE" DIAGNOSED (READ-ONLY): app-config missing read_products
 
 **STATUS (2026-10-27):** READ-ONLY diagnosis of the callback "insufficient scope". Evidence: `docs/SCA-SHOPIFY-OAUTH-INSUFFICIENT-SCOPE-DIAGNOSIS.md`. No app-scope/config/deploy/OAuth/uninstall/prod change; no secrets printed; order integration preserved.
 - **ROOT CAUSE:** token exchange SUCCEEDED but Shopify's returned token `scope` omitted read_products → `grantedScopesSatisfyRequired` false → OAuthController callback step 5 `fail(403,'insufficient scope')` BEFORE `tokens->put()` (token NOT stored). SCA side is CORRECT (config scopes=read_orders,read_products; authorizeUrl requests both).
