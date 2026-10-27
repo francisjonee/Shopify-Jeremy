@@ -1,4 +1,17 @@
-# SCA — SHOPIFY PRODUCT WEBHOOK CONFIG PROPOSAL ready (shopify.app.toml); AWAITING owner deploy+release of new app version
+# SCA — SHOPIFY PRODUCT WEBHOOK RELEASE BLOCKED: no Partner auth on host + committed toml STALE (would strip read_products); owner CLI action needed
+
+**STATUS (2026-10-27):** App identity verified; release NOT performed. Evidence: `docs/SCA-SHOPIFY-PRODUCT-WEBHOOK-RELEASE-BLOCKED.md`. No app version released, no new app, no other app's creds, no SCA code/schema/service/inventory/product change.
+- **Found:** shopify CLI 4.8.5 present; app-config project at `/opt/sca-gov/shopify-app/shopify.app.toml` (tracked in gov); name "SCA Eyewear Registry", client_id MATCHES app/.env SHOPIFY_CLIENT_ID (same app, verified; no new app).
+- **⛔ BLOCKER A:** no ~/.config/shopify / no Partner session → `shopify app deploy` can't run non-interactively → STOP+instruct (per final clause).
+- **⛔ BLOCKER B:** committed toml is STALE — `[access_scopes] scopes="read_orders"` (NO read_products) + only the 3 order/refund webhooks. Live install granted read_orders,read_products (owner's earlier Dashboard fix). **Deploying this toml as-is would DOWNGRADE scopes and strip read_products** → must reconcile first. (Webhooks part is fine: 3 present, endpoint + api 2026-07 + redirect correct.)
+- **OWNER STEPS (authenticated workstation):** `shopify login` (correct Partner org) → `shopify app config link` (SCA Eyewear Registry, verify client_id) → **`shopify app config pull`** (reconcile stale scopes — MUST then show scopes=read_orders,read_products + 3 webhooks; if not, read_products missing from released config → STOP) → append product `[[webhooks.subscriptions]]` block (products/create|update|delete, same uri) → `shopify app deploy` (diff MUST show +3 product topics ONLY, scopes keep read_products, nothing removed) → release (sca-eyewear-registry-6). Did NOT edit the gov toml (editing could mislead a deploy; authoritative config via config pull).
+- SCA side healthy/unchanged (admin 200, scope read_orders,read_products, catalog 4565/5330, prov 3/3/5/4/3/1); receiver proven.
+
+**STOP — owner must authenticate + reconcile (config pull) + add product webhooks + deploy/release. After release: confirm 6 subs in active version + a delivered products/* receipt (processed) + provenance unchanged. Reconcile UNscheduled.**
+
+---
+
+# (PRIOR) SCA — SHOPIFY PRODUCT WEBHOOK CONFIG PROPOSAL ready (shopify.app.toml)
 
 **STATUS (2026-10-27):** Config proposal prepared (NOT released). Evidence: `docs/SCA-SHOPIFY-PRODUCT-WEBHOOK-CONFIG-PROPOSAL.md`. No app version deployed/released, no new app, no SCA server/inventory change.
 - **[4] Reuse existing app** (active version sca-eyewear-registry-5): adding subs = edit same app config + new version (auto sca-eyewear-registry-6), NOT a new app. Reuse the linked shopify.app.toml project (or Dev Dashboard).
