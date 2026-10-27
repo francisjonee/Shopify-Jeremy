@@ -1,4 +1,18 @@
-# SCA — SHOPIFY INVENTORY SYNC PHASE 1 MIGRATION PREFLIGHT (READ-ONLY): migration scope PROVEN SAFE, NOT BLOCKED; AWAITING CHATGPT + owner deploy approval
+# SCA — SHOPIFY INVENTORY SYNC PHASE 1 DEPLOYED (main 905ea7d, batch 28); tables live-but-dormant; prod data unchanged; AWAITING CHATGPT
+
+**STATUS (2026-10-27):** Authorized controlled deploy of candidate 9f05c8a DONE. Evidence: `docs/SCA-SHOPIFY-INVENTORY-SYNC-PHASE1-DEPLOY-RESULT.md`. No OAuth/scope/reauth, webhook register, import, reconcile schedule, Option C, unrelated migration, Docker recreate, or rollback.
+- **Deployed:** main `6ebe968`→merge **`905ea7d09661994a7aa22b0e9a5c966a8b4c2a95`** (2nd parent 9f05c8a; push 6ebe968..905ea7d). Rollback pin `shopify-p1-prerelease-pin→6ebe968`.
+- **Gates:** preflight reconfirmed (main/clean/backup/pending==2); merge --no-ff (on-disk change = EXACTLY 16 files, Shopify pkg + tests); migrate:status (case-sensitive) = ONLY the 2 Pending → `migrate --force` ran BOTH DONE (batch 27→28). [GOTCHA: case-insensitive grep 'pending' falsely matched migration NAME add_active_pending_guard; use case-sensitive 'Pending' for status — no migration ran at that false gate.]
+- **Post-checks PASS:** configtest Syntax OK + `apachectl -k graceful` (container NOT recreated, StartedAt 2026-10-18); admin/login 200 + passport /p 200; sca_shopify_products/variants EXIST + EMPTY (0/0); migrations 142 rows, maxbatch 28, exactly 2 rows@batch28; eyewear fingerprint UNCHANGED 3/3/5/4; 139/140 batch-27 untouched.
+- **LIVE-BUT-DORMANT:** catalog code + 2 empty tables live; product-sync/import/reconcile services inert (no products/* webhook registered, no read_products, no import run); order/sale-link path unchanged.
+- **Rollback (preserved, data-preserving, NOT migrate:rollback):** `git revert -m1 905ea7d` + advance tree + graceful reload; LEAVE tables+rows.
+- **Still owner-gated (NOT done):** read_products scope + merchant re-consent; products/* webhook registration; initial import; reconcile scheduling.
+
+**STOP — Phase 1 deployed; reported for ChatGPT review. No activation action; no further changes.**
+
+---
+
+# (PRIOR) SCA — SHOPIFY INVENTORY SYNC PHASE 1 MIGRATION PREFLIGHT (READ-ONLY): scope PROVEN SAFE
 
 **STATUS (2026-10-27T15:36Z):** READ-ONLY production migration preflight. Evidence: `docs/SCA-SHOPIFY-INVENTORY-SYNC-PHASE1-MIGRATION-PREFLIGHT.md`. No merge/deploy/migrate/restart/OAuth/webhook/import/prod change; Option C+139/140 untouched (not resolved).
 - **[1][2][3] MIGRATION SCOPE PROVEN SAFE:** diffed branch 9f05c8a migration files (141) vs prod sca_krayin applied rows (140). PENDING = EXACTLY the 2 Shopify catalog migrations (2026_10_27_000001/000002) → migrate runs ONLY these (batch 27→28; additive Schema::create). 139 (2026_10_20 qr reason) on-branch+applied→skipped. **140 (2026_10_21 activity_last_seen) = orphan-applied row with NO file on branch → migrate never attempts it (inert); 139/140 incident triggers NO extra migration.** NOT BLOCKED.
