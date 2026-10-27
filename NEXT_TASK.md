@@ -1,4 +1,19 @@
-# SCA — SHOPIFY INVENTORY SYNC PHASE 1 DB TEST PASS (21/21, disposable DB); prod unchanged; AWAITING CHATGPT
+# SCA — SHOPIFY INVENTORY SYNC PHASE 1 RELEASE READINESS (READ-ONLY): READY on owner approval; AWAITING CHATGPT
+
+**STATUS (2026-10-27):** READ-ONLY release prep. Evidence: `docs/SCA-SHOPIFY-INVENTORY-SYNC-PHASE1-RELEASE-READINESS.md`. No merge/deploy/migrate/scope/OAuth/webhook/import/restart/prod change; Option C+139/140 untouched.
+- **[1][2] Branch 9f05c8a directly on main 6ebe968 (clean merge, NO conflict); delta 16 files +1387/−4 CONFINED to app/packages/Sca/Shopify + app/tests; 2 ADDITIVE migrations (CREATE only, no ALTER); NO composer/config change. Code deploy is INERT until activation (empty tables, no product webhooks, no read_products).**
+- **[3] Deploy seq:** merge --no-ff 9f05c8a→main; advance live tree; **`artisan migrate --force` (2 new tables, batch 27→28; pre-check migrate:status shows ONLY the 2 pending; GOTCHA bare migrate=prod sca_krayin, intended here)**; `apachectl -k graceful` (changed WebhookController/Recorder/Topics/Provider). NO composer/rebuild. Rollback: revert-forward + `migrate:rollback --step=1` (drops the 2 empty tables, no data loss); never reset main.
+- **[4] OAuth:** prod SHOPIFY_SCOPES=read_orders; live credential token read_orders-only. Add read_products → set SHOPIFY_SCOPES=read_orders,read_products (scope string NOT secret; creds/token env-only, never printed; token stored encrypted) + merchant RE-CONSENT → new token. SHOP_DOMAIN second-chance-eyewear-accessories.myshopify.com, redirect .../sca/shopify/oauth/callback, api 2026-07; client_id/secret/webhook_secret present.
+- **[5] Webhooks:** add products/create|update|delete → https://verify.secondchanceauthenticators.com/sca/shopify/webhook (JSON, 2026-07, HMAC=client_secret); verify edge Caddy routes it (prior gov 8bc04d5); test delivery→200 + 1 receipt, replay→no 2nd row. Keep order/refund topics.
+- **[6] Import:** `php artisan sca:shopify:import-catalog` (explicit); verify counts + catalog rows>0 + provenance UNCHANGED (3/3/5/4) + no passport/QR + idempotent re-run (all unchanged). reconcile-catalog stays UNscheduled.
+- **[7] Merchant:** one click to approve "read products" (read-only; changes nothing in store); no secrets shared.
+- **VERDICT: READY to release on owner approval; activation gated on read_products re-consent + webhook registration + import.**
+
+**STOP — readiness report delivered for owner + ChatGPT. No release action; no further tests unless a concrete issue is found.**
+
+---
+
+# (PRIOR) SCA — SHOPIFY INVENTORY SYNC PHASE 1 DB TEST PASS (21/21, disposable DB); prod unchanged
 
 **STATUS (2026-10-27):** Authorized ONE isolated DB-test session executed. Evidence: `docs/SCA-SHOPIFY-INVENTORY-SYNC-PHASE1-DB-TEST-RESULT.md`. Disposable DB only; dropped+verified; prod sca_krayin UNCHANGED. No prod-migrate/merge/deploy/live-Shopify/OAuth/webhook; no full-regression/baseline; Option C+139/140 untouched.
 - **Run SHA `9f05c8a`** = reviewed `e96700b` + TEST-ONLY DB-guard parameterization (SCA_TEST_DB; refuses sca_krayin); product/service code byte-identical to e96700b. Worktree; live main 6ebe968 untouched. Pushed origin.
