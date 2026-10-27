@@ -1,4 +1,17 @@
-# SCA — RESTORE-VERIFY TOOLING SAFETY CORRECTIONS DONE (branch b14439c; mocked tests 22/22); NO real restore; AWAITING CHATGPT + OWNER AUTH
+# SCA — RESTORE-VERIFY FINAL TWO SAFETY CHECKS DONE (branch 95c15d3; mocked 35/35); NO real restore; AWAITING CHATGPT + OWNER AUTH
+
+**STATUS (2026-10-27):** Two more isolated corrections to `scripts/backup-verify-restore.sh` (after conditionally-accepted review of b14439c). Evidence: `docs/SCA-OPTC-BACKUP-FIX-RESTORE-SAFETY-CORRECTIONS-2.md`. Done in a git WORKTREE (live checkout untouched = main 6022b75 clean). NO real restore/merge/deploy/migration/service/backup-config change.
+- **SHA:** branch `b14439c`→**`95c15d3f5dde1162f6ede442b87a007b87835ccd`** (pushed origin). Changed backup-verify-restore.sh + test-restore-verify-safety.sh. backup-run.sh/lib-docsnapshot.sh/DocumentService.php UNTOUCHED.
+- **Correction 1 (cleanup fatal):** `cleanup_created_dbs` drops `2>/dev/null||true` (shows original mysql error), records CLEANUP_ERR, returns nonzero. Shared `final_cleanup` EXIT trap (both selftest+verify): shred WORK → cleanup; on failure prints `CLEANUP INCOMPLETE` + leftover DB name + `(original failure preserved: body exited N)` and exits nonzero EVEN IF body succeeded. Success lines (SELFTEST PASS / RESTORE VERIFICATION PASS) deferred to RESULT_MSG, printed ONLY after DB actually dropped → success never reported on incomplete cleanup.
+- **Correction 2 (app-read DB pin):** php guard asserts `getenv(DB_DATABASE)`==`DB::connection()->getDatabaseName()`==live `SELECT DATABASE()` all == injected TARGET before reading tables; else emits DB_IDENTITY_MISMATCH + exit 3; shell aborts unless output exactly `items=N state=N`. Catches app reading live sca_krayin via stale .env.
+- **Mocked tests 35/35 PASS** (`bash scripts/test-restore-verify-safety.sh scripts/backup-verify-restore.sh`): preserved T1-T6 + new T7a-d (cleanup fatal/no-false-success/reason-preserved/revoke-fatal) + T8 (identity mismatch abort / match pass) + static asserts. bash -n clean.
+- Procedure unchanged except staged tip now 95c15d3; `CLEANUP INCOMPLETE`/`DB identity mismatch` = hard stop.
+
+**STOP — corrected tooling + mocked tests delivered for independent ChatGPT review. Do NOT execute real restore; await explicit owner authorization. No merge/deploy/migration/service/backup-config change.**
+
+---
+
+# (PRIOR) SCA — RESTORE-VERIFY TOOLING SAFETY CORRECTIONS DONE (branch b14439c; mocked tests 22/22); NO real restore; AWAITING CHATGPT + OWNER AUTH
 
 **STATUS (2026-10-27):** Isolated safety corrections to `scripts/backup-verify-restore.sh` + mocked tests. Evidence: `docs/SCA-OPTC-BACKUP-FIX-268C637-RESTORE-SAFETY-CORRECTIONS.md`. Done in a git WORKTREE (live checkout untouched = main 6022b75 clean). NO real restore/merge/deploy/migration/service/backup-config change.
 - **SHA:** branch `fix/sca-backup-document-consistency` `268c637`→**`b14439cf819ac25a3dea07dfd8412671d00f009e`** (pushed origin github-sca-platform). Changed `scripts/backup-verify-restore.sh` (+77/−19); added `scripts/test-restore-verify-safety.sh`. backup-run.sh/lib-docsnapshot.sh/DocumentService.php UNTOUCHED.
