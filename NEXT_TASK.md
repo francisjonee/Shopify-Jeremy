@@ -1,4 +1,19 @@
-# SCA — CONTROLLED RESTORE-VERIFICATION EXECUTED: PASS (R1 cleared); prod unchanged; AWAITING CHATGPT
+# SCA — BACKUP FIX RELEASE PREFLIGHT (READ-ONLY): GO to merge+deploy; AWAITING EXPLICIT OWNER APPROVAL
+
+**STATUS (2026-10-27):** READ-ONLY final release preflight for the backup-hardening delta. Evidence: `docs/SCA-OPTC-BACKUP-FIX-RELEASE-PREFLIGHT.md`. Nothing merged/deployed/restarted/migrated/reconfigured; no backup created.
+- **[1] SHAs:** main=`6022b75`, branch=`95c15d3`, merge-base==main ⇒ branch directly on current main (clean merge). Live app = bind-mounted working tree = main 6022b75.
+- **[2] Standalone diff = 6 files (+877/−57), ONLY intended backup-hardening:** DocumentService.php (app write-atomicity) + BackupDocumentAtomicityTest + backup-run.sh + lib-docsnapshot.sh(new) + backup-verify-restore.sh + test-restore-verify-safety.sh(new). NO migration/composer/config/bootstrap/.env; retention unchanged.
+- **[3] Rollback:** code-only, NO DB rollback (no migration); revert 6 files→6022b75 + re-run deploy-preview.sh + graceful reload; DocumentService.php forward-safe (may stay). Revert-forward only, never reset shared main.
+- **[4] Deploy:** (A) `git merge --no-ff 95c15d3`→main, push. (B) `scripts/deploy-preview.sh` (reset --hard origin/main advances app/+scripts/ together; composer no-op; suite vs sca_domain_test; `migrate --force`=NO-OP no pending migration; config/route clear). (C) **required opcache reload `docker exec kr-app apachectl -k graceful`** (zero-downtime, NOT restart; opcache enable=On validate_timestamps=On freq=2 → graceful makes pickup deterministic).
+- **[5] Post-deploy:** app 200 + passport renders; existing doc stream loads; **first nightly (03:17 UTC) logs OK with new snapshot+verify_db_document_refs** (R1 cleared → should pass; fail-closed→no artifact); then `backup-verify-restore.sh verify <new-artifact>` (disposable).
+- **[6] Safeguards:** run verify PLAIN + BACKGROUND, never `bash -x|grep` or kill -9 (SIGKILL skips EXIT final_cleanup → orphan `*_restore_verify_<hex>` DB + multi-GB staging; create happens only AFTER decrypt). Orphan ID: schemata LIKE restore_verify/backup_selftest + grants + backups/.work; remove only disposable names (never sca_krayin). Follow-up: add `trap final_cleanup INT TERM`.
+- **[7] GO/NO-GO: GO** to merge+deploy on explicit owner approval; off-host B1–B4 remains separate open DR item (not a blocker for this code-only release).
+
+**STOP — read-only preflight delivered. Await EXPLICIT owner approval before release execution. No merge/deploy/restart/migration/config/backup action.**
+
+---
+
+# (PRIOR) SCA — CONTROLLED RESTORE-VERIFICATION EXECUTED: PASS (R1 cleared); prod unchanged; AWAITING CHATGPT
 
 **STATUS (2026-10-27):** Authorized ONE controlled restore-verification of the 2026-10-27 encrypted backup via branch `95c15d3` in an isolated worktree, disposable DB only. Evidence: `docs/SCA-OPTC-BACKUP-RESTORE-VERIFICATION-RESULT.md`. NO prod DB restore/modify, NO backup create/delete, NO merge/deploy/migration/service-restart/config/integration change.
 - **Pre-flight PASS:** identity sca_krayin; kr-mariadb+kr-app up; no stray disposable DBs; checksum 42e7aadd…==sidecar==log; key 0600; 317G free; cron 17 3 * * *; 10 artifacts; baseline items=3 state=3 owns=5 certs=4 batch=27.
