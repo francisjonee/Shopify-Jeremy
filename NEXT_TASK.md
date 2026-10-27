@@ -1,4 +1,19 @@
-# SCA — BACKUP FIX RELEASE PREFLIGHT (READ-ONLY): GO to merge+deploy; AWAITING EXPLICIT OWNER APPROVAL
+# SCA — BACKUP FIX MINIMAL DEPLOY PLAN (READ-ONLY, commands for review): deploy-preview.sh REJECTED; AWAITING OWNER + CHATGPT
+
+**STATUS (2026-10-27):** READ-ONLY corrected deployment plan (deploy-preview.sh NOT approved — it does reset --hard/composer/tests/migrate/rebuild). Evidence: `docs/SCA-OPTC-BACKUP-FIX-MINIMAL-DEPLOY-PLAN.md`. Commands for review only, NOT executed. No merge/deploy/reload/restart/DB/backup-config change.
+- **Delta = 6 files, NO migration** (verified), Option C `0f41e2e` DISJOINT (no overlap), 6022b75 ancestor of 95c15d3 (clean merge touches only the 6). Live app = bind-mounted working tree → file update IS the deploy (no rebuild/recreate/composer/migrate).
+- **Minimal deploy:** (A) `git merge --no-ff --no-edit 95c15d3` (updates ONLY the 6 files in live working tree; NO reset --hard, NO deploy-preview.sh); (A') verify `git diff --name-only HEAD@{1} HEAD`==6 paths; (B) `git push origin main`; (C) `docker exec kr-app apachectl -k graceful` (controlled opcache reload, zero-downtime, NOT restart/recreate). No chown needed.
+- **Preflight:** clean tree + HEAD==6022b75==origin/main; branch tip==95c15d3 & ancestor; delta==6 files & no migrations; containers up; record batch 27 baseline.
+- **Rollback (code-only, NO DB):** revert-forward `git revert -m 1 <merge>` + push + graceful reload; emergency `git checkout 6022b75 -- <6 paths>` + reload. Never reset/force-push main.
+- **Post-deploy:** curl 200 + passport render; existing doc stream; `apachectl configtest`; batch still 27 (no migrate ran); first nightly logs OK w/ new verify stage; then restore-proof first new artifact (disposable, plain+background).
+- **Failure-stop:** any preflight fail→STOP; merge conflict/>6 files→`git merge --abort`; push rejected→re-preflight; graceful nonzero→configtest/retry, do NOT restart container; health fail→rollback.
+- **[7] PRESERVES 139/140 (no migrate, no migration file) + Option C (never checked out/merged, disjoint).**
+
+**STOP — read-only corrected deploy plan delivered for owner + ChatGPT. Commands for review only; nothing executed. Await explicit owner approval.**
+
+---
+
+# (PRIOR) SCA — BACKUP FIX RELEASE PREFLIGHT (READ-ONLY): GO to merge+deploy; AWAITING EXPLICIT OWNER APPROVAL
 
 **STATUS (2026-10-27):** READ-ONLY final release preflight for the backup-hardening delta. Evidence: `docs/SCA-OPTC-BACKUP-FIX-RELEASE-PREFLIGHT.md`. Nothing merged/deployed/restarted/migrated/reconfigured; no backup created.
 - **[1] SHAs:** main=`6022b75`, branch=`95c15d3`, merge-base==main ⇒ branch directly on current main (clean merge). Live app = bind-mounted working tree = main 6022b75.
