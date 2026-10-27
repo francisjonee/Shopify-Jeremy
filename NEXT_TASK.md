@@ -1,4 +1,16 @@
-# SCA — ADMIN ACCESS RESTORED: owner IP 103.200.35.3/32 added to Caddy @staff allowlist (graceful reload); OAuth Step 1 can resume
+# SCA — SHOPIFY OAUTH "INSUFFICIENT SCOPE" DIAGNOSED (READ-ONLY): Shopify app-config missing read_products; owner must declare+release scope; AWAITING owner
+
+**STATUS (2026-10-27):** READ-ONLY diagnosis of the callback "insufficient scope". Evidence: `docs/SCA-SHOPIFY-OAUTH-INSUFFICIENT-SCOPE-DIAGNOSIS.md`. No app-scope/config/deploy/OAuth/uninstall/prod change; no secrets printed; order integration preserved.
+- **ROOT CAUSE:** token exchange SUCCEEDED but Shopify's returned token `scope` omitted read_products → `grantedScopesSatisfyRequired` false → OAuthController callback step 5 `fail(403,'insufficient scope')` BEFORE `tokens->put()` (token NOT stored). SCA side is CORRECT (config scopes=read_orders,read_products; authorizeUrl requests both).
+- **[4] CREDENTIAL INTACT:** sca_shopify_credentials scope=read_orders, has_token=1 (len 256), updated_at 2026-10-05 UNCHANGED → failed callback did NOT overwrite/damage; orders unaffected.
+- **[2][5] WHY:** modern Shopify apps use CONFIG-BASED (managed) scopes — granted scopes come from the app's declared Access scopes (shopify.app.toml/Dev Dashboard), authorize `scope` param ignored/capped. read_products almost certainly NOT declared+released in the app config → not granted. (read_products is not protected data, so not an approval restriction.)
+- **[6] FIX (owner, no SCA change):** (1) add read_products to the Shopify app's Access scopes (keep read_orders); (2) DEPLOY/RELEASE the app config version; (3) re-run connect from allowlisted IP 103.200.35.3 → store admin approves (now shows read products) → callback stores both-scope token; (4) verify sca_shopify_credentials.scope includes read_products + read-only product probe. Do NOT uninstall/reinstall unless dashboard requires; do NOT weaken grantedScopesSatisfyRequired. SHOPIFY_SCOPES already correct.
+
+**STOP — diagnosis delivered; owner updates the Shopify app config (declare+release read_products) then re-consents. No secrets exposed; order integration intact.**
+
+---
+
+# (PRIOR) SCA — ADMIN ACCESS RESTORED: owner IP 103.200.35.3/32 added to Caddy @staff allowlist
 
 **STATUS (2026-10-27):** Authorized minimal change EXECUTED + verified. Evidence: `docs/SCA-ADMIN-403-ALLOWLIST-FIX-RESULT.md`. Allowlist NOT disabled; both existing staff IPs preserved; admin NOT public; no recreate/restart; smsrocket uninterrupted; no Shopify change.
 - Added `103.200.35.3/32` (valid public IPv4) to `@staff remote_ip` (2→3 IPs, append-only). Backup `/opt/smsrocket-stack/Caddyfile.bak.20261027T172637Z`.
