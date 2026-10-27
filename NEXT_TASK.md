@@ -1,4 +1,17 @@
-# SCA — SHOPIFY PRODUCT ACCESS VERIFIED (read_products LIVE); connection activated; next = webhooks + import (owner-gated)
+# SCA — INITIAL SHOPIFY CATALOG IMPORT DONE: 4565 products / 5330 variants; prod provenance UNCHANGED; next = products/* webhooks (owner-gated)
+
+**STATUS (2026-10-27):** Authorized ONE import executed + verified. Evidence: `docs/SCA-SHOPIFY-CATALOG-IMPORT-RESULT.md`. No webhook register / reconcile schedule / code / migration / Shopify modification / Option C.
+- **Preflight:** SHA 905ea7d; scope read_orders,read_products; catalog empty 0/0; baseline prov items3/state3/own5/cert4/qr3/grant1/batch28; backup OK; app 200.
+- **[4][5] `sca:shopify:import-catalog` (once, exit 0):** products 4565 / created 4565 / updated 0 / unchanged 0 / stale 0 / rejected 0 / pages 46.
+- **[6] No duplicates:** sca_shopify_products 4565 rows = 4565 distinct pid; sca_shopify_variants 5330 rows = 5330 distinct vid; dup 0/0. Status (mirrors Shopify): active1697/archived2788/draft80. 173 variants qty>1 = 1 catalog row each (NOT physical items).
+- **[7] PROVENANCE UNCHANGED (diff empty):** items3/state3/own5/cert4/qr3/grant1/batch28 == baseline. NO eyewear/cert/ownership/QR/claim-link created. Catalog-only invariant held in prod.
+- **[8] Health:** admin/login 200; getShop OK; getOrder(8019293831455) OK (read_orders intact).
+
+**STOP — catalog import complete + verified for independent review. REMAINING owner-gated: register products/create|update|delete webhooks (incremental sync; edge routes POST /sca/shopify/webhook, HMAC=client_secret); reconcile-catalog stays UNscheduled.**
+
+---
+
+# (PRIOR) SCA — SHOPIFY PRODUCT ACCESS VERIFIED (read_products LIVE); connection activated
 
 **STATUS (2026-10-27):** READ-ONLY post-OAuth verification PASS. Evidence: `docs/SCA-SHOPIFY-OAUTH-PRODUCT-ACCESS-VERIFICATION.md`. No import/webhook/product-change/migration; no token/credential/PII revealed.
 - **[1] Credential:** sca_shopify_credentials scope=`read_orders,read_products`, has_token=1, updated_at 2026-10-27 18:22:03 (re-consent stored both-scope token). Owner's Dev Dashboard scope declare+release worked.
