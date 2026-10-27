@@ -1,4 +1,19 @@
-# SCA — SHOPIFY INVENTORY SYNC PHASE 1 FINAL SNAPSHOT CORRECTION (branch e96700b); non-destructive PASS; DB tests NOT run; AWAITING CHATGPT + separate auth
+# SCA — SHOPIFY INVENTORY SYNC PHASE 1 DB TEST PASS (21/21, disposable DB); prod unchanged; AWAITING CHATGPT
+
+**STATUS (2026-10-27):** Authorized ONE isolated DB-test session executed. Evidence: `docs/SCA-SHOPIFY-INVENTORY-SYNC-PHASE1-DB-TEST-RESULT.md`. Disposable DB only; dropped+verified; prod sca_krayin UNCHANGED. No prod-migrate/merge/deploy/live-Shopify/OAuth/webhook; no full-regression/baseline; Option C+139/140 untouched.
+- **Run SHA `9f05c8a`** = reviewed `e96700b` + TEST-ONLY DB-guard parameterization (SCA_TEST_DB; refuses sca_krayin); product/service code byte-identical to e96700b. Worktree; live main 6ebe968 untouched. Pushed origin.
+- **Isolation:** unique DB `sca_shopify_p1_74d640a161a9` created after existence-check; verified effective getDatabaseName()==live SELECT DATABASE()==disposable (not sca_krayin). Dev vendor built in worktree (live vendor is --no-dev); ephemeral container reached kr-mariadb on sca_internal with DB_DATABASE injected.
+- **Result: PASS — 21 tests / 67 assertions / 0 fail / 0 skip / 0 warn** (phpunit 11.5.50, PHP 8.3.33). Migrated full schema incl. 2 new catalog migrations. Verified: dup prevention, update+no-provenance, stale, incomplete/null/malformed/empty/partial-malformed/non-array/duplicate-id snapshots (no wrongful archive) + fully-valid still archives, reversible delete+revive, reconciliation-confirm-only-when-absent, missing/invalid/per-variant-unorderable ts fail-closed, variant qty>1→1 row+0 items, webhook replay idempotent, bad-sig 401 writes nothing.
+- **[7] Catalog-only:** disposable DB 0 rows in eyewear_items/state/ownership/certs/qr/claim_grants AND catalog tables (rollback) → no physical/passport/ownership/claim records.
+- **[9] Cleanup:** disposable DB dropped, grant revoked (0 residual), DBs back to baseline; worktree+vendor removed.
+- **[10] Prod UNCHANGED:** sca_krayin 3/3/5/4 batch 27; kr-app 200.
+- **Remaining activation (owner):** read_products scope + OAuth re-consent; register products/* webhooks; deploy (code + 2 additive migrations) via minimal-deploy; initial import; optional reconcile schedule.
+
+**STOP — DB test PASS delivered for ChatGPT review. No further DB runs / merge / deploy / scope / webhook action under this authorization.**
+
+---
+
+# (PRIOR) SCA — SHOPIFY INVENTORY SYNC PHASE 1 FINAL SNAPSHOT CORRECTION (branch e96700b)
 
 **STATUS (2026-10-27):** Final variant-snapshot fix on feat/sca-shopify-inventory-sync (worktree; live main 6ebe968 untouched). Evidence: `docs/SCA-SHOPIFY-INVENTORY-SYNC-PHASE1-SNAPSHOT-CORRECTION.md`. No prod/merge/deploy/live-Shopify/OAuth/webhook-register; all other Phase 1 behavior preserved.
 - **SHA:** `5f53bec`→**`e96700b9a369ac259cd8a14c1162622fb16e6898`** (pushed). 2 files (ProductCatalogService::syncVariants + test).
