@@ -1,4 +1,18 @@
-# SCA — RESTORE-VERIFY FINAL TWO SAFETY CHECKS DONE (branch 95c15d3; mocked 35/35); NO real restore; AWAITING CHATGPT + OWNER AUTH
+# SCA — CONTROLLED RESTORE-VERIFICATION EXECUTED: PASS (R1 cleared); prod unchanged; AWAITING CHATGPT
+
+**STATUS (2026-10-27):** Authorized ONE controlled restore-verification of the 2026-10-27 encrypted backup via branch `95c15d3` in an isolated worktree, disposable DB only. Evidence: `docs/SCA-OPTC-BACKUP-RESTORE-VERIFICATION-RESULT.md`. NO prod DB restore/modify, NO backup create/delete, NO merge/deploy/migration/service-restart/config/integration change.
+- **Pre-flight PASS:** identity sca_krayin; kr-mariadb+kr-app up; no stray disposable DBs; checksum 42e7aadd…==sidecar==log; key 0600; 317G free; cron 17 3 * * *; 10 artifacts; baseline items=3 state=3 owns=5 certs=4 batch=27.
+- **Selftests PASS:** `selftest` (tamper-detect, rows=2, trigger enforced, doc sha match) + `doc-consistency-selftest` (A–M fail-closed).
+- **Real restore PASS** into disposable `sca_krayin_restore_verify_dfe153bc9551`: artifact sha verified; db vs manifest; tables=100 triggers=46 FK=129; referential OK; **app read PINNED to disposable (items=3 state=3)**; docs 4605 intact; **verify_db_document_refs OK on restored artifact ⇒ R1 CLEARED**; disposable DB dropped; exit 0.
+- **Cleanup PASS:** only sca_krayin+system DBs remain; no restore_verify grant; backups/.work 0 entries; worktree removed; live main 6022b75 clean.
+- **Prod unchanged PASS:** sca_krayin fingerprint identical (3/3/5/4, batch 27); containers up; cron/retention/10-artifacts/artifact-sha all unchanged; 139/140 untouched.
+- **Note:** a first `bash -x|grep` trace was stopped mid-restore (SIGKILL skipped EXIT cleanup) → left 1 orphan disposable DB + staging; both manually removed/verified gone before the clean run. No prod object touched.
+
+**STOP — controlled restore-verification PASS delivered for independent ChatGPT review. Backup-DR restore-proof gate (R1) satisfied. No merge/deploy/migration/prod-mutation/service/config/integration change.**
+
+---
+
+# (PRIOR) SCA — RESTORE-VERIFY FINAL TWO SAFETY CHECKS DONE (branch 95c15d3; mocked 35/35); NO real restore; AWAITING CHATGPT + OWNER AUTH
 
 **STATUS (2026-10-27):** Two more isolated corrections to `scripts/backup-verify-restore.sh` (after conditionally-accepted review of b14439c). Evidence: `docs/SCA-OPTC-BACKUP-FIX-RESTORE-SAFETY-CORRECTIONS-2.md`. Done in a git WORKTREE (live checkout untouched = main 6022b75 clean). NO real restore/merge/deploy/migration/service/backup-config change.
 - **SHA:** branch `b14439c`→**`95c15d3f5dde1162f6ede442b87a007b87835ccd`** (pushed origin). Changed backup-verify-restore.sh + test-restore-verify-safety.sh. backup-run.sh/lib-docsnapshot.sh/DocumentService.php UNTOUCHED.
