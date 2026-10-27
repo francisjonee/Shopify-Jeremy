@@ -1,4 +1,20 @@
-# SCA — BACKUP FIX MINIMAL DEPLOY PLAN (READ-ONLY, commands for review): deploy-preview.sh REJECTED; AWAITING OWNER + CHATGPT
+# SCA — BACKUP FIX DEPLOYED (main 6ebe968); all checks PASS; prod unchanged; AWAITING CHATGPT
+
+**STATUS (2026-10-27):** Authorized controlled standalone deploy of backup-consistency release 95c15d3 via the MINIMAL plan (deploy-preview.sh NOT used). Evidence: `docs/SCA-OPTC-BACKUP-FIX-DEPLOY-RESULT.md`. NO reset --hard/force-push, NO migration/DB-test/composer/Docker-rebuild/recreate/config/Option-C/Shopify/Stripe/SMTP; NO backup/restore started.
+- **Deployed SHA:** prior main `6022b75` → **merge `6ebe9686a5ad3cecf115eb058f98c0dfc52fa3f9`** (push 6022b75..6ebe968; 2nd parent 95c15d3). Live working-tree HEAD=6ebe968 (bind-mount → app live).
+- **Preflight PASS:** clean tree, HEAD==origin/main==6022b75, branch==95c15d3 ff-descendant, delta==6 files no migration, containers up.
+- **Rollback prepared+pinned** `backup-prerelease-pin→6022b75` (verified pre-images) BEFORE merge; primary = `git revert -m 1 6ebe968`+push+graceful; code-only NO DB. Not needed (all passed).
+- **Deploy PASS:** `git merge --no-ff 95c15d3` (on-disk change = EXACTLY the 6 files, asserted) → push → `apachectl configtest`=Syntax OK → `apachectl -k graceful` (container NOT recreated; StartedAt 2026-10-18 unchanged).
+- **[7] Health PASS:** `/p/{token}` 200 (194KB, content rendered); `/p/{token}/image` 200 image/png (document access OK); `/admin/login` 200; no 5xx.
+- **[8] DB UNCHANGED:** items/state/owns/certs 3/3/5/4; migrations 140 rows/batch 27; migrations-sha 3b38ae24 == baseline. No migrate ran; 139/140 untouched; Option C 0f41e2e unmerged.
+- **[9] cron/retention/artifacts INTACT:** cron 03:17; 10 artifacts; sha-list 1790976606 == baseline. backup-run.sh now has doc-consistency stage → **FIRST NIGHTLY 03:17 UTC = first-backup validation (pending; not run under this auth)**.
+- **B5 (doc-consistency) now CLOSED+DEPLOYED.** Off-host B1–B4 + key escrow remain separate open DR item.
+
+**STOP — controlled backup-fix deploy PASS delivered for independent ChatGPT review. Next: observe first post-deploy nightly (03:17 UTC) logs OK + optionally restore-proof the first new artifact (disposable, separate auth). No further action under this authorization.**
+
+---
+
+# (PRIOR) SCA — BACKUP FIX MINIMAL DEPLOY PLAN (READ-ONLY, commands for review): deploy-preview.sh REJECTED; AWAITING OWNER + CHATGPT
 
 **STATUS (2026-10-27):** READ-ONLY corrected deployment plan (deploy-preview.sh NOT approved — it does reset --hard/composer/tests/migrate/rebuild). Evidence: `docs/SCA-OPTC-BACKUP-FIX-MINIMAL-DEPLOY-PLAN.md`. Commands for review only, NOT executed. No merge/deploy/reload/restart/DB/backup-config change.
 - **Delta = 6 files, NO migration** (verified), Option C `0f41e2e` DISJOINT (no overlap), 6022b75 ancestor of 95c15d3 (clean merge touches only the 6). Live app = bind-mounted working tree → file update IS the deploy (no rebuild/recreate/composer/migrate).
