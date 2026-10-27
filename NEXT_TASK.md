@@ -1,4 +1,19 @@
-# SCA — SHOPIFY ACTIVATION STEP 1: OAuth read_products PREP (READ-ONLY); AWAITING APPROVAL before scope change/OAuth
+# SCA — SHOPIFY OAUTH ACTIVATION STEP 1: scope change DONE; merchant approval PENDING (interactive)
+
+**STATUS (2026-10-27):** Authorized scope change applied; OAuth re-consent is interactive + PENDING. Evidence: `docs/SCA-SHOPIFY-INVENTORY-SYNC-PHASE1-OAUTH-ACTIVATION-RESULT.md`. No webhook register/import/reconcile/deploy/migrate/ownership change; no credential exposed; Option C+139/140 untouched.
+- **[2] DONE:** app/.env `SHOPIFY_SCOPES=read_orders`→`read_orders,read_products` (ONE line; backup `app/.env.bak.preoauth.20261027T155210Z` 0600 kept; verified only that line differs, secrets untouched).
+- **[4] Verified:** effective config scopes=read_orders,read_products; OAuthService::requiredScopes=[read_orders,read_products]. Config not cached → live immediately (no restart).
+- **[3] Preserved:** credential row unchanged (scope=read_orders, has_token=1, token 2026-10-05); order webhooks + sale-link path untouched.
+- **[5] Callback:** GET /sca/shopify/oauth/callback → 400 (public + loopback) = reachable + fail-closed + edge-routed.
+- **[6] CONNECTION URL:** `https://verify.secondchanceauthenticators.com/admin/sca/shopify/connect` (staff ACL sca.shopify.view opens → app 302s to Shopify authorize requesting read_orders,read_products → STORE ADMIN approves).
+- **[7][8][9] PENDING:** merchant has NOT re-consented (stored scope still read_orders). Cannot bypass. After approval, re-run: verify sca_shopify_credentials.scope includes read_products (+newer updated_at), then read-only getProduct/listProducts probe (NO import).
+- **ROLLBACK:** `cp -p app/.env.bak.preoauth.20261027T155210Z app/.env` (reverts scope; no token/DB change).
+
+**STOP — scope live, approval PENDING. Owner: have the Shopify admin open the connection URL + approve, then re-run steps 8–9. NOT AUTHORIZED next: webhook registration, import, reconcile scheduling.**
+
+---
+
+# (PRIOR) SCA — SHOPIFY ACTIVATION STEP 1: OAuth read_products PREP (READ-ONLY); AWAITING APPROVAL
 
 **STATUS (2026-10-27):** READ-ONLY OAuth preparation. Evidence: `docs/SCA-SHOPIFY-INVENTORY-SYNC-PHASE1-OAUTH-PREP.md`. No scope change/reauth/webhook/import/migrate/merge/restart; no credential exposed; Option C untouched.
 - **[1] Observed:** SHOP second-chance-eyewear-accessories.myshopify.com; SHOPIFY_SCOPES=read_orders; api 2026-07; redirect https://verify.secondchanceauthenticators.com/sca/shopify/oauth/callback; client_id/secret/webhook_secret present (values NOT shown). Credential row scope=read_orders, has_token=1. Config NOT cached (env read live; config:clear only if ever cached).
