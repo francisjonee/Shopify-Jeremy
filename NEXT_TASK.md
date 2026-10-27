@@ -1,4 +1,17 @@
-# SCA — SHOPIFY INVENTORY SYNC PHASE 1 DEPLOYED (main 905ea7d, batch 28); tables live-but-dormant; prod data unchanged; AWAITING CHATGPT
+# SCA — SHOPIFY ACTIVATION STEP 1: OAuth read_products PREP (READ-ONLY); AWAITING APPROVAL before scope change/OAuth
+
+**STATUS (2026-10-27):** READ-ONLY OAuth preparation. Evidence: `docs/SCA-SHOPIFY-INVENTORY-SYNC-PHASE1-OAUTH-PREP.md`. No scope change/reauth/webhook/import/migrate/merge/restart; no credential exposed; Option C untouched.
+- **[1] Observed:** SHOP second-chance-eyewear-accessories.myshopify.com; SHOPIFY_SCOPES=read_orders; api 2026-07; redirect https://verify.secondchanceauthenticators.com/sca/shopify/oauth/callback; client_id/secret/webhook_secret present (values NOT shown). Credential row scope=read_orders, has_token=1. Config NOT cached (env read live; config:clear only if ever cached).
+- **[2] Minimal change (prepared, NOT applied):** app/.env one line `SHOPIFY_SCOPES=read_orders`→`read_orders,read_products` (ADDITIVE; not a secret; no code change — flow already supports multi-scope; OAuthService::authorizeUrl emits SHOPIFY_SCOPES).
+- **[3] Verify:** shop domain matches credential; redirect path route resolves (sca.shopify.oauth.callback), HTTPS exact. OWNER must confirm (external): Dev Dashboard redirect-URL allowlist includes the exact URL + edge Caddy routes /sca/shopify/oauth/callback→kr-app (gov 8bc04d5).
+- **[4] Authorize + approval:** staff (ACL sca.shopify.view) opens `https://verify.secondchanceauthenticators.com/admin/sca/shopify/connect` → app 302s to `https://<shop>/admin/oauth/authorize?client_id=<CLIENT_ID>&scope=read_orders,read_products&redirect_uri=<callback>&state=<nonce>` → MERCHANT (store admin) approves added "read products" → callback verifies state+HMAC+shop, exchanges code→new token (read_orders,read_products) stored ENCRYPTED → verify sca_shopify_credentials.scope includes read_products.
+- **[5] Preserved:** additive → read_orders + order webhooks (orders/paid|cancelled, refunds/create) + sale-link path untouched. [6] No token/secret/client-id value revealed.
+
+**STOP — prep delivered; await approval before editing SHOPIFY_SCOPES or initiating OAuth. Next activation steps after this: register products/* webhooks; run initial import.**
+
+---
+
+# (PRIOR) SCA — SHOPIFY INVENTORY SYNC PHASE 1 DEPLOYED (main 905ea7d, batch 28); tables live-but-dormant; prod data unchanged
 
 **STATUS (2026-10-27):** Authorized controlled deploy of candidate 9f05c8a DONE. Evidence: `docs/SCA-SHOPIFY-INVENTORY-SYNC-PHASE1-DEPLOY-RESULT.md`. No OAuth/scope/reauth, webhook register, import, reconcile schedule, Option C, unrelated migration, Docker recreate, or rollback.
 - **Deployed:** main `6ebe968`→merge **`905ea7d09661994a7aa22b0e9a5c966a8b4c2a95`** (2nd parent 9f05c8a; push 6ebe968..905ea7d). Rollback pin `shopify-p1-prerelease-pin→6ebe968`.
