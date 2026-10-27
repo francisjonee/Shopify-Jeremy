@@ -1,4 +1,16 @@
-# SCA — SHOPIFY PRODUCT WEBHOOK RELEASE BLOCKED: no Partner auth on host + committed toml STALE (would strip read_products); owner CLI action needed
+# SCA — SHOPIFY CLI AUTH RECOVERY: interactive `shopify auth login` must be owner-run; toml backed up; config pull PENDING
+
+**STATUS (2026-10-27):** Prepared auth recovery; interactive login cannot run headless. Evidence: `docs/SCA-SHOPIFY-CLI-AUTH-RECOVERY.md`. No deploy, no product-webhook add, no new app, no scope change, no credential exposed, no SCA prod change.
+- **[1][5] DONE:** project /opt/sca-gov/shopify-app; backed up `shopify.app.toml.bak.20261027T190333Z`.
+- **[2][3] Auth = `shopify auth login` (CLI 4.8.5), INTERACTIVE-ONLY** — CLI refuses non-interactive ("run in an interactive environment"); also uses localhost loopback callback → must run where owner's browser reaches the CLI. Cannot do from this automated/headless session; did NOT bypass. Owner runs it: Option A (own workstation, clone gov shopify-app/) or Option B (interactive SSH with `ssh -L 3456:localhost:3456` tunnel for the callback). Then `shopify app config link --client-id <SCA Eyewear Registry client_id>` (verify name) → `shopify app config pull`.
+- **[4][6][7][8] PENDING auth:** after pull, confirm toml retains scopes=read_orders,read_products (⚠️ committed toml STALE=read_orders only; pull must restore read_products, else STOP), 3 order/refund webhooks, api 2026-07, OAuth callback. Expected diff = committed(read_orders)→pulled(+read_products). Then `git -C /opt/sca-gov diff shopify-app/` + commit refreshed toml.
+- client_id to link = the one in committed toml / app/.env SHOPIFY_CLIENT_ID (verified match).
+
+**STOP — owner completes interactive `shopify auth login` + config link/pull + confirms baseline; report diff. NOT YET: add product webhooks or `shopify app deploy`.**
+
+---
+
+# (PRIOR) SCA — SHOPIFY PRODUCT WEBHOOK RELEASE BLOCKED: no Partner auth on host + committed toml STALE
 
 **STATUS (2026-10-27):** App identity verified; release NOT performed. Evidence: `docs/SCA-SHOPIFY-PRODUCT-WEBHOOK-RELEASE-BLOCKED.md`. No app version released, no new app, no other app's creds, no SCA code/schema/service/inventory/product change.
 - **Found:** shopify CLI 4.8.5 present; app-config project at `/opt/sca-gov/shopify-app/shopify.app.toml` (tracked in gov); name "SCA Eyewear Registry", client_id MATCHES app/.env SHOPIFY_CLIENT_ID (same app, verified; no new app).
