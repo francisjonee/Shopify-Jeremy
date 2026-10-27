@@ -1,4 +1,17 @@
-# SCA — SHOPIFY INVENTORY SYNC PHASE 1: AUDIT + PLAN delivered (no code); AWAITING OWNER + CHATGPT before DB-changing tests
+# SCA — SHOPIFY INVENTORY SYNC PHASE 1 IMPLEMENTED (branch 312927d); non-destructive checks PASS; DB tests NOT run; AWAITING CHATGPT + separate auth
+
+**STATUS (2026-10-27):** Phase 1 catalog sync implemented on feat/sca-shopify-inventory-sync (worktree; live tree main 6ebe968 untouched). Evidence: `docs/SCA-SHOPIFY-INVENTORY-SYNC-PHASE1-IMPLEMENTATION.md`. No prod/merge/deploy/live-connect/webhook-register/scope-change/OAuth-reauth; Option C + 139/140 untouched.
+- **SHA:** `6ebe968`→**`312927ddc0a8de7c8b64415a837cf9c59931a70d`** (pushed origin). 16 files (10 new/5 edit/1 test).
+- **New:** migrations sca_shopify_products/variants (UNIQUE shop+product/variant id); Models; ProductCatalogService (sole writer: txn idempotent upsert, stale-event guard via shopify_updated_at, removed-variant + delete SOFT-archive, missing-id fail-closed, content_hash); ProductSyncEventProcessor; ProductCatalogImporter + ImportCatalogCommand (explicit, not scheduled); ProductReconciliationService + ReconcileCatalogCommand (PREPARED, NOT scheduled/activated). **Edit:** ShopifyClient +getProduct/listProducts (cursor/Link pagination, 429→RATE_LIMITED, host-locked); WebhookTopics +product topics+isProductTopic; WebhookController routes product topics inside existing atomic/idempotent/replay boundary (order/sale-link path PRESERVED); WebhookAuditRecorder catalog outcomes; ServiceProvider registers 2 console cmds (console-only, no schedule).
+- **CATALOG-ONLY INVARIANT:** writes ONLY the 2 catalog tables; NEVER creates eyewear item/passport/QR/ownership/auth/cert/claim-link; ItemService NOT invoked by any sync path. Variant qty>1 → 1 catalog row + 0 items.
+- **Non-destructive evidence:** php -l 16/16 clean; WebhookTopics + Link-header parser logic smokes OK. **DB feature test `ShopifyProductCatalogSyncTest` WRITTEN, NOT RUN** (dup/update+no-provenance/stale/missing-ids/archival/removed-variant/qty>1/replay/bad-sig).
+- **Remaining activation (owner):** (1) run DB tests on isolated unique disposable DB — SEPARATE AUTH needed; (2) add read_products scope + merchant OAuth re-consent (token is read_orders-only→403 until then); (3) register products/* webhooks (deploy-time); (4) deploy (code + 2 additive migrations) via minimal-deploy, then import once, then optionally schedule reconcile; (5) read_inventory/read_locations only if authoritative stock sync later.
+
+**STOP — implementation delivered for ChatGPT review. Do NOT run DB tests / merge / deploy / change scopes / reauth / register webhooks until authorized.**
+
+---
+
+# (PRIOR) SCA — SHOPIFY INVENTORY SYNC PHASE 1: AUDIT + PLAN delivered (no code)
 
 **STATUS (2026-10-27):** Read-only audit + implementation plan for Shopify product→SCA sync. Evidence: `docs/SCA-SHOPIFY-INVENTORY-SYNC-PHASE1-PLAN.md`. Branch `feat/sca-shopify-inventory-sync` created at `6ebe968` (LOCAL ref, NO code, live tree stays on main). No code written, no DB test, no merge/deploy/live-connect/webhook-register/prod-migrate.
 - **CORE DECISION (needs sign-off):** Shopify variant = catalog SKU w/ qty ≠ physical pair. Phase 1 = CATALOG sync into NEW tables `sca_shopify_products`+`sca_shopify_variants` (UNIQUE shop+product_id / shop+variant_id = DB dup protection); sync NEVER creates sca_eyewear_items/passport/QR/ownership/auth/claim-link (objective #6 + IMPORTANT). Physical-pair individuation + item↔variant link DEFERRED. ItemService reused only at that future step.
