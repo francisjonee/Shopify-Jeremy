@@ -1,4 +1,15 @@
-# SCA — SHOPIFY OAUTH ACTIVATION STEP 1: scope change DONE; merchant approval PENDING (interactive)
+# SCA — ADMIN /admin/login 403 DIAGNOSED (READ-ONLY): edge IP-allowlist by design; fix = initiate from a staff IP; AWAITING owner
+
+**STATUS (2026-10-27):** READ-ONLY diagnosis of the /admin/login "Forbidden". Evidence: `docs/SCA-ADMIN-LOGIN-403-DIAGNOSIS.md`. No firewall/auth/config/permission/code/service change; no protection disabled.
+- **ROOT CAUSE (working-as-designed, NOT a bug):** sr-caddy verify.* block has `@admin path /admin /admin/*` → `@staff remote_ip <two authorized staff IPs>`; non-staff IPs get edge `respond "Forbidden" 403` BEFORE kr-app. Public /admin/login = 403 (server: Caddy, text/plain "Forbidden"); loopback 127.0.0.1:8080/admin/login = 200 (Apache/Laravel full Sign In). So 403 is at the EDGE, not Apache/Laravel/ACL.
+- **OAuth impact:** /admin/sca/shopify/connect is UNDER /admin → 403 at edge for non-staff IP (loopback 302). The callback /sca/shopify/oauth/callback is edge-allowed (any IP) → reachable (400 fail-closed). So only INITIATING connect is blocked; CSRF state→callback same-domain session requires the initiator's browser to finish Shopify approval.
+- **SMALLEST SAFE FIX (do NOT weaken allowlist):** (1) PREFERRED no-change — staff on an authorized IP opens /admin/login + /admin/sca/shopify/connect; store admin authenticates+approves on Shopify's own domain in that session; public callback completes. (2) If operator IP must be allowed: owner adds that specific IP to the Caddy `@staff remote_ip` line + `docker compose up -d --force-recreate sr-caddy` (⚠️ briefly drops smsrocket.io — quiet hour; single-file bind, plain reload won't work). (3) NEVER broaden to 0.0.0.0/0.
+
+**STOP — diagnosis delivered; owner action to access /admin from a staff IP (or scope-add the IP). Then resume OAuth Step 1 approval (scope change already live: SHOPIFY_SCOPES=read_orders,read_products; stored token still read_orders pending merchant approval).**
+
+---
+
+# (PRIOR) SCA — SHOPIFY OAUTH ACTIVATION STEP 1: scope change DONE; merchant approval PENDING (interactive)
 
 **STATUS (2026-10-27):** Authorized scope change applied; OAuth re-consent is interactive + PENDING. Evidence: `docs/SCA-SHOPIFY-INVENTORY-SYNC-PHASE1-OAUTH-ACTIVATION-RESULT.md`. No webhook register/import/reconcile/deploy/migrate/ownership change; no credential exposed; Option C+139/140 untouched.
 - **[2] DONE:** app/.env `SHOPIFY_SCOPES=read_orders`→`read_orders,read_products` (ONE line; backup `app/.env.bak.preoauth.20261027T155210Z` 0600 kept; verified only that line differs, secrets untouched).
