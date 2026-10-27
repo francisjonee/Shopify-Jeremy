@@ -1,4 +1,16 @@
-# SCA — BACKUP FIX DEPLOYED (main 6ebe968); all checks PASS; prod unchanged; AWAITING CHATGPT
+# SCA — FIRST POST-DEPLOY NIGHTLY = PENDING (read-only); re-check after 2026-10-28 02:17 UTC
+
+**STATUS (2026-10-27T14:14Z):** READ-ONLY observation of the first nightly after deploy 6ebe968. Evidence: `docs/SCA-OPTC-BACKUP-FIRST-NIGHTLY-OBSERVATION.md`. No backup triggered; no restore/merge/deploy/restart/config.
+- **PENDING:** deploy landed ~14:09 UTC 2026-10-27; cron `17 3 * * *` = host TZ UTC+1 ⇒ **02:17 UTC** daily. Last run 2026-10-27 02:17 UTC was BEFORE deploy (old code). **First post-deploy nightly = 2026-10-28 02:17 UTC (not yet occurred).** Did NOT trigger a manual backup.
+- **[2] Deployed backup-run.sh READY:** 2× backup_document_stage + sources lib-docsnapshot.sh → next run uses snapshot_documents + verify_db_document_refs (R1 cleared → expected pass).
+- **[5] schedule/retention INTACT:** cron unchanged; RETAIN_DAYS=14/RETAIN_MIN=7; 10 artifacts; newest 20261027T021703Z sidecar sha MATCH.
+- **[6] prod health + migration baseline UNCHANGED:** admin/login 200, passport /p 200; DB 3/3/5/4, migrations 140/batch 27, migrations-sha 3b38ae24==baseline; HEAD 6ebe968.
+
+**STOP — PENDING reported (no trigger). RE-OBSERVE after 2026-10-28 02:17 UTC: expect START/OK docs=N/DONE for sca-backup-20261028T0217…, no snapshot/doc-ref error, matching .sha256; then optionally restore-proof the new artifact (disposable, separate auth, run plain+background).**
+
+---
+
+# (PRIOR) SCA — BACKUP FIX DEPLOYED (main 6ebe968); all checks PASS; prod unchanged; AWAITING CHATGPT
 
 **STATUS (2026-10-27):** Authorized controlled standalone deploy of backup-consistency release 95c15d3 via the MINIMAL plan (deploy-preview.sh NOT used). Evidence: `docs/SCA-OPTC-BACKUP-FIX-DEPLOY-RESULT.md`. NO reset --hard/force-push, NO migration/DB-test/composer/Docker-rebuild/recreate/config/Option-C/Shopify/Stripe/SMTP; NO backup/restore started.
 - **Deployed SHA:** prior main `6022b75` → **merge `6ebe9686a5ad3cecf115eb058f98c0dfc52fa3f9`** (push 6022b75..6ebe968; 2nd parent 95c15d3). Live working-tree HEAD=6ebe968 (bind-mount → app live).
