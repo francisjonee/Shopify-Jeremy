@@ -1,4 +1,17 @@
-# SCA — SHOPIFY INVENTORY SYNC PHASE 1 RELEASE READINESS (READ-ONLY): READY on owner approval; AWAITING CHATGPT
+# SCA — SHOPIFY INVENTORY SYNC PHASE 1 MIGRATION PREFLIGHT (READ-ONLY): migration scope PROVEN SAFE, NOT BLOCKED; AWAITING CHATGPT + owner deploy approval
+
+**STATUS (2026-10-27T15:36Z):** READ-ONLY production migration preflight. Evidence: `docs/SCA-SHOPIFY-INVENTORY-SYNC-PHASE1-MIGRATION-PREFLIGHT.md`. No merge/deploy/migrate/restart/OAuth/webhook/import/prod change; Option C+139/140 untouched (not resolved).
+- **[1][2][3] MIGRATION SCOPE PROVEN SAFE:** diffed branch 9f05c8a migration files (141) vs prod sca_krayin applied rows (140). PENDING = EXACTLY the 2 Shopify catalog migrations (2026_10_27_000001/000002) → migrate runs ONLY these (batch 27→28; additive Schema::create). 139 (2026_10_20 qr reason) on-branch+applied→skipped. **140 (2026_10_21 activity_last_seen) = orphan-applied row with NO file on branch → migrate never attempts it (inert); 139/140 incident triggers NO extra migration.** NOT BLOCKED.
+- **[4] Recovery point:** backups/sca-backup-20261027T021703Z.tar.gz.gpg (sha 42e7aadd… MATCH; 10 artifacts; key present; 317G free; cron intact) = clean sca_krayin batch-27 snapshot, restore-proven 2026-10-27 (gov 016bd1c). First post-deploy nightly (10-28 02:17Z) not yet run (not required).
+- **[5] Minimal deploy:** migrate:status gate → `git merge --no-ff 9f05c8a→main` → push → `migrate --force` (ONLY the 2, batch 28) → `apachectl -k graceful`. No composer/rebuild/config.
+- **[6] ROLLBACK = CODE-ONLY, DATA-PRESERVING (NOT migrate:rollback):** `git revert -m1 <merge>` + advance tree + graceful reload; LEAVE both tables + imported rows (becomes inert orphan rows like 140; old code never references them). migrate:rollback would DROP tables+data → do NOT use. Table removal = separate owner decision. Never reset main.
+- **[7] main 6ebe968 clean; app/login 200; sca_krayin 3/3/5/4, 140 rows, batch 27.**
+
+**STOP — preflight PASS (not blocked) for owner + ChatGPT. Await explicit deploy approval. No release action.**
+
+---
+
+# (PRIOR) SCA — SHOPIFY INVENTORY SYNC PHASE 1 RELEASE READINESS (READ-ONLY): READY on owner approval
 
 **STATUS (2026-10-27):** READ-ONLY release prep. Evidence: `docs/SCA-SHOPIFY-INVENTORY-SYNC-PHASE1-RELEASE-READINESS.md`. No merge/deploy/migrate/scope/OAuth/webhook/import/restart/prod change; Option C+139/140 untouched.
 - **[1][2] Branch 9f05c8a directly on main 6ebe968 (clean merge, NO conflict); delta 16 files +1387/−4 CONFINED to app/packages/Sca/Shopify + app/tests; 2 ADDITIVE migrations (CREATE only, no ALTER); NO composer/config change. Code deploy is INERT until activation (empty tables, no product webhooks, no read_products).**
