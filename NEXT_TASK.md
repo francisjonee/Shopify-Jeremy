@@ -1,3 +1,14 @@
+# SCA — SHOPIFY PHASE 2 SLICE C MERGED to origin/main (cb8a8c3); CODE-ONLY, NOT deployed; prod still 91b88f1. (Phase-1 webhook verification still OPEN.)
+
+**STATUS (2026-10-28):** Authorized CODE-ONLY merge of feat/sca-shopify-phase2-visibility (aaa21a6) into main. Evidence: `docs/SCA-SHOPIFY-PHASE2-SLICE-C-MERGE.md`. No deploy/restart/migration/Shopify/Option-C.
+- **origin/main `91b88f1`→`cb8a8c3277f4319bc7c2ebdb8e0238426400bc7a`** (--no-ff merge commit; parents 91b88f1 + aaa21a6; non-force FF push). Merge tree byte-identical to candidate; conflict-free; exactly 4 approved files; product code byte-identical to DB-tested 992e048 (only the test file differs between 992e048 and aaa21a6).
+- Merge done in ISOLATED temp worktree, NOT the live checkout → live /opt/sca-platform still 91b88f1 (docroot lacks new code; loopback /admin/login 200). Prod sca_krayin UNCHANGED (Slice C adds NO migration). Temp worktree+branch removed. ⚠️ live local main intentionally left at 91b88f1 (origin ahead in history only).
+- Slice C = read-only linked-product visibility (DB-tested 7/7, gov 109074a).
+
+**STOP — merge complete. NEXT (SEPARATE auth): OPTIONAL deploy of cb8a8c3 = ff live tree 91b88f1→cb8a8c3 + `apachectl graceful` (NO new migration — tables already in prod; no Docker recreate). SEPARATE OPEN: Phase-1 first genuine products/* webhook receipt verification on next organic product change.**
+
+---
+
 # SCA — SHOPIFY PHASE 2 SLICE C DB TEST PASS (7/7, disposable DB); branch aaa21a6; prod unchanged; AWAITING merge decision. (Phase-1 webhook verification still OPEN.)
 
 **STATUS (2026-10-28):** Authorized ONE isolated DB-test for Slice C (992e048). Evidence: `docs/SCA-SHOPIFY-PHASE2-SLICE-C-DB-TEST-RESULT.md`. Disposable DB `sca_p2c_test_f1e008cde238` only; dropped+verified (0 residual); prod sca_krayin + SHA 91b88f1 UNCHANGED. No prod migrate/merge/deploy/Shopify/ownership/Option-C/full-regression.
