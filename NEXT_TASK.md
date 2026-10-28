@@ -1,3 +1,15 @@
+# SCA — SHOPIFY PHASE 2 SLICE C DEPLOYED to prod (cb8a8c3); healthy; prod data UNCHANGED. (Phase-1 webhook verification still OPEN.)
+
+**STATUS (2026-10-28):** Authorized controlled release of Slice C (cb8a8c3) DONE + verified. Evidence: `docs/SCA-SHOPIFY-PHASE2-SLICE-C-DEPLOY-RESULT.md`.
+- Prod code `91b88f1`→`cb8a8c3` (live tree ff-only + `apachectl graceful`; NO Docker recreate; NO migration — Slice C adds none). 4-file read-only visibility delta.
+- Verified: deployed SHA cb8a8c3; /admin/login 200, registry/detail 302 (auth, not 500); new index linked-map + detail pair-count queries run clean read-only against prod; logs clean (no Laravel/apache errors); edge 403 (owner allowlist).
+- **PROD DATA UNCHANGED:** items3/state3/auth4/cert4/qr3/own5/grant1; catalog 4565/5330; batch 29/145; link/audit/idempotency 0/0/0 (unchanged). No new records.
+- Rollback (if needed): live tree→91b88f1 + graceful (code-only; no DB action). Not needed — all checks passed.
+
+**STOP — Slice C live + healthy. SEPARATE OPEN: first genuine products/* webhook receipt verification on next organic Shopify product change (unaffected by this release).**
+
+---
+
 # SCA — SHOPIFY PHASE 2 SLICE C MERGED to origin/main (cb8a8c3); CODE-ONLY, NOT deployed; prod still 91b88f1. (Phase-1 webhook verification still OPEN.)
 
 **STATUS (2026-10-28):** Authorized CODE-ONLY merge of feat/sca-shopify-phase2-visibility (aaa21a6) into main. Evidence: `docs/SCA-SHOPIFY-PHASE2-SLICE-C-MERGE.md`. No deploy/restart/migration/Shopify/Option-C.
