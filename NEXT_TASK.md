@@ -1,3 +1,15 @@
+# SCA — OWNERSHIP R0 FINAL DB TEST PASS (48/48, disposable DB; bf77490); prod unchanged; AWAITING merge decision (paired w/ R0b). (Phase-1 webhook verification still OPEN.)
+
+**STATUS (2026-10-28):** Authorized final isolated DB-test of R0 (bf77490, post-E16 fix). Evidence: `docs/SCA-OWNERSHIP-R0-FINAL-DB-TEST-RESULT.md`. Disposable DB only; dropped+verified; prod sca_krayin + SHA cb8a8c3 UNCHANGED. No merge/deploy/prod-DB/live-claim/Shopify/full-regression.
+- Isolation verified (getenv==getDatabaseName==live SELECT DATABASE()==SCA_TEST_DB==sca_domain_test, ≠sca_krayin). Fresh sca_domain_test (absent+not-in-use; suites hard-pin that literal name), dropped after. migrate + db:seed.
+- **ALL FOUR SUITES GREEN: 48 tests / 233 assertions / 0 err / 0 fail / 0 warn / 0 skip.** OwnershipR0PublicClaimRetiredTest 7, ClaimWorkflowTest 11, ShopifySaleClaimVisibilityTest 12, ExternalClaimTest 18 (incl corrected E16).
+- E16 (renamed e16_public_qr_token_claim_is_retired_even_with_eligible_sale_link) GREEN: public claim→PUBLIC_CLAIM_RETIRED, 0 ownership/0 claim, item unclaimed, sale link stays eligible. Private-grant/replay/authz/adverse/rollback/passport/transfer all intact.
+- prod fingerprint: items3/own5/claims2/cert4/qr3/grant1; batch 29/145; loopback /admin/login 200.
+
+**STOP — R0 verified green. ⚠️ RELEASE SAFETY: R0 must NOT deploy alone — needs R0b (private sce_presale grant + fulfillment-release) so SCE-purchased eyewear keeps a claim path; external_intake unaffected. NEXT (owner): R0 merge decision paired with R0b. SEPARATE OPEN: Phase-1 first genuine products/* webhook receipt verification.**
+
+---
+
 # SCA — OWNERSHIP R0 e16 CORRECTED (branch bf77490); test-only; DB re-run pending (sep auth); UNMERGED/undeployed. (Phase-1 webhook verification still OPEN.)
 
 **STATUS (2026-10-28):** Authorized test-only fix of the sole R0 DB-test incompatibility. Evidence: `docs/SCA-OWNERSHIP-R0-E16-CORRECTION.md`.
