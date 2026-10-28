@@ -1,3 +1,14 @@
+# SCA — OWNERSHIP R0 e16 CORRECTED (branch bf77490); test-only; DB re-run pending (sep auth); UNMERGED/undeployed. (Phase-1 webhook verification still OPEN.)
+
+**STATUS (2026-10-28):** Authorized test-only fix of the sole R0 DB-test incompatibility. Evidence: `docs/SCA-OWNERSHIP-R0-E16-CORRECTION.md`.
+- **SHA ce74229→`bf774905dd3997abc4efcd5044b16d7db0d6272d`** (pushed origin). 1 file (ExternalClaimTest.php, e16 only).
+- e16 renamed → e16_public_qr_token_claim_is_retired_even_with_eligible_sale_link; setup kept (certified sce_presale + active QR + eligible sale link); now asserts ClaimWorkflow::claim()→PUBLIC_CLAIM_RETIRED, 0 ownership/0 claim, item unclaimed, sale link stays eligible. No private grant substituted (covered by e-series). php -l clean; only ExternalClaimTest changed.
+- Expected on next authorized disposable-DB run: full ExternalClaimTest passes (prior 1 error resolved) → all four suites green.
+
+**STOP — e16 fixed. NEXT (sep auth): re-run the four suites on a disposable DB at bf77490 (expect 0 errors) → merge decision → R0b (sce_presale private grant + fulfillment-release; R0 must NOT deploy alone). SEPARATE OPEN: Phase-1 first genuine products/* webhook receipt verification.**
+
+---
+
 # SCA — OWNERSHIP R0 DB TEST PASS (security contract; disposable DB); 1 reported incompatibility (ExternalClaimTest::e16); prod unchanged; AWAITING review. (Phase-1 webhook verification still OPEN.)
 
 **STATUS (2026-10-28):** Authorized isolated DB-test of R0 (ce74229). Evidence: `docs/SCA-OWNERSHIP-R0-DB-TEST-RESULT.md`. Disposable DB only; dropped+verified; prod sca_krayin + SHA cb8a8c3 UNCHANGED. No prod migrate/merge/deploy/live-Shopify/live-claim/Option-C.
