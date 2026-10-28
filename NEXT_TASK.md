@@ -1,4 +1,15 @@
-# SCA — SHOPIFY PHASE 2 SLICE A IMPLEMENTED (branch 5c1aa23); non-destructive PASS; DB tests NOT run; AWAITING review + sep auth. (Phase-1 webhook verification still OPEN.)
+# SCA — SHOPIFY PHASE 2 SLICE A DB TEST PASS (10/10, disposable DB); prod unchanged; AWAITING review. (Phase-1 webhook verification still OPEN.)
+
+**STATUS (2026-10-28):** Authorized ONE isolated DB-test session for Slice A (5c1aa23). Evidence: `docs/SCA-SHOPIFY-PHASE2-SLICE-A-DB-TEST-RESULT.md`. Disposable DB only; dropped+verified; prod sca_krayin UNCHANGED; link table NOT in prod. No prod-migrate/merge/deploy/Shopify/live-webhook/Option-C/full-regression.
+- Worktree at 5c1aa23 (live main 905ea7d untouched); dev vendor built in worktree. Unique DB `sca_p2link_test_a2996cc08156` (existence-checked); isolation verified (getenv==getDatabaseName==live SELECT DATABASE()==disposable, ≠sca_krayin); migrated incl 2026_10_28_000001 link table.
+- **ShopifyProductLinkTest: OK 10 tests / 29 assertions / 0 fail/skip/warn** (phpunit 11.5.50): 1:N linking, one-item-no-silent-relink (already_linked_to_other_variant), idempotent, explicit relink, wrong-shop/archived/unknown rejected, non-interference (link+unlink touch 0 ownership/cert/qr/grant/subs + item not deleted), permission defined.
+- [10] route-level auth + relink audit history = Slice B. [11] DB dropped + grant revoked (0 residual) + worktree removed. [12] prod diff empty (3/3/5/4/3/1, cat 4565/5330, batch 28); link table absent in prod; admin 200.
+
+**STOP — Slice A verified. NEXT (sep auth): Slice B (staff UI selector + prefill + create-with-link one-txn + per-submit idempotency token + wire link/unlink routes + sca.can enforcement + repoint ACL route + relink audit); Slice C surfacing. SEPARATE OPEN: Phase-1 first genuine products/* webhook receipt verification on next organic product change.**
+
+---
+
+# (PRIOR) SCA — SHOPIFY PHASE 2 SLICE A IMPLEMENTED (branch 5c1aa23); non-destructive PASS; DB tests NOT run
 
 **STATUS (2026-10-28):** Slice A (link layer, no UI) on feat/sca-shopify-phase2-linking off 905ea7d. Evidence: `docs/SCA-SHOPIFY-PHASE2-SLICE-A-IMPLEMENTATION.md`. Worktree (live main 905ea7d untouched). No prod migration/deploy/live-Shopify/UI/Option-C.
 - **SHA 905ea7d→`5c1aa23e45f78f33a5cd8c590b907dd049595417`** (pushed origin). 5 files.
