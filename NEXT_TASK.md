@@ -1,3 +1,16 @@
+# SCA — SHOPIFY PHASE 2 DEPLOY READINESS: READY FOR RELEASE APPROVAL (read-only; nothing deployed). Prod 905ea7d; target origin/main 91b88f1. (Phase-1 webhook verification still OPEN.)
+
+**STATUS (2026-10-28):** READ-ONLY production deploy-readiness assessment of 91b88f1 over prod 905ea7d. Evidence: `docs/SCA-SHOPIFY-PHASE2-DEPLOY-READINESS.md`. VERDICT **READY FOR RELEASE APPROVAL — no NO-GO blockers**. Nothing deployed/migrated/checked-out/restarted.
+- State verified: origin/main 91b88f1; prod+live tree 905ea7d (clean). kr-app bind-mounts /opt/sca-platform/app RW; opcache validate_timestamps=On (~2s) → release = tree swap + `apachectl graceful` (zero-downtime, NO Docker recreate; zero dep changes).
+- 3 ADDITIVE migrations (000001 link FK→items; 000002 audit+triggers no FK; 000003 idempotency FK→items) → batch 29; no inter-dependency; referenced tables exist in prod; names absent from the 142-row/batch-28 history (appends cleanly, no repair).
+- ⚠️ **MANDATORY migrate-BEFORE-code:** EyewearItemController::show() (item detail) reads sca_eyewear_item_shopify_variant + _link_audit on EVERY load → activating code first = 500s. Recommended zero-downtime: migrate from a SEPARATE 91b88f1 mount (prod app/.env) while old app runs, THEN swap live tree + graceful. Fallback: artisan down→swap→migrate→graceful→up.
+- Backup current+usable: daily cron; latest 20261028T021702Z (~4.6GB today), gpg+sha256 (bare-hash sidecar, integrity MATCH), key secrets/backup.key present; restore tooling + prior restore-proof PASS. ROLLBACK = code-only (live tree→905ea7d + graceful); NO DB rollback needed (additive tables ignored by old code); optional migrate:rollback --step=1. Residual (non-blocker): off-host backup + key escrow still outstanding.
+- Health now: kr-app loopback /admin/login 200.
+
+**STOP — read-only; READY FOR RELEASE APPROVAL. NEXT (SEPARATE deploy auth): execute migrate-before-code deploy of 91b88f1 + 3 migrations per readiness doc §4/§7, with pre-deploy backup + post-deploy smoke tests §8. SEPARATE OPEN: Phase-1 first genuine products/* webhook receipt verification.**
+
+---
+
 # SCA — SHOPIFY PHASE 2 SLICE A+B MERGED to origin/main (91b88f1); CODE-ONLY, NOT deployed; prod untouched. (Phase-1 webhook verification still OPEN; deploy = separate auth.)
 
 **STATUS (2026-10-28):** Authorized CODE-ONLY merge of feat/sca-shopify-phase2-linking (a477dc4) into main. Evidence: `docs/SCA-SHOPIFY-PHASE2-SLICE-AB-MERGE.md`. No deploy/migration/restart/infra/Shopify/Option-C/DB change.
