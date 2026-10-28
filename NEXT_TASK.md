@@ -1,3 +1,16 @@
+# SCA — SHOPIFY PHASE 2 SLICE B DB TEST PASS (28/28, disposable DB); prod unchanged; 1 finding for review; AWAITING review. (Phase-1 webhook verification still OPEN.)
+
+**STATUS (2026-10-28):** Authorized ONE isolated DB-test session for Slice B (2343e04). Evidence: `docs/SCA-SHOPIFY-PHASE2-SLICE-B-DB-TEST-RESULT.md`. Disposable DB `sca_p2b_test_7860c4e3e7b0` only; dropped+verified (0 residual grant); prod sca_krayin UNCHANGED; link/audit/idempotency tables NOT in prod. No prod-migrate/merge/deploy/Shopify/live-webhook/Option-C/full-regression.
+- Isolation verified (getenv==getDatabaseName==live SELECT DATABASE()==SCA_TEST_DB==disposable, ≠sca_krayin). Migrated incl 000001/000002/000003.
+- **EyewearShopifyIntakeTest 8 + ShopifyProductLinkRouteTest 10 + ShopifyProductLinkTest 10 = 28 tests / 96 assertions / 0 fail/err/warn/skip** (phpunit 11.5.50). Covers permissions (route + server-side create-with-link 403), selector+pagination+filter, prefill override persistence, one-txn create+link, rollback-on-rejected-link (no orphan), duplicate-submit=1 item, link/relink/unlink, append-only audit immutability (UPDATE+DELETE rejected), no-provenance, Slice A compatibility.
+- **FINDING (DEFECT-1, for review, NOT repaired):** archived PRODUCT + active VARIANT → link SUCCEEDS; variantEligibility gates on VARIANT status only, ignores product status (selector shows product_status but doesn't gate on it). Not a safety/provenance issue. Options: enforce product status OR document variant-only gating.
+- **NOTE (working-as-designed):** idempotency key reused with DIFFERENT details → returns prior item (outcome 'exists'), new payload silently ignored; 1 item, no corruption. Key is machine-minted per render → cross-submission reuse not a real path. NOT a defect.
+- prod fingerprint baseline: items3/state3/own5/cert4/qr3/grant1, catalog 4565/5330, batch 28 (142 rows); 3 Slice A/B tables absent in prod. App: loopback /admin/login 200; edge 403 (owner-IP allowlist, expected). Cleanup: DB dropped, grant revoked (0 residual), DB-test worktree removed; live main 905ea7d clean.
+
+**STOP — Slice B verified. NEXT (owner/ChatGPT): decide on DEFECT-1 (product-status gating), then review→merge decision for 2343e04. SEPARATE OPEN: Phase-1 first genuine products/* webhook receipt verification on next organic product change.**
+
+---
+
 # SCA — SHOPIFY PHASE 2 SLICE B IMPLEMENTED (branch 2343e04); static PASS; DB tests NOT run; AWAITING review. (Phase-1 webhook verification still OPEN.)
 
 **STATUS (2026-10-28):** Slice B (staff linking UI + backend) on feat/sca-shopify-phase2-linking. Evidence: `docs/SCA-SHOPIFY-PHASE2-SLICE-B-IMPLEMENTATION.md`. Worktree-only; live main 905ea7d untouched. No prod migrate/merge/deploy/Shopify/Option-C.
