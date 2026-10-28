@@ -1,3 +1,17 @@
+# SCA — OWNERSHIP R0b IMPLEMENTED (branch 1592a78, off R0 bf77490): private SCE presale claim; static PASS; DB tests NOT run; AWAITING review. (Phase-1 webhook verification still OPEN.)
+
+**STATUS (2026-10-29):** R0b (private sce_presale claim grant, fulfillment-release-gated) on feat/sca-ownership-r0b-private-sce-claim off R0 bf77490. Evidence: `docs/SCA-OWNERSHIP-R0B-PRIVATE-SCE-CLAIM.md`. Worktree-only; prod/main cb8a8c3 untouched. No prod migration/deploy/merge/live-Shopify/live-claim/Option-C.
+- **SHA bf77490→`1592a78944c7709b56dc0cc37a5f4f76f1ff2e83`** (pushed origin). 12 files (4 mod, 8 new); 2 ADDITIVE migrations; EXTERNAL grant flow UNTOUCHED (req 10).
+- Reuse via PARALLEL table `sca_presale_claim_grants` (sale-link-backed, time-limited; mirrors external grant arch) + nullable fulfillment_released_at/_by on sca_eyewear_items.
+- FulfillmentReleaseService (append-once, idempotent, auditable; sce_presale only). PresaleClaimGrantService (issue only when sce_presale + RELEASED + eligible sale link + unowned + status-normal; opaque, TTL 14d, single-use, reuse-issued). ClaimWorkflow::previewPresaleGrant/claimByPresaleGrant (resolve presale table; reject expired/void/used; re-validate sale link eligible + status at consumption; openShopifyClaim→ownership + sale link 'claimed'; single-use + replay/race safe; exact item id, never variant).
+- ACL sca.eyewear.fulfillment.release. Staff FulfillmentReleaseController (GET confirm+POST release→issue private link). Collector PresaleGrantClaimController on dedicated /collector/claim/presale/{token}. Grant token never on public passport.
+- PRESERVED: external_intake grant, passport viewing, register/login, My Collection, transfers; public QR still 410 (R0).
+- Tests PresaleClaimGrantTest WRITTEN NOT run (sep disposable-DB auth; literal sca_domain_test guard): release ACL/idempotency, grant-requires-release, valid claim (1 shopify ownership + sale link consumed), single-use/double, 2nd-collector reject, expiry, cancelled/refunded, concurrent single-use, public-QR-410, token-not-on-passport. php -l clean; Blade balanced.
+
+**STOP — R0b for review. ⚠️ RELEASE GATE: R0+R0b COMBINED security regression + separate merge/deploy authorization; R0 must NOT release alone. NEXT (sep auth): combined DB test of R0+R0b (disposable sca_domain_test); then combined merge/deploy decision. SEPARATE OPEN: Phase-1 first genuine products/* webhook receipt verification.**
+
+---
+
 # SCA — OWNERSHIP R0 FINAL DB TEST PASS (48/48, disposable DB; bf77490); prod unchanged; AWAITING merge decision (paired w/ R0b). (Phase-1 webhook verification still OPEN.)
 
 **STATUS (2026-10-28):** Authorized final isolated DB-test of R0 (bf77490, post-E16 fix). Evidence: `docs/SCA-OWNERSHIP-R0-FINAL-DB-TEST-RESULT.md`. Disposable DB only; dropped+verified; prod sca_krayin + SHA cb8a8c3 UNCHANGED. No merge/deploy/prod-DB/live-claim/Shopify/full-regression.
