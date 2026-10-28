@@ -1,3 +1,18 @@
+# SCA — OWNERSHIP R0 IMPLEMENTED (branch ce74229): public QR-token claiming RETIRED; static PASS; DB tests NOT run; AWAITING review. (Phase-1 webhook verification still OPEN.)
+
+**STATUS (2026-10-28):** R0 (GAP-1) on feat/sca-ownership-r0-retire-public-claim off prod cb8a8c3. Evidence: `docs/SCA-OWNERSHIP-R0-RETIRE-PUBLIC-CLAIM.md`. Worktree-only; prod/main cb8a8c3 untouched. No migration/deploy/merge/live-Shopify/live-claim/Option-C.
+- **SHA cb8a8c3→`ce7422984809dd9013cf68b03de3c60c1f71c9ae`** (pushed origin). 7 files, NO migration.
+- ClaimWorkflow::claim() throws new ClaimRejection::PUBLIC_CLAIM_RETIRED at the very top (before resolve/open/complete) → public QR token NEVER acquires ownership, even with an eligible Shopify sale link (sale link stays eligible, 0 claim/ownership rows). Old sale-link claim body removed (no flag).
+- ClaimController: public POST → 410 Gone (PII-free msg → use private link); GET claim page → view-only `public_retired` notice, NO form (additive branch in shared show.blade; grant flow's `eligible` form untouched). Malformed/unknown token → 410 (no enumeration).
+- PRESERVED: /p/{token} passport viewing, collector register/login, My Collection, transfer, claimByGrant (private grant path + all protections), preview() (unchanged).
+- Reimplemented against cb8a8c3; NO Option C file copied/merged. Omits sce_presale fulfillment-release migr/ACL (= proposed R0b).
+- Tests WRITTEN NOT run (sep disposable-DB auth): NEW OwnershipR0PublicClaimRetiredTest; ClaimWorkflowTest rewritten to retired contract; ShopifySaleClaimVisibilityTest 3 setup sites moved to ClaimService primitive. php -l clean; Blade balanced.
+- ⚠️ NOTE: after R0, sce_presale items have NO live claim path until R0b (private sce_presale grant); external_intake grant claiming unaffected.
+
+**STOP — R0 for review. NEXT (sep auth): run OwnershipR0PublicClaimRetiredTest + ClaimWorkflowTest + ShopifySaleClaimVisibilityTest + ExternalClaimTest on a unique disposable DB at ce74229; then merge decision (code-only, NO migration); then R0b (sce_presale private grant + fulfillment-release). SEPARATE OPEN: Phase-1 first genuine products/* webhook receipt verification.**
+
+---
+
 # SCA — CUSTOMER OWNERSHIP PASSPORT AUDIT (read-only) delivered; recommend R0 (retire public-token claiming). Prod cb8a8c3. (Phase-1 webhook verification still OPEN.)
 
 **STATUS (2026-10-28):** READ-ONLY audit of the customer QR Ownership-Passport system at prod cb8a8c3. Evidence: `docs/SCA-CUSTOMER-OWNERSHIP-PASSPORT-AUDIT.md`. No code/DB/merge/migration/deploy/Shopify/live-claim.
