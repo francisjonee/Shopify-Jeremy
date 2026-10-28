@@ -1,3 +1,15 @@
+# SCA — SHOPIFY LINK PERMISSION ROLE ASSESSMENT (read-only): only 1 role (Administrator, all) → already holds sca.eyewear.shopify.link; NO grant needed. Awaiting approval. (Phase-1 webhook verification still OPEN.)
+
+**STATUS (2026-10-28):** READ-ONLY staff role/permission review at prod 91b88f1. Evidence: `docs/SCA-SHOPIFY-LINK-PERMISSION-ROLE-ASSESSMENT.md`. No role/user/permission/code/config change.
+- Only ONE role in prod: **Administrator (id1, permission_type=all, 1 user)**. No separate intake/authenticator role.
+- sca.eyewear.create → held by Administrator (via all). sca.eyewear.shopify.link REGISTERED (leaf; route admin.sca.shopify.catalog-search). "Ungranted by default" applies only to CUSTOM roles — the all-role ALREADY effectively holds it, so the feature is usable now; no grant action required.
+- RECOMMENDATION: no grant needed (Administrator already has it). A dedicated least-privilege custom role (sca.eyewear+view+create+shopify.link[+catalog], EXCLUDING certify/QR/ownership/status/authenticate) is only worth creating if/when non-admin intake staff are added — separate approval-gated role change.
+- SCOPE CONFIRMED: sca.eyewear.shopify.link is a distinct leaf; grants NO ownership(.ownership.correct/.claim)/certification(.certify/.certificate)/QR(.qr.reissue)/authenticate/status — each a separate key.
+
+**STOP — read-only; awaiting owner approval before any grant or role creation. SEPARATE OPEN: Phase-1 first genuine products/* webhook receipt verification on next organic product change.**
+
+---
+
 # SCA — SHOPIFY PHASE 2 SLICE A+B DEPLOYED to prod (91b88f1); healthy; prod data UNCHANGED. (Phase-1 webhook verification still OPEN.)
 
 **STATUS (2026-10-28):** Authorized controlled release of 91b88f1 DONE + verified. Evidence: `docs/SCA-SHOPIFY-PHASE2-DEPLOY-RESULT.md`.
