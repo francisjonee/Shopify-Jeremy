@@ -1,3 +1,16 @@
+# SCA — R0+R0b COMBINED DB TEST PASS (60/60, disposable DB; 1592a78); prod unchanged; ⚠️ SECURITY BLOCKER (bearer grant, no buyer verification) — do NOT release until resolved. (Phase-1 webhook verification still OPEN.)
+
+**STATUS (2026-10-29):** Authorized combined isolated DB-test of R0b 1592a78 (incl R0). Evidence: `docs/SCA-OWNERSHIP-R0-R0B-COMBINED-DB-TEST-RESULT.md`. Disposable DB only; dropped+verified; prod sca_krayin + SHA cb8a8c3 UNCHANGED. No merge/deploy/prod-DB/live-Shopify/live-claim/Option-C.
+- Isolation verified (fresh sca_domain_test, absent+0-procs+re-checked; peer sca-85 idle). migrate (incl R0b 000001/000002) + db:seed.
+- **ALL FIVE SUITES GREEN: 60 tests / 277 assertions / 0 err/fail/warn/skip.** PresaleClaimGrant 12 + OwnershipR0 7 + ClaimWorkflow 11 + ShopifySaleClaimVisibility 12 + ExternalClaim 18.
+- Security [11-20] confirmed: release ACL-gated + idempotent/auditable; grant requires release; grant bound to exact item+eligible sale link; valid claim=1 ownership (shopify_sale, sale link consumed); public QR still 410; expired/consumed/void/unauthorized/cancelled/refunded fail closed; double/concurrent → one owner; token not in app logs / not on passport; external_intake + My Collection + transfer unchanged.
+- ⚠️ **[21] SECURITY BLOCKER (release-gating):** presale grant is a BEARER token with NO buyer-identity verification (sca_shopify_sale_links has no customer/email to bind; delivery = staff out-of-band). Possession by ANY authed collector = claim. Token also travels in URL path → access logs/history/Referer may record. NOT a build defect (mirrors external-grant model) but must be RESOLVED or owner-risk-accepted before release. Options: bind to Shopify order email + match claimant; require order#; verified-channel delivery; short TTL + staff revoke.
+- prod fingerprint items3/own5/claims2/cert4/qr3/grant1; batch 29/145; presale table absent.
+
+**STOP — R0+R0b functionally green. ⚠️ RELEASE GATE: resolve/risk-accept the item-21 bearer-token BLOCKER (buyer verification/delivery) AND obtain separate combined merge/deploy authorization before any release; R0 never alone. NEXT (owner): decide on buyer-verification; then combined merge/deploy decision. SEPARATE OPEN: Phase-1 first genuine products/* webhook receipt verification.**
+
+---
+
 # SCA — OWNERSHIP R0b IMPLEMENTED (branch 1592a78, off R0 bf77490): private SCE presale claim; static PASS; DB tests NOT run; AWAITING review. (Phase-1 webhook verification still OPEN.)
 
 **STATUS (2026-10-29):** R0b (private sce_presale claim grant, fulfillment-release-gated) on feat/sca-ownership-r0b-private-sce-claim off R0 bf77490. Evidence: `docs/SCA-OWNERSHIP-R0B-PRIVATE-SCE-CLAIM.md`. Worktree-only; prod/main cb8a8c3 untouched. No prod migration/deploy/merge/live-Shopify/live-claim/Option-C.
