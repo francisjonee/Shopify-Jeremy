@@ -1,3 +1,16 @@
+# SCA — SHOPIFY PHASE 2 SLICE C IMPLEMENTED (branch 992e048); read-only visibility; static PASS; DB tests NOT run; AWAITING review. (Phase-1 webhook verification still OPEN.)
+
+**STATUS (2026-10-28):** Slice C (staff visibility of linked Shopify product) on feat/sca-shopify-phase2-visibility off deployed 91b88f1. Evidence: `docs/SCA-SHOPIFY-PHASE2-SLICE-C-IMPLEMENTATION.md`. Worktree-only; prod/main 91b88f1 untouched. No migration/deploy/live-Shopify/ownership/Option-C.
+- **SHA 91b88f1→`992e048b1a6991aca3f7fae1f760a4dfb72fd309`** (pushed origin). 4 files (+78/-5): controller 2 READ methods, 2 views, 1 test. NO migration/route/ACL/service change.
+- Detail "Shopify link" panel: live product name+vendor, variant, SKU (live→snapshot fallback), Shopify ref (product/variant ids), pairs-linked count; LEFT JOIN live catalog → archived/draft="Inactive in catalog", deleted="Unavailable in catalog" (from snapshot), link PRESERVED (never auto-unlink).
+- Registry index cards: "Shopify ✓" / "Shopify (inactive)" / "No Shopify link" — ONE bounded query over current page's ≤20 ids (no N+1).
+- Read-only; link/relink/unlink still gated by sca.eyewear.shopify.link (viewer sees info, not controls). Provenance untouched.
+- Tests ShopifyLinkVisibilityTest WRITTEN, NOT run (SCA_TEST_DB guard; need sep disposable-DB auth): linked display, pair count, archived→inactive+preserved, deleted→unavailable, unlinked, index indicators, viewer-vs-linker controls. php -l clean; Blade balanced.
+
+**STOP — Slice C for review. NEXT (sep auth): run ShopifyLinkVisibilityTest on a unique disposable DB at 992e048; then merge decision (code-only, NO migration). SEPARATE OPEN: Phase-1 first genuine products/* webhook receipt verification on next organic product change.**
+
+---
+
 # SCA — SHOPIFY LINK PERMISSION ROLE ASSESSMENT (read-only): only 1 role (Administrator, all) → already holds sca.eyewear.shopify.link; NO grant needed. Awaiting approval. (Phase-1 webhook verification still OPEN.)
 
 **STATUS (2026-10-28):** READ-ONLY staff role/permission review at prod 91b88f1. Evidence: `docs/SCA-SHOPIFY-LINK-PERMISSION-ROLE-ASSESSMENT.md`. No role/user/permission/code/config change.
