@@ -1,3 +1,14 @@
+# SCA — SHOPIFY PHASE 2 SLICE A+B MERGED to origin/main (91b88f1); CODE-ONLY, NOT deployed; prod untouched. (Phase-1 webhook verification still OPEN; deploy = separate auth.)
+
+**STATUS (2026-10-28):** Authorized CODE-ONLY merge of feat/sca-shopify-phase2-linking (a477dc4) into main. Evidence: `docs/SCA-SHOPIFY-PHASE2-SLICE-AB-MERGE.md`. No deploy/migration/restart/infra/Shopify/Option-C/DB change.
+- **origin/main `905ea7d`→`91b88f1a7754e8589893fccfcd393cc4e0cfde74`** (--no-ff merge commit; parents 905ea7d + a477dc4; non-force FF push accepted). Merge tree byte-identical to candidate; no conflicts; 20 files ALL within Sca packages + Sca tests; exactly 3 ADDITIVE migrations (000001/000002/000003, all new, additive only). Regression evidence (37/37) is for the exact merged commit a477dc4.
+- Merge done in an ISOLATED temp worktree (branch merge-tmp at 905ea7d), NOT the live checkout → live bind-mount /opt/sca-platform/app UNCHANGED (still 905ea7d; shopifyLinkPanel absent). Prod sca_krayin UNCHANGED (3 new tables absent; no migration run). Temp worktree+branch removed.
+- ⚠️ LIVE local main intentionally left at 905ea7d (origin/main ahead in history only) — merged, NOT deployed.
+
+**STOP — merge complete. NEXT (SEPARATE auth required): deploy 91b88f1 — fast-forward the live tree + `migrate --force` the 3 additive migrations (MUST apply together: new code reads link/audit tables on item-detail) + graceful reload (no Docker recreate). SEPARATE OPEN: Phase-1 first genuine products/* webhook receipt verification on next organic product change.**
+
+---
+
 # SCA — SHOPIFY PHASE 2 SLICE B FINAL REGRESSION PASS (37/37, disposable DB; corrected a477dc4); prod unchanged; AWAITING review→merge. (Phase-1 webhook verification still OPEN.)
 
 **STATUS (2026-10-28):** Authorized ONE isolated DB-test session for corrected Slice B (a477dc4). Evidence: `docs/SCA-SHOPIFY-PHASE2-SLICE-B-FINAL-REGRESSION-RESULT.md`. Disposable DB `sca_p2bf_test_c4d7872d1e07` only; dropped+verified (0 residual); prod sca_krayin UNCHANGED; 3 link/audit/idempotency tables NOT in prod. No prod-migrate/merge/deploy/Shopify/live-webhook/Option-C/full-regression.
