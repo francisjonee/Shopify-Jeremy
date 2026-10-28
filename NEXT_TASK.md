@@ -1,3 +1,15 @@
+# SCA — SHOPIFY PHASE 2 SLICE B FINAL REGRESSION PASS (37/37, disposable DB; corrected a477dc4); prod unchanged; AWAITING review→merge. (Phase-1 webhook verification still OPEN.)
+
+**STATUS (2026-10-28):** Authorized ONE isolated DB-test session for corrected Slice B (a477dc4). Evidence: `docs/SCA-SHOPIFY-PHASE2-SLICE-B-FINAL-REGRESSION-RESULT.md`. Disposable DB `sca_p2bf_test_c4d7872d1e07` only; dropped+verified (0 residual); prod sca_krayin UNCHANGED; 3 link/audit/idempotency tables NOT in prod. No prod-migrate/merge/deploy/Shopify/live-webhook/Option-C/full-regression.
+- Isolation verified (getenv==getDatabaseName==live SELECT DATABASE()==disposable, ≠sca_krayin). Migrated 000001/000002/000003 incl fingerprint column.
+- **EyewearShopifyIntakeTest 12 + ShopifyProductLinkTest 12 + ShopifyProductLinkRouteTest 13 = 37 tests / 131 assertions / 0 fail/err/warn/skip** (phpunit 11.5.50).
+- BOTH corrections CONFIRMED: [6] archived/draft parent NOT newly link/relinkable w/ active variant (svc rejects link+relink, intake rollback, HTTP no item, selector not linkable); [7] existing link PRESERVED after product archived (no auto-unlink); [8] identical retry → same item, no dup; [9] reused key w/ changed attrs OR link selection → explicit conflict (idempotency_key_reused_with_different_details), no data change; [10] permissions/rollback/audit-immutability/provenance-isolation still pass.
+- prod fingerprint baseline: items3/state3/own5/cert4/qr3/grant1, catalog 4565/5330, batch 28 (142 rows); 3 tables absent in prod. App loopback /admin/login 200. Cleanup: DB dropped, grant revoked (0 residual), test worktree removed; live main 905ea7d clean.
+
+**STOP — corrected Slice B verified green. NEXT (owner/ChatGPT): review → merge decision for a477dc4 (code-only + 3 additive migrations 000001/000002/000003; deploy would need a separate authorization). SEPARATE OPEN: Phase-1 first genuine products/* webhook receipt verification on next organic product change.**
+
+---
+
 # SCA — SHOPIFY PHASE 2 SLICE B CORRECTIONS COMMITTED (branch a477dc4); static PASS; DB tests NOT run; AWAITING review + authorized DB re-test. (Phase-1 webhook verification still OPEN.)
 
 **STATUS (2026-10-28):** Authorized narrow correction of the two Slice B DB-test findings on feat/sca-shopify-phase2-linking. Evidence: `docs/SCA-SHOPIFY-PHASE2-SLICE-B-CORRECTIONS.md`. Worktree-only; live main 905ea7d untouched. No prod migrate/merge/deploy/live-Shopify/Option-C.
