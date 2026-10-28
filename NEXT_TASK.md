@@ -1,3 +1,15 @@
+# SCA — SHOPIFY PHASE 2 SLICE B CORRECTIONS COMMITTED (branch a477dc4); static PASS; DB tests NOT run; AWAITING review + authorized DB re-test. (Phase-1 webhook verification still OPEN.)
+
+**STATUS (2026-10-28):** Authorized narrow correction of the two Slice B DB-test findings on feat/sca-shopify-phase2-linking. Evidence: `docs/SCA-SHOPIFY-PHASE2-SLICE-B-CORRECTIONS.md`. Worktree-only; live main 905ea7d untouched. No prod migrate/merge/deploy/live-Shopify/Option-C.
+- **SHA 2343e04→`a477dc4f7dbd2c07b95368c6534a35eb315e2b90`** (pushed origin). 9 files (6 src, 3 tests).
+- **DEFECT-1 FIX:** ShopifyProductLinkService::variantEligibility now requires parent ShopifyProduct active (status=active) AND variant active — gates link() AND relink(). ProductLinkController::search linkable = product active && variant active (+exposes product_status). Eligibility checked ONLY on new link/relink → EXISTING links preserved if product later archived (NO auto-unlink).
+- **IDEMPOTENCY FIX:** sca_eyewear_intake_idempotency +`fingerprint` char(64) (migration extended in place, not in prod). EyewearShopifyIntakeService computes canonical sha256(item attrs + link selection, key-sorted); reused key → identical fingerprint=`exists` (returns existing item), different=`conflict` (reason idempotency_key_reused_with_different_details, creates/modifies NOTHING); applied on fast-path + 1062 race; null legacy fingerprint treated as match. store() surfaces conflict as form error (no item).
+- Tests UPDATED (fixtures create active product) + ADDED (archived-product rejected link+relink, link preserved after archive, identical-retry idempotent, key-reuse-different-details conflict svc+HTTP, attr-only divergence conflict, selector marks archived not linkable). php -l 9/9 clean. **DB tests NOT run (need sep disposable-DB auth).**
+
+**STOP — corrections for review. NEXT (sep auth): re-run EyewearShopifyIntakeTest + ShopifyProductLinkRouteTest + ShopifyProductLinkTest on a UNIQUE disposable DB at a477dc4 (prod untouched); then merge decision. SEPARATE OPEN: Phase-1 first genuine products/* webhook receipt verification on next organic product change.**
+
+---
+
 # SCA — SHOPIFY PHASE 2 SLICE B DB TEST PASS (28/28, disposable DB); prod unchanged; 1 finding for review; AWAITING review. (Phase-1 webhook verification still OPEN.)
 
 **STATUS (2026-10-28):** Authorized ONE isolated DB-test session for Slice B (2343e04). Evidence: `docs/SCA-SHOPIFY-PHASE2-SLICE-B-DB-TEST-RESULT.md`. Disposable DB `sca_p2b_test_7860c4e3e7b0` only; dropped+verified (0 residual grant); prod sca_krayin UNCHANGED; link/audit/idempotency tables NOT in prod. No prod-migrate/merge/deploy/Shopify/live-webhook/Option-C/full-regression.
