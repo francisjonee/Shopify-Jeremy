@@ -1,3 +1,17 @@
+# SCA — CUSTOMER OWNERSHIP PASSPORT AUDIT (read-only) delivered; recommend R0 (retire public-token claiming). Prod cb8a8c3. (Phase-1 webhook verification still OPEN.)
+
+**STATUS (2026-10-28):** READ-ONLY audit of the customer QR Ownership-Passport system at prod cb8a8c3. Evidence: `docs/SCA-CUSTOMER-OWNERSHIP-PASSPORT-AUDIT.md`. No code/DB/merge/migration/deploy/Shopify/live-claim.
+- INVENTORY: QR (QrService), public passport /p/{token} (PassportResolver), collector register/login, claiming (ClaimWorkflow→ClaimService; public-token ClaimController + private GrantClaimController), My Collection (Collector UI2), transfer (TransferWorkflow invite token), Shopify sale→item (SaleLinkService via public_ref only; dormant), Phase 2 variant links (ShopifyProductLinkService, reference/visibility only) — ALL deployed.
+- FREE claim = sce_presale, entitlement=Shopify sale link (openShopifyClaim), no charge. PAID = external_intake, pay for authentication, entitlement=issued cert→staff grant (openExternalClaim). Both → ClaimService ownership under item lock; terminal claims immutable.
+- ⚠️ SECURITY GAP-1 (central): on main, public /p/{token} doubles as a claim credential — a signed-in collector who sees the passport can claim an item with an eligible unclaimed Shopify sale link. LATENT (0 sale links) but activates when sales flow. Option C closes it (public-token claiming retired → private grants + sce_presale staff fulfillment-release gate).
+- Option C branch 0f41e2e UNMERGED + STALE vs cb8a8c3 (161 files; reverts deployed backup/DR + test harness) → do NOT merge as-is; re-cut the claim-flow intent onto cb8a8c3.
+- Phase 2 variant link NOT wired to sale matching; must NOT be (1 variant→N pairs ambiguity).
+- **RECOMMENDED SMALLEST NEXT TASK (R0): on a fresh branch off cb8a8c3, retire public-QR-token ownership claiming in ClaimWorkflow::claim (→NOT_ELIGIBLE; claimByGrant sole path), CODE-ONLY no schema; fulfillment-release gate = R0b follow-up.** Dev+disposable-DB only.
+
+**STOP — audit delivered; awaiting owner prioritization. SEPARATE OPEN: Phase-1 first genuine products/* webhook receipt verification on next organic product change.**
+
+---
+
 # SCA — SHOPIFY PHASE 2 SLICE C DEPLOYED to prod (cb8a8c3); healthy; prod data UNCHANGED. (Phase-1 webhook verification still OPEN.)
 
 **STATUS (2026-10-28):** Authorized controlled release of Slice C (cb8a8c3) DONE + verified. Evidence: `docs/SCA-SHOPIFY-PHASE2-SLICE-C-DEPLOY-RESULT.md`.
