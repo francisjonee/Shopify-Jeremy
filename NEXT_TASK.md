@@ -1,4 +1,17 @@
-# SCA — SHOPIFY CLI AUTH RECOVERY: interactive `shopify auth login` must be owner-run; toml backed up; config pull PENDING
+# SCA — SHOPIFY INVENTORY SYNC ACTIVATION VERIFIED (v6 live); PRODUCT WEBHOOK DELIVERY PENDING (no genuine products/* receipt yet)
+
+**STATUS (2026-10-28):** READ-ONLY activation verification after owner released sca-eyewear-registry-6. Evidence: `docs/SCA-SHOPIFY-INVENTORY-SYNC-ACTIVATION-VERIFICATION.md`. No product create/modify, no re-import, no deploy/migration, no Shopify config change, no passport.
+- **[1] SHA 905ea7d, admin 200, kr-app up. [2] scope read_orders,read_products. [4] live getShop/listProducts(5+next)/getOrder(refunded) all OK (read_products+read_orders work).**
+- **[3] 6 subs:** owner Dashboard confirms v6 active (scopes both, 6 managed subs, api 2026-07, callback preserved). Server-side webhooks.json=0 EXPECTED for managed/config-based subs (not enumerable server-side) — definitive server proof = first genuine products/* receipt.
+- **[5][6] ⚠️ WEBHOOK DELIVERY PENDING:** 0 receipts with topic products/* (synthetic sca-selftest cleaned, not counted). No real product create/update/delete since release (not triggered per instruction). Order webhooks DO deliver (latest orders/paid 2026-10-27 20:38, 109 total) → pipeline/edge/HMAC healthy; receiver already PROVEN (gov 8faa1fa). END-TO-END PRODUCT SYNC NOT CLAIMED PASSED.
+- **[7] catalog 4565/5330 + provenance 3/3/5/4/3/1 consistent. [8] reconciliation DISABLED (no cron/schedule:run/Console-Kernel entry).**
+
+**STOP — activation in place; SCA side healthy+proven. RE-VERIFY when a product is next created/updated/deleted in the store during normal business: expect a sca_shopify_webhook_receipts row topic products/* processing_outcome=processed + catalog change + no duplicates + provenance unchanged. Do NOT trigger a product change artificially. Reconcile stays disabled.**
+
+---
+
+# (PRIOR) SCA — SHOPIFY CLI AUTH RECOVERY: interactive `shopify auth login` must be owner-run; toml backed up; config pull PENDING
+(Note: owner has since completed auth + released v6; the CLI-auth-recovery task is resolved.)
 
 **STATUS (2026-10-27):** Prepared auth recovery; interactive login cannot run headless. Evidence: `docs/SCA-SHOPIFY-CLI-AUTH-RECOVERY.md`. No deploy, no product-webhook add, no new app, no scope change, no credential exposed, no SCA prod change.
 - **[1][5] DONE:** project /opt/sca-gov/shopify-app; backed up `shopify.app.toml.bak.20261027T190333Z`.

@@ -1,0 +1,24 @@
+# Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
+
+client_id = "64a260185ad3845818801c83d4e055f7"
+name = "SCA Eyewear Registry"
+application_url = "https://shopify.dev/apps/default-app-home"
+embedded = false
+
+[webhooks]
+api_version = "2026-07"
+
+  [[webhooks.subscriptions]]
+  uri = "https://verify.secondchanceauthenticators.com/sca/shopify/webhook"
+  topics = [ "orders/cancelled", "orders/paid", "refunds/create" ]
+
+[access_scopes]
+# Learn more at https://shopify.dev/docs/apps/tools/cli/configuration#access_scopes
+scopes = "read_orders"
+use_legacy_install_flow = false
+optional_scopes = [ ]
+
+[auth]
+redirect_urls = [
+  "https://verify.secondchanceauthenticators.com/sca/shopify/oauth/callback"
+]
