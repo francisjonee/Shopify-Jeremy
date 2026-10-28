@@ -1,3 +1,17 @@
+# SCA — OWNERSHIP R0 DB TEST PASS (security contract; disposable DB); 1 reported incompatibility (ExternalClaimTest::e16); prod unchanged; AWAITING review. (Phase-1 webhook verification still OPEN.)
+
+**STATUS (2026-10-28):** Authorized isolated DB-test of R0 (ce74229). Evidence: `docs/SCA-OWNERSHIP-R0-DB-TEST-RESULT.md`. Disposable DB only; dropped+verified; prod sca_krayin + SHA cb8a8c3 UNCHANGED. No prod migrate/merge/deploy/live-Shopify/live-claim/Option-C.
+- Isolation verified (getenv==getDatabaseName==live SELECT DATABASE()==SCA_TEST_DB==disposable, ≠sca_krayin). NAMING DEVIATION (documented): the 4 suites hard-guard the LITERAL `sca_domain_test` (ignore SCA_TEST_DB) → used a FRESH `sca_domain_test` (absent at baseline; no other session), dropped after. Migrated + `db:seed` (web routes need channel/config state).
+- **Combined (seeded): 48 tests / 228 assertions / 1 error / 0 failures / 0 skips.** Per-suite: OwnershipR0PublicClaimRetiredTest 7/29 OK; ClaimWorkflowTest 11/44 OK; ShopifySaleClaimVisibilityTest 12 OK; ExternalClaimTest 17 pass + 1 ERROR.
+- R0 contract CONFIRMED: [6] every public claim→410 (eligible/missing/cancelled/refunded); [7] 0 ownership/0 claim/sale-link stays eligible; [8] malformed+unknown both 410 (no enumeration); [9] private grant → exactly one ownership; [10] expired/used/unauthorized grants rejected (ExternalClaim grant suite); [11] passport viewing + collector routing + transfer/former-owner preview intact.
+- **[12] ONLY incompatibility (REPORTED, not repaired): `ExternalClaimTest::e16_shopify_claim_path_is_unchanged` (line 419) calls retired ClaimWorkflow::claim()→now throws PUBLIC_CLAIM_RETIRED. Recommend update/remove e16 when finalizing R0.** No other test/route depends on the retired path (ClaimController handled→410; public routes intentionally retired).
+- Combined-run /install redirects were an unseeded-DB artifact (gone after db:seed), NOT an R0 regression.
+- prod fingerprint: items3/own5/claims2/cert4/qr3/grant1; batch 29/145; loopback /admin/login 200.
+
+**STOP — R0 verified. ⚠️ RELEASE DEPENDENCY: do NOT deploy R0 alone without approved R0b (sce_presale private grant + fulfillment-release) — R0 leaves sce_presale with no claim path; external_intake unaffected. NEXT (owner): fix e16 on R0 branch → merge decision → R0b. SEPARATE OPEN: Phase-1 first genuine products/* webhook receipt verification.**
+
+---
+
 # SCA — OWNERSHIP R0 IMPLEMENTED (branch ce74229): public QR-token claiming RETIRED; static PASS; DB tests NOT run; AWAITING review. (Phase-1 webhook verification still OPEN.)
 
 **STATUS (2026-10-28):** R0 (GAP-1) on feat/sca-ownership-r0-retire-public-claim off prod cb8a8c3. Evidence: `docs/SCA-OWNERSHIP-R0-RETIRE-PUBLIC-CLAIM.md`. Worktree-only; prod/main cb8a8c3 untouched. No migration/deploy/merge/live-Shopify/live-claim/Option-C.
