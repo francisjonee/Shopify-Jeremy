@@ -1,3 +1,15 @@
+# SCA — SHOPIFY PHASE 2 SLICE C DB TEST PASS (7/7, disposable DB); branch aaa21a6; prod unchanged; AWAITING merge decision. (Phase-1 webhook verification still OPEN.)
+
+**STATUS (2026-10-28):** Authorized ONE isolated DB-test for Slice C (992e048). Evidence: `docs/SCA-SHOPIFY-PHASE2-SLICE-C-DB-TEST-RESULT.md`. Disposable DB `sca_p2c_test_f1e008cde238` only; dropped+verified (0 residual); prod sca_krayin + SHA 91b88f1 UNCHANGED. No prod migrate/merge/deploy/Shopify/ownership/Option-C/full-regression.
+- Isolation verified (getenv==getDatabaseName==live SELECT DATABASE()==SCA_TEST_DB==disposable, ≠sca_krayin). Slice C adds NO migration (schema = Slice A/B 000001-3).
+- **ShopifyLinkVisibilityTest 7 tests / 29 assertions / 0 fail/warn/skip** (after 1 DISCLOSED test-only fix). Covers [6] linked product title/vendor/variant/SKU/ref/linked-at; [7] pair count=2 (re-confirmed); [8] archived→inactive + link preserved; [9] deleted→unavailable from snapshot + preserved; [10] registry linked/inactive/unlinked indicators (1 bounded query, no N+1); [11] viewer sees read-only info, NOT relink/unlink controls; [12] no link/provenance mutation.
+- DISCLOSED FIX (not silent): test #2 expected contiguous "Physical pairs linked to this variant: 2" but markup splits label/value with </span>; FEATURE correct (count=2 verified). Test-only one-line fix → branch 992e048→**`aaa21a6fc978e1fa4fd5be6e105e677d313e806d`** (product code byte-identical).
+- prod fingerprint baseline: items3/state3/auth4/cert4/qr3/own5/grant1; catalog 4565/5330; batch 29/145; Slice A/B tables empty. loopback /admin/login 200.
+
+**STOP — Slice C verified. NEXT (owner/ChatGPT): merge decision for Slice C branch aaa21a6 (code-only presentation, NO migration; if merged, deploy = ff live tree + apachectl graceful, NO new migration needed). SEPARATE OPEN: Phase-1 first genuine products/* webhook receipt verification on next organic product change.**
+
+---
+
 # SCA — SHOPIFY PHASE 2 SLICE C IMPLEMENTED (branch 992e048); read-only visibility; static PASS; DB tests NOT run; AWAITING review. (Phase-1 webhook verification still OPEN.)
 
 **STATUS (2026-10-28):** Slice C (staff visibility of linked Shopify product) on feat/sca-shopify-phase2-visibility off deployed 91b88f1. Evidence: `docs/SCA-SHOPIFY-PHASE2-SLICE-C-IMPLEMENTATION.md`. Worktree-only; prod/main 91b88f1 untouched. No migration/deploy/live-Shopify/ownership/Option-C.
