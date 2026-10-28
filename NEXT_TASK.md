@@ -1,3 +1,16 @@
+# SCA — SHOPIFY PHASE 2 SLICE B IMPLEMENTED (branch 2343e04); static PASS; DB tests NOT run; AWAITING review. (Phase-1 webhook verification still OPEN.)
+
+**STATUS (2026-10-28):** Slice B (staff linking UI + backend) on feat/sca-shopify-phase2-linking. Evidence: `docs/SCA-SHOPIFY-PHASE2-SLICE-B-IMPLEMENTATION.md`. Worktree-only; live main 905ea7d untouched. No prod migrate/merge/deploy/Shopify/Option-C.
+- **SHA 5c1aa23→`2343e044b5d801985b381ef022311dc1a2b45dcd`** (pushed origin). 17 files (7 mod, 10 new).
+- EyewearShopifyIntakeService::createLinked = canonical ItemService::create + ShopifyProductLinkService::link in ONE DB::transaction; rejected link throws LinkRejectedException → whole intake rolls back (no orphan). Durable idempotency sca_eyewear_intake_idempotency (UNIQUE key; fast-path prior; 1062 race→re-resolve) → exactly one item/submission.
+- Append-only sca_eyewear_shopify_link_audit (BEFORE UPDATE/DELETE SIGNAL 45000); ShopifyProductLinkService appends audit on link/relink/unlink in-txn. Two ADDITIVE migrations (000002/000003); existing tables unchanged.
+- ProductLinkController: paginated catalog-search (title/vendor/variant/SKU/status) + link/relink/unlink, ALL under sca.can:sca.eyewear.shopify.link + CSRF + throttle. ACL route repointed→admin.sca.shopify.catalog-search. store() re-checks link ACL server-side (create-only staff → real 403, no item). UI: create-form selector+prefill(overridable)+hidden idem key; item-detail "Shopify link" tab.
+- Static: php -l 14/14 clean; Blade balanced. DB-changing tests EyewearShopifyIntakeTest + ShopifyProductLinkRouteTest WRITTEN, NOT run (SCA_TEST_DB guard). No app boot/DB connection; no dev-vendor build in worktree.
+
+**STOP — Slice B for review. NEXT (sep auth): run the two feature tests on a UNIQUE disposable DB (isolation-verified; prod sca_krayin untouched) + any Slice C surfacing. SEPARATE OPEN: Phase-1 first genuine products/* webhook receipt verification on next organic product change.**
+
+---
+
 # SCA — SHOPIFY PHASE 2 SLICE A DB TEST PASS (10/10, disposable DB); prod unchanged; AWAITING review. (Phase-1 webhook verification still OPEN.)
 
 **STATUS (2026-10-28):** Authorized ONE isolated DB-test session for Slice A (5c1aa23). Evidence: `docs/SCA-SHOPIFY-PHASE2-SLICE-A-DB-TEST-RESULT.md`. Disposable DB only; dropped+verified; prod sca_krayin UNCHANGED; link table NOT in prod. No prod-migrate/merge/deploy/Shopify/live-webhook/Option-C/full-regression.
