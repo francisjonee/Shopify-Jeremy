@@ -1,4 +1,18 @@
-# SCA — SHOPIFY INVENTORY SYNC ACTIVATION VERIFIED (v6 live); PRODUCT WEBHOOK DELIVERY PENDING (no genuine products/* receipt yet)
+# SCA — SHOPIFY PHASE 2 (product→physical-eyewear LINKING) AUDIT+PLAN (READ-ONLY); AWAITING review. (Phase-1 webhook-delivery verification still OPEN, separate.)
+
+**STATUS (2026-10-28):** READ-ONLY Phase 2 audit + plan. Evidence: `docs/SCA-SHOPIFY-PHASE2-LINKING-PLAN.md`. No code/DB/deploy/Shopify/activation.
+- **AUDIT:** intake = `ItemService::create` (canonical) via `EyewearItemController` (ACL sca.eyewear.create; StoreEyewearItemRequest: brand+model_name req, frame_serial, intake_type sce_presale|external_intake, year, country, materials, original_specs) + InventoryImportController (bulk). Auth→Cert→QR→Ownership chain services present (unchanged by P2). NO existing eyewear↔variant link (clean slate).
+- **DESIGN:** NEW additive table `sca_eyewear_item_shopify_variant` (eyewear_item_id UNIQUE → ≤1 variant/item; index shop+variant NOT unique → N items/variant = multiple pairs per variant §3). NEW sole-writer `ShopifyProductLinkService` (link/unlink/relink, validates item + active variant, UNIQUE guard, txn; never creates item or touches auth/cert/QR/ownership). New ACL sca.eyewear.shopify.link.
+- **WORKFLOW:** optional "Link to Shopify product" on create form → search active sca_shopify_products/variants → prefill brand←vendor, model_name←title(+options), sku←variant.sku (staff-editable; year/country/materials/serial staff-entered; no images in P1) → submit = ItemService::create + link in ONE txn; double-submit idempotency token; link/unlink from item detail too.
+- **INVARIANT PRESERVED:** catalog sync/webhook/import NEVER create item/link (only staff intake does); linking never auto-authenticates/passports/owns. History additive/untouched.
+- **TESTS+ROADMAP:** Slice A (migration+service+ACL+DB tests), B (UI selector+prefill+create-with-link), C (surface ref + ops linked-count); future image/metafield sync + advisory stock reconcile. Catalog-only invariant test (webhook/import → 0 items/0 links).
+
+**STOP — Phase 2 plan for review; implement only on approval (Slice A first). SEPARATE OPEN TASK: re-verify first genuine products/* webhook receipt (processed + catalog change + provenance unchanged) on next organic product change — see activation-verification doc. Reconcile stays disabled.**
+
+---
+
+# (PRIOR) SCA — SHOPIFY INVENTORY SYNC ACTIVATION VERIFIED (v6 live); PRODUCT WEBHOOK DELIVERY PENDING (no genuine products/* receipt yet)
+(Still OPEN + separate: confirm first genuine products/* receipt on the next organic store product change; do NOT trigger artificially.)
 
 **STATUS (2026-10-28):** READ-ONLY activation verification after owner released sca-eyewear-registry-6. Evidence: `docs/SCA-SHOPIFY-INVENTORY-SYNC-ACTIVATION-VERIFICATION.md`. No product create/modify, no re-import, no deploy/migration, no Shopify config change, no passport.
 - **[1] SHA 905ea7d, admin 200, kr-app up. [2] scope read_orders,read_products. [4] live getShop/listProducts(5+next)/getOrder(refunded) all OK (read_products+read_orders work).**
