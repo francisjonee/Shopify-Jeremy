@@ -1,4 +1,17 @@
-# SCA — SHOPIFY PHASE 2 (product→physical-eyewear LINKING) AUDIT+PLAN (READ-ONLY); AWAITING review. (Phase-1 webhook-delivery verification still OPEN, separate.)
+# SCA — SHOPIFY PHASE 2 SLICE A IMPLEMENTED (branch 5c1aa23); non-destructive PASS; DB tests NOT run; AWAITING review + sep auth. (Phase-1 webhook verification still OPEN.)
+
+**STATUS (2026-10-28):** Slice A (link layer, no UI) on feat/sca-shopify-phase2-linking off 905ea7d. Evidence: `docs/SCA-SHOPIFY-PHASE2-SLICE-A-IMPLEMENTATION.md`. Worktree (live main 905ea7d untouched). No prod migration/deploy/live-Shopify/UI/Option-C.
+- **SHA 905ea7d→`5c1aa23e45f78f33a5cd8c590b907dd049595417`** (pushed origin). 5 files.
+- NEW migration sca_eyewear_item_shopify_variant (UNIQUE eyewear_item_id = 1 variant/item; NON-unique (shop,variant) index = N items/variant; FK item→sca_eyewear_items cascade; NO FK to catalog). Model EyewearItemShopifyVariant. ShopifyProductLinkService (sole writer: link/unlink/explicit relink; validates item exists + expected shop + ACTIVE variant belongs to product+shop; idempotent same-variant='exists', other-variant=rejected; writes ONLY join table, never creates item/touches provenance). ACL sca.eyewear.shopify.link (placeholder route until Slice B). Test ShopifyProductLinkTest (disposable DB, SCA_TEST_DB guard, NOT run).
+- Non-destructive: php -l 5/5 clean; id/shop logic smoke OK. DB tests written NOT run (sep auth + unique disposable DB).
+- Idempotency strategy for Slice-B intake double-submit documented (per-submit token + item-create+link in one txn; UNIQUE eyewear_item_id hard guard).
+- Catalog sync + order processing UNCHANGED.
+
+**STOP — Slice A for review. NEXT (sep auth): run DB tests on unique disposable DB; then Slice B (UI selector+prefill+create-with-link, wire link/unlink routes, repoint ACL route); Slice C surfacing. SEPARATE OPEN: Phase-1 first genuine products/* webhook receipt verification on next organic product change.**
+
+---
+
+# (PRIOR) SCA — SHOPIFY PHASE 2 (product→physical-eyewear LINKING) AUDIT+PLAN (READ-ONLY)
 
 **STATUS (2026-10-28):** READ-ONLY Phase 2 audit + plan. Evidence: `docs/SCA-SHOPIFY-PHASE2-LINKING-PLAN.md`. No code/DB/deploy/Shopify/activation.
 - **AUDIT:** intake = `ItemService::create` (canonical) via `EyewearItemController` (ACL sca.eyewear.create; StoreEyewearItemRequest: brand+model_name req, frame_serial, intake_type sce_presale|external_intake, year, country, materials, original_specs) + InventoryImportController (bulk). Auth→Cert→QR→Ownership chain services present (unchanged by P2). NO existing eyewear↔variant link (clean slate).
