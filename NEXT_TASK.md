@@ -1,3 +1,16 @@
+# SCA — SHOPIFY PHASE 2 SLICE A+B DEPLOYED to prod (91b88f1); healthy; prod data UNCHANGED. (Phase-1 webhook verification still OPEN.)
+
+**STATUS (2026-10-28):** Authorized controlled release of 91b88f1 DONE + verified. Evidence: `docs/SCA-SHOPIFY-PHASE2-DEPLOY-RESULT.md`.
+- Prod code `905ea7d`→`91b88f1` (live tree ff-only + `apachectl graceful`; NO Docker recreate). 3 ADDITIVE migrations applied to prod sca_krayin via SEPARATE target-code mount (migrate:status gate = exactly 3 pending) → batch 28→**29** (142→145 rows). Fresh pre-deploy backup 20261028T171117Z verified (sha256 MATCH + decrypts).
+- Verified: 3 new tables exist + 2 append-only triggers; item-detail show() canary reads new tables OK (migrate-before-code satisfied); routes catalog-search/link/relink/unlink registered w/ ScaAuthenticate+ScaAuthorize:sca.eyewear.shopify.link; unauth POST link=419; loopback /admin/login 200; edge 403 (owner allowlist, expected).
+- **PROD DATA UNCHANGED:** items3/state3/auth4/cert4/qr3/own5/grant1; catalog 4565/5330; 3 new tables EMPTY (live-but-dormant). No eyewear/ownership created; feature NOT exercised with live data.
+- ⚠️ OPERATOR ACTION: ACL `sca.eyewear.shopify.link` is ungranted by default — grant to intended staff role before use.
+- ROLLBACK (if needed): live tree→905ea7d + graceful (code-only; no DB rollback — additive tables ignored by old code; optional migrate:rollback --step=1 w/ separate approval).
+
+**STOP — Phase 2 deployed + healthy. SEPARATE OPEN: first genuine products/* webhook receipt verification on next organic Shopify product change (unchanged by this release).**
+
+---
+
 # SCA — SHOPIFY PHASE 2 DEPLOY READINESS: READY FOR RELEASE APPROVAL (read-only; nothing deployed). Prod 905ea7d; target origin/main 91b88f1. (Phase-1 webhook verification still OPEN.)
 
 **STATUS (2026-10-28):** READ-ONLY production deploy-readiness assessment of 91b88f1 over prod 905ea7d. Evidence: `docs/SCA-SHOPIFY-PHASE2-DEPLOY-READINESS.md`. VERDICT **READY FOR RELEASE APPROVAL — no NO-GO blockers**. Nothing deployed/migrated/checked-out/restarted.
