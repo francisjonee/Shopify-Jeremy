@@ -1,3 +1,14 @@
+# SCA — ORDER-ASSIGNMENT DEPLOYED to prod: live 5bed316→`eb137bf` (migrate-before-code, batch 30, graceful). Assignment+permfix+rc21 LIVE; R0c excluded; ZERO Shopify interaction. (Phase-1 webhook verification still OPEN.)
+
+**STATUS (2026-10-29):** Authorized controlled production deployment of RC eb137bf. Evidence: `docs/SCA-SHOPIFY-ORDER-ASSIGNMENT-DEPLOY.md`. No Docker recreate; ZERO Shopify API/store/credential/webhook change.
+- **LIVE /opt/sca-platform + local main = `eb137bf905758e7bfa2a9b13a2ce68384340c54f`** (prev 5bed316). Migrate-BEFORE-code from a SEPARATE target worktree (own vendor + copied prod .env, shredded after): migrate:status showed EXACTLY 1 pending → `migrate --force` applied `2026_10_31_000001_create_sca_shopify_order_item_assignments` to sca_krayin (batch 30). Then FF live tree + `view:clear` + `apachectl -k graceful` (opcache validate_timestamps=On; NO Docker recreate). vendor(53)+app/.env preserved.
+- POST-DEPLOY ALL PASS: SHA eb137bf; login200/operations302/order-assign302 (redirects, not 500, no Shopify API); routes+ACL registered (GET order-assign→ScaAuthorize:sca.shopify.view; POST→sca.eyewear.shopify.order-assign+throttle); **assignment table 0 rows + append-only triggers; provenance UNCHANGED (items3/own5/claims2/cert4/qr3/state3/auth4/grant1); shopify sale_links=1 unchanged** (catalog 4574/5344, receipts 1282 drift only via background webhooks); migrations 30/146. Logs: only ERRORs today are a benign operator `route:list --columns` CLI typo (not app/deploy). Backup 20261029T021703Z sha256 OK.
+- ⚠️ DEPLOYED DB now batch 30 (one ADDITIVE table); R0/R0b/R0c still UNDEPLOYED. Feature INERT until staff use it (no order assignment performed). Rollback (if needed): reset/checkout live→5bed316 + view:clear + graceful; do NOT roll back the additive migration without separate approval (no DB rollback needed — table additive, 0 rows).
+
+**STOP — Order→Eyewear Assignment + perm-fix + rc21 LIVE at eb137bf; prod provenance + Shopify untouched; ZERO Shopify interaction. SEPARATE OPEN: Phase-1 first genuine products/* webhook receipt verification.**
+
+---
+
 # SCA — ORDER-ASSIGNMENT RELEASE CANDIDATE READY: branch release/sca-shopify-order-assignment `eb137bf` off prod 5bed316 (assignment+permfix+rc21; 1 additive migration; R0c excluded; tree==tested integration). NOT deployed. (Phase-1 webhook verification still OPEN.)
 
 **STATUS (2026-10-29):** Authorized prod-based RC prep combining 5b29338 + e2470a6 + d6e4b96. Evidence: `docs/SCA-SHOPIFY-ORDER-ASSIGNMENT-RELEASE-CANDIDATE.md`. No deploy/migration/Shopify/prod-DB change; no Shopify access (pure git).
