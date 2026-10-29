@@ -1,3 +1,16 @@
+# SCA — R0+R0b+R0c CODE-ONLY MERGE READINESS (read-only): SAFE TO MERGE (non-activating); deploy still gated on migrate-before-code + email delivery. Candidate 539cd1f; prod cb8a8c3. (Phase-1 webhook verification still OPEN.)
+
+**STATUS (2026-10-29):** READ-ONLY merge-readiness review of 539cd1f→main. Evidence: `docs/SCA-OWNERSHIP-R0-R0B-R0C-MERGE-READINESS.md`. No merge/deploy/migrate/prod change.
+- SHAs: candidate=539cd1f; origin/main=local=live=cb8a8c3 (no drift). merge-base=cb8a8c3 → clean LINEAR descendant, conflict-free.
+- Complete R0+R0b+R0c (7 commits); tests (77/326) correspond to 539cd1f. 33 files, ALL within Sca packages+tests (no unrelated). 4 ADDITIVE reversible migrations (batch 30): fulfillment cols on items, sca_presale_claim_grants, order_email on sale_links, sca_collector_email_verifications. No destructive ops.
+- **[5/6] SAFE to merge code-only (isolated worktree + push origin main): live checkout + prod DB stay cb8a8c3/batch29; migrations NOT run; no deploy.**
+- **[8] NO accidental-activation: openShopifyClaim has ONE caller (claimByPresaleGrant, after buyerIsVerified gate); public claim() retired(410); email_verified_at set ONLY by challenge confirm (email delivery blocked). Feature INERT-until-email; even if deployed w/o email, no customer claim can succeed (fails closed).**
+- [7] DEPLOY PREREQS (future, sep auth): migrate-BEFORE-code (new code writes order_email/fulfillment cols → unknown-column if code-first); email delivery (provider token+verified sender+SPF/DKIM, see SCA-OWNERSHIP-EMAIL-DELIVERY-READINESS); ACL grant (Administrator all already has); backfill no-op/skippable; deploy approval; never bearer-only.
+
+**STOP — read-only; code-only merge is SAFE/non-activating when owner authorizes. NEXT (owner): authorize code-only merge of 539cd1f→main (isolated worktree, no deploy) OR defer; deployment separately gated on migrate-before-code + email delivery. SEPARATE OPEN: Phase-1 first genuine products/* webhook receipt verification.**
+
+---
+
 # SCA — OWNERSHIP EMAIL-DELIVERY READINESS (read-only): BLOCKED pending provider token + verified sender + SPF; app/code READY; backfill a no-op (0 eligible rows). Prod cb8a8c3. (Phase-1 webhook verification still OPEN.)
 
 **STATUS (2026-10-29):** READ-ONLY email-delivery readiness assessment (R0+R0b+R0c candidate 539cd1f). Evidence: `docs/SCA-OWNERSHIP-EMAIL-DELIVERY-READINESS.md`. No mail/DNS/DB/deploy change, no email sent, no creds printed.
