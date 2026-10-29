@@ -1,3 +1,16 @@
+# SCA — FIRST-ORDER-ASSIGNMENT ELIGIBILITY AUDIT (read-only): NO local candidate (sole sale-link refunded; all 3 eyewear are test/demo, 2 owned; 0 variant links). Needs real paid order + real unowned QR-active pair (sep auth). prod eb137bf. (Phase-1 webhook verification still OPEN.)
+
+**STATUS (2026-10-29):** READ-ONLY local-data eligibility audit for the first Order→Eyewear Assignment. Evidence: `docs/SCA-SHOPIFY-FIRST-ORDER-ASSIGNMENT-ELIGIBILITY-AUDIT.md`. No Shopify API/getOrder/reconciliation, no DB write, no PII, no item/order fabrication.
+- Live eb137bf/clean/200; 0 assignment records. Webhook receipts store NO order/line ids (shop/topic/webhook-id/digest/counts only) → 104 paid receipts can't supply (order_id,line_id). ONLY local order/line ids = the 1 sale_links row = **revoked_refund** (item4, order 8019293831455) → ineligible.
+- Eyewear (all TEST/DEMO): id1 SCA-3C35D669ACBE DEMO-DO-NOT-USE (unowned, QR active, no order — demo, not a real candidate); id3 SCA-F1B792AE4745 Ray-Ban/PILOT-TEST (OWNED collector1); id4 SCA-A960A57D3124 PHASE4-TEST-DO-NOT-SELL (OWNED collector3, the refunded link). Owned items ineligible for new sale link. No active (eligible/claimed) sale link anywhere.
+- 0 item↔variant links; the refunded order's variant 52983511089439/product 10632814199071 NOT in catalog mirror. No match assumed by name/SKU/appearance.
+- VERDICT: NO local candidate. Missing prereqs: a genuine paid/non-refunded order (id+line+variant from Shopify admin/authoritative getOrder, NOT local), a REAL unowned QR-active certified pair, and a variant link (or manager override). Did NOT create a test item or fabricate an order.
+- [11] Safe first test (SEP owner auth): owner picks a real paid order (id+line+variant) + the real pair that shipped (unowned/certified/active-QR) → pre-link variant OR manager override → ONE assign via /admin/sca/shopify/order-assign (authoritative getOrder) → verify 1 eligible sale link + 1 audit row + no provenance change.
+
+**STOP — no ready candidate in local data; first assignment blocked on real operational prereqs needing separate authoritative verification. SEPARATE OPEN: Phase-1 first genuine products/* webhook receipt verification.**
+
+---
+
 # SCA — ORDER-ASSIGNMENT STAFF SOP DELIVERED (read-only) for first order→eyewear assignment at prod `eb137bf`. No blockers beyond operational prerequisites. (Phase-1 webhook verification still OPEN.)
 
 **STATUS (2026-10-29):** READ-ONLY staff SOP for connecting sold glasses to the Shopify order + QR Passport. Evidence: `docs/SCA-SHOPIFY-ORDER-ASSIGNMENT-STAFF-SOP.md`. No Shopify API/store change, no DB write, no test assignment/variant-link, no code/deploy.
