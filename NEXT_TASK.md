@@ -1,3 +1,15 @@
+# SCA — ASSIGNMENT + PERM-FIX + rc21 FINAL COMBINED REGRESSION: ALL GREEN (79/79; rc8+rc21 pass; rc21 N+1-detection proven). 3 branches UNMERGED off 5bed316; prod untouched. NEXT = code-only merge review → release. (Phase-1 webhook verification still OPEN.)
+
+**STATUS (2026-10-29):** Authorized FINAL combined disposable-DB regression (egress BLOCKED) of assignment 5b29338 + perm-fix e2470a6 + rc21-fix d6e4b96 onto 5bed316 (R0c excluded). Evidence: `docs/SCA-SHOPIFY-ASSIGN-PERM-RC21-FINAL-REGRESSION-RESULT.md`. No merge/deploy/prod-DB change.
+- Integration off 5bed316, --no-ff all three (disjoint, no conflicts). Combined diff = approved files + 1 additive migration (assignment audit) ONLY; ZERO R0c.
+- Disposable sca_domain_test (absent+0-conns; scoped user no sca_krayin access; dropped). Isolation verified. **SHOPIFY SAFETY: ran on `docker network --internal sca_testnet` — proven from test-runner image: TCP 1.1.1.1:443 BLOCKED, kr-mariadb:3306 reachable → ZERO live Shopify requests possible; fake store domain; Http::fake; no prod creds; kr-mariadb restored to sca_internal at teardown; prod sca_shopify_credentials row intact.**
+- **RESULTS: OperationsPermission 6/6 + Assignment 17/17 + SaleLink 23/23 + SaleClaimVisibility 12/12 + Reconciliation 21/21 = 79 tests / 512 assertions / 0 fail/err/warn/skip.** rc8 ✔ + rc21 ✔. **rc21 N+1-detection PROVEN via negative control** (injected per-row ops query → rc21 failed assertSame 6 vs 23; reverted, worktree clean). Assignment [22-23] confirmed (ACL/override/variant-match/refund-cancel/idempotency/conflict/append-only-audit; zero provenance).
+- Cleanup verified; PROD UNCHANGED (5bed316/200; batch29/145; 3/5/2/4/3/1; assignment table absent; Shopify creds row=1).
+
+**STOP — verification only, NOT merged. Three unmerged branches off 5bed316: assignment 5b29338 (1 additive migration), perm-fix e2470a6 (code-only), rc21-fix d6e4b96 (test-only). NEXT (separate owner decision): code-only merge review of the three → controlled release (assignment migration = migrate-before-code; perm-fix+rc21 code/test-only). SEPARATE OPEN: Phase-1 first genuine products/* webhook receipt verification.**
+
+---
+
 # SCA — rc21 TEST CORRECTED (test-only, branch fix/sca-reconciliation-rc21-test d6e4b96 off e2470a6). NEXT = combined disposable-DB rerun (egress blocked) expecting 21/21. 3 unmerged branches off 5bed316. (Phase-1 webhook verification still OPEN.)
 
 **STATUS (2026-10-29):** Authorized test-only correction of ShopifyReconciliationTest::rc21. Evidence: `docs/SCA-SHOPIFY-RECONCILIATION-RC21-TEST-CORRECTION.md`. No prod code/migration/deploy; no tests run (DB-backed → deferred).
