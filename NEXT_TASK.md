@@ -1,3 +1,14 @@
+# SCA — OWNERSHIP R0+R0b+R0c MERGED to origin/main (e644c9c); CODE-ONLY, NOT deployed; prod still cb8a8c3 (batch 29). Claiming workflow INERT until email delivery. (Phase-1 webhook verification still OPEN.)
+
+**STATUS (2026-10-29):** Authorized CODE-ONLY merge of 539cd1f into main. Evidence: `docs/SCA-OWNERSHIP-R0-R0B-R0C-MERGE.md`. No deploy/restart/migration/SMTP/Shopify/Option-C.
+- **origin/main `cb8a8c3`→`e644c9cc87f3a388af73de00c38cba5fd57597a3`** (--no-ff; parents cb8a8c3+539cd1f; non-force FF push). Merge tree byte-identical to candidate; conflict-free; 33 files all within Sca packages+tests; 4 ADDITIVE migrations (batch 30, NOT applied).
+- Merge in ISOLATED temp worktree, NOT the live checkout → live /opt/sca-platform still cb8a8c3 (docroot lacks new code; buyerIsVerified absent); prod sca_krayin UNCHANGED (batch 29/145; R0c tables+order_email col absent); loopback /admin/login 200. Temp worktree+branch removed. ⚠️ live local main intentionally left at cb8a8c3.
+- Claiming workflow INERT until email delivery configured (gate fails closed; email verification deferred by owner). Public QR retired(410); external-intake unchanged.
+
+**STOP — merge complete. NEXT (SEPARATE auth required): deploy e644c9c = migrate-BEFORE-code the 4 additive migrations (batch 30) from a separate mount + ff live tree + apachectl graceful (NO Docker recreate); PLUS operational email delivery (provider token+verified sender+SPF/DKIM, see SCA-OWNERSHIP-EMAIL-DELIVERY-READINESS) before customer claims; ACL grant (admin has it); backfill no-op. Never bearer-only. SEPARATE OPEN: Phase-1 first genuine products/* webhook receipt verification.**
+
+---
+
 # SCA — R0+R0b+R0c CODE-ONLY MERGE READINESS (read-only): SAFE TO MERGE (non-activating); deploy still gated on migrate-before-code + email delivery. Candidate 539cd1f; prod cb8a8c3. (Phase-1 webhook verification still OPEN.)
 
 **STATUS (2026-10-29):** READ-ONLY merge-readiness review of 539cd1f→main. Evidence: `docs/SCA-OWNERSHIP-R0-R0B-R0C-MERGE-READINESS.md`. No merge/deploy/migrate/prod change.
