@@ -1,3 +1,16 @@
+# SCA — TRANSACTIONAL EMAIL READINESS (read-only): minimum = Postmark SMTP (config-only) OR API transport (release needs symfony/postmark-mailer added). Email fail-closed; no Shopify change. RC still DEPLOYMENT-BLOCKED. (Phase-1 webhook verification COMPLETE.)
+
+**STATUS (2026-10-29):** READ-ONLY email-config readiness for verified-buyer claim launch. Evidence: `docs/SCA-TRANSACTIONAL-EMAIL-READINESS.md`. No account/DNS/email/config/deploy change; no secrets.
+- ⚠️ **KEY: Postmark API transport NOT installed — `symfony/postmark-mailer`+`symfony/http-client` are composer SUGGESTIONS only, NOT in composer.json/vendor. So `MAIL_MAILER=postmark` would FAIL at runtime; release 4bd88d2 ships no such dep.** Only smtp/sendmail/log/array work out-of-the-box (symfony/mailer installed).
+- TWO paths: (A) RECOMMENDED config-only = Postmark **SMTP** (MAIL_MAILER=smtp, smtp.postmarkapp.com:587 tls, username=password=Server token) — no release change; (B) Postmark **API** = `composer require symfony/postmark-mailer symfony/http-client` (code/vendor change to release + re-test) then MAIL_MAILER=postmark+POSTMARK_TOKEN.
+- Both need: verified sender no-reply@secondchanceauthenticators.com (replace no-reply@localhost placeholder); DNS @GoDaddy = add SPF (absent), confirm/publish DKIM (pm selector — match the Postmark server), Return-Path/bounce CNAME (DMARC already p=quarantine); prod APP_URL must = https://verify.secondchanceauthenticators.com (link origin for verify + reset).
+- Email-verif token: single-use, SHA-256 hashed, 60-min TTL, origin config('app.url'). FAIL-CLOSED confirmed: no provider → email_verified_at unsettable → buyerIsVerified false → BUYER_VERIFICATION_REQUIRED (no bypass; no config step may set email_verified_at without a real confirmed link). [10] email independent of Shopify (zero store change).
+- Owner actions: provider account + Server token (secret→prod .env only); verified sender; SCA-owned test inbox; GoDaddy DNS (SPF/DKIM/Return-Path); choose SMTP vs API; confirm APP_URL. Then non-prod delivery test → separate migrate-before-code deploy of 4bd88d2.
+
+**STOP — email readiness delivered. RC `4bd88d2` remains RELEASE-PREPARED / DEPLOYMENT-BLOCKED. Owner must configure transactional email (SMTP config-only is the shortest; API needs a release dep) + DNS, then authorize the deploy. Phase-1 webhook verification COMPLETE.**
+
+---
+
 # SCA — SECURE CLAIM RELEASE CANDIDATE PREPARED (branch release/sca-secure-claim `4bd88d2` off prod 4faf84d; byte-identical to tested 7da38b8). RELEASE-PREPARED / DEPLOYMENT-BLOCKED on email+auth. (Phase-1 webhook verification COMPLETE.)
 
 **STATUS (2026-10-29):** Authorized prod-based RC for the integrated R0/R0b/R0c secure claim. Evidence: `docs/SCA-SECURE-CLAIM-RELEASE-CANDIDATE.md`. No deploy/merge/migration/prod-DB/Shopify/email change.
