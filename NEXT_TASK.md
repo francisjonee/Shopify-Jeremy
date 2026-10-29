@@ -1,3 +1,14 @@
+# SCA — SHOPIFY OPERATIONS ADMIN-PERM FIX (branch fix/sca-shopify-operations-admin-perm e2470a6 off prod 5bed316; UNMERGED). Fixes pre-existing OperationsController 'all'-role 500. prod unchanged. (Phase-1 webhook verification still OPEN.)
+
+**STATUS (2026-10-29):** Authorized narrow fix of the pre-existing Administrator permission crash (rc8/rc21). Evidence: `docs/SCA-SHOPIFY-OPERATIONS-ADMIN-PERM-FIX.md`. No merge/deploy/migration/Shopify/reconcile-logic change.
+- Branch off PROD 5bed316 → head **`e2470a64fae543b4ec111d7b833b6c8a55d7c6f0`** (pushed origin). Live /opt/sca-platform untouched (5bed316/main/clean/200). 2 files (1 mod OperationsController + 1 new test); NO migration/config/route change.
+- FIX: OperationsController::index:81 `canReconcile` was core `User::hasPermission()` → TypeError (in_array null) for 'all'-role Administrator → 500 on GET operations. Changed to `(bool) bouncer()->hasPermission('sca.shopify.reconcile')` (same as sca.can/ScaAuthorize). ONLY `->hasPermission(` occurrence in all packages/Sca (grep-verified). ACL unchanged (view gates screen; separate reconcile ACL gates mutation); zero reconcile/order/inventory/ownership logic change.
+- Tests `ShopifyOperationsPermissionTest` (admin loads 200+reconcile; view-only loads no-reconcile; no-view 403; unauth redirect; reconcile needs separate ACL). WRITTEN, **NOT run** (no DB-test auth). php -l clean.
+
+**STOP — fix on dev branch. NEXT (separate auth): disposable-DB run of ShopifyOperationsPermissionTest + confirm ShopifyReconciliationTest rc8/rc21 pass → code-only merge review → deploy (code-only, no migration). SEPARATE OPEN: Phase-1 first genuine products/* webhook receipt verification.**
+
+---
+
 # SCA — STAFF ORDER→EYEWEAR ASSIGNMENT: isolated DB regression GREEN (17/17) at `5b29338` (was c37592b + 2 disclosed fixes); UNMERGED. prod 5bed316 unchanged. NEXT = code-only merge review. (Phase-1 webhook verification still OPEN.)
 
 **STATUS (2026-10-29):** Authorized disposable-DB regression of candidate c37592b. Evidence: `docs/SCA-SHOPIFY-ORDER-ITEM-ASSIGNMENT-DB-TEST-RESULT.md`. No merge/deploy/prod-DB change.
