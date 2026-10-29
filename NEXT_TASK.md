@@ -1,3 +1,14 @@
+# SCA — TRANSFER STATUS CLARITY: isolated DB regression GREEN (23/23) at a44103a; UNMERGED. prod cb8a8c3 unchanged. NEXT = code-only merge review. (Phase-1 webhook verification still OPEN.)
+
+**STATUS (2026-10-29):** Authorized single disposable-DB regression of candidate `a44103a`. Evidence: `docs/SCA-OWNERSHIP-TRANSFER-STATUS-CLARITY-DB-TEST-RESULT.md`. No merge/deploy/prod-DB change.
+- Fresh `sca_domain_test` (re-checked absent+0-conns; scoped user `sca_test` with ALL on test DB only, NO access to sca_krayin; dropped after). Isolation verified (getenv/conn/SELECT DATABASE()/SCA_TEST_DB all = sca_domain_test). migrate(batch 30)+db:seed. Dev vendor built via app image sca-app:krayin-2.2.6 (composer:2 lacks gd/intl/calendar).
+- **`TransferStatusClarityTest` 8/24 OK + `TransferWorkflowTest` 15/52 OK = 23 tests / 76 assertions / 0 err/fail/warn/skip.** Objectives [8-13] confirmed: banner only when valid pending invite; banner states owner retains ownership until acceptance; generate/cancel/accept confirmations; non-owner 404 (no controls/banner/token); **token + accept-URL absent from item-detail HTML**; expiry/cancel/replay/self-transfer protections unchanged.
+- Cleanup verified (DB gone, user gone, sca_krayin intact). **PROD UNCHANGED:** cb8a8c3/main/clean, loopback 200, batch 29/145, items3/own5/claims2/cert4/qr3/sale1, R0c tables+order_email col absent (0/0).
+
+**STOP — regression GREEN; prod untouched. NEXT (separate auth): code-only merge review of feat/sca-transfer-status-clarity (presentation-only, off main e644c9c, no migration). No deploy without separate approval. SEPARATE OPEN: Phase-1 first genuine products/* webhook receipt verification.**
+
+---
+
 # SCA — TRANSFER STATUS CLARITY IMPLEMENTED (presentation-only) on branch feat/sca-transfer-status-clarity (a44103a, off main e644c9c; UNMERGED). prod cb8a8c3. (Phase-1 webhook verification still OPEN.)
 
 **STATUS (2026-10-29):** Authorized presentation-only implementation of the transfer status-clarity slice. Evidence: `docs/SCA-OWNERSHIP-TRANSFER-STATUS-CLARITY.md`. Dev branch only — NO merge/deploy/migration/schema/service change.
