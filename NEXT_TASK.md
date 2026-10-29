@@ -1,3 +1,14 @@
+# SCA — QR PACKING-READINESS DEPLOYED to prod: live eb137bf→`4faf84d` (code-only FF, NO migration, graceful). Order-assign confirmation now keyed on ACTIVE QR, not is_production. (Phase-1 webhook verification still OPEN.)
+
+**STATUS (2026-10-29):** Authorized controlled production deployment of RC 4faf84d (display-only QR packing-readiness fix). Evidence: `docs/SCA-QR-PACKING-READINESS-DEPLOY.md`. No migration/Docker-recreate/DB-write; ZERO Shopify API/store change.
+- **LIVE /opt/sca-platform + local main = `4faf84d49b4a67823aff31ba0dc926bd91110c16`** (prev eb137bf; single-commit `git merge --ff-only`, origin/main NOT pulled). Parent eb137bf; diff = 2 files only. view:clear + apachectl graceful (opcache validate_timestamps=On; NO recreate; vendor(53)+.env preserved).
+- PRECHECKS: batch 30/146, 0 pending migrations; backup 20261029T021703Z sha256 OK. POST: SHA 4faf84d; login200/order-assign302/operations302; updated code present (line 97 single-arg; "staging — not for print" count=0); routes+ACL intact; **provenance/assignment UNCHANGED (3/5/2/4/3/1/0); migrations 30/146**; catalog 4575/5345/receipts 1298 (background-webhook drift only). Logs: only today-ERRORs = earlier benign route:list --columns CLI typo (15:54), not this deploy. No recreate (kr-app 3w/kr-mariadb 6w uptime).
+- Rollback (if needed): restore code snapshot eb137bf on live + view:clear + graceful; NO DB rollback (display-only). Live code diverges from origin/main a397a7e (R0/R0b/R0c undeployed).
+
+**STOP — QR packing-readiness LIVE at 4faf84d; prod data/schema/Shopify untouched; ZERO Shopify interaction. SEPARATE OPEN: Phase-1 first genuine products/* webhook receipt verification.**
+
+---
+
 # SCA — QR PACKING-READINESS RELEASE CANDIDATE READY: branch release/sca-qr-packing-readiness `4faf84d` off prod eb137bf (display-only; NO migration; byte-identical to tested a0bd8db). NOT deployed. (Phase-1 webhook verification still OPEN.)
 
 **STATUS (2026-10-29):** Authorized prod-based RC prep of the QR packing-readiness fix. Evidence: `docs/SCA-QR-PACKING-READINESS-RELEASE-CANDIDATE.md`. No deploy/merge/migration/DB/Shopify change; pure git.
