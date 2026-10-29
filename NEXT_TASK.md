@@ -1,3 +1,14 @@
+# SCA — rc21 TEST CORRECTED (test-only, branch fix/sca-reconciliation-rc21-test d6e4b96 off e2470a6). NEXT = combined disposable-DB rerun (egress blocked) expecting 21/21. 3 unmerged branches off 5bed316. (Phase-1 webhook verification still OPEN.)
+
+**STATUS (2026-10-29):** Authorized test-only correction of ShopifyReconciliationTest::rc21. Evidence: `docs/SCA-SHOPIFY-RECONCILIATION-RC21-TEST-CORRECTION.md`. No prod code/migration/deploy; no tests run (DB-backed → deferred).
+- Branch off **e2470a6** (perm-fix, needed for the Operations page to render for Administrator) → head **`d6e4b96324fe2d6063004f6704c012e8d988c51d`** (pushed origin). 1 file, test-only (rc21 body + helper `opsFeatureQueryCount`); diff confined to app/tests/ (verified). php -l clean. Live 5bed316 untouched.
+- FIX: rc21 now counts ONLY feature queries (regex `sca_shopify_(webhook_receipts|sale_links|reconciliation_runs)`), EXCLUDING Krayin admin-chrome (EAV attributes/core_config ≈36). Detects real N+1 via assertSame(small=3rows, large=28rows) feature-query count + strict budget assertLessThanOrEqual(6) (3 bounded list queries + headroom). NOT a raised global limit. Method name kept.
+- Expected on rerun: feature queries = 3 at both sizes → rc21 GREEN; still fails loudly on any real per-row N+1.
+
+**STOP — rc21 corrected. NEXT (separate auth per the task's own NEXT): combined disposable-DB regression with egress BLOCKED (docker network --internal; fake store; Http::fake; no prod creds) over assignment 5b29338 + perm-fix e2470a6 + rc21-fix d6e4b96, expecting OperationsPermission 6/6 + Assignment 17/17 + SaleLink 23/23 + SaleClaimVisibility 12/12 + Reconciliation 21/21. Then merge review → release. SEPARATE OPEN: Phase-1 first genuine products/* webhook receipt verification.**
+
+---
+
 # SCA — ASSIGNMENT + PERM-FIX COMBINED INTEGRATION REGRESSION: functionally GREEN (58 pass; rc8 FIXED); rc21 = pre-existing admin-chrome query-budget artifact (NOT merged). Both branches UNMERGED off prod 5bed316. (Phase-1 webhook verification still OPEN.)
 
 **STATUS (2026-10-29):** Authorized combined disposable-DB integration of assignment 5b29338 + perm-fix e2470a6 onto 5bed316 (R0/R0b/R0c excluded). Evidence: `docs/SCA-SHOPIFY-ASSIGN-PLUS-PERMFIX-COMBINED-DB-TEST-RESULT.md`. No merge/deploy/prod-DB change.
