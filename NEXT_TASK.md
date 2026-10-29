@@ -1,3 +1,15 @@
+# SCA — SECURE CLAIM REGRESSION FULLY GREEN + ENV-HARDENED (branch head `7da38b8`): 19 suites / 245 tests / 1141 assertions / 0 fail. UNMERGED; launch blocked on email+deploy. (Phase-1 webhook verification COMPLETE.)
+
+**STATUS (2026-10-29):** Authorized test-env hardening → completely green reproducible regression. Evidence: `docs/SCA-SECURE-CLAIM-REGRESSION-ENV-HARDENING.md`. No merge/deploy/prod-DB/app-behavior change.
+- Branch `c65dc1f`→**`7da38b8af9be0704c359bb027feaacc4f9f58d3b`** (pushed). 2 TEST files only (CollectorAuthTest +15/-4, TransactionalEmailHardeningTest +9); no production/auth change. php -l clean.
+- FIXES (evidence-based, boundary-preserving): h8 pins config(app.url=CANON) like siblings (was relying on ambient APP_URL); h7 flake = /collector/forgot-password throttle:6,1 shared array-cache limiter across 5 class POSTs → setUp withoutMiddleware(ThrottleRequests) (rate-limit not this class's subject; green 3x); c11 = collector→/admin/dashboard 302→/admin/login (user guard false; access DENIED) so assert either denial shape (redirect /admin/login OR "Something went wrong"), boundary unchanged.
+- **FULL REGRESSION DEFINITIVE PASS: 19 suites, 245 tests, 1141 assertions, 0 fail/err/warn/skip** on --internal no-egress net (ZERO live Shopify; fake store; Http::fake; no prod creds). Security [17] enforced (public-token→PUBLIC_CLAIM_RETIRED; wrong/unverified buyer→BUYER_VERIFICATION_REQUIRED; invalid grants; refund/cancel block; authoritative-only order email fails closed). ExternalClaimTest had one transient flake in a loop (then 18/93 green 3x + definitive pass) — untouched, not fixed per no-unrelated-fixes.
+- Cleanup verified; PROD UNCHANGED (4faf84d/200; batch30/146; 3/5/2/4/3/1).
+
+**STOP — regression completely green/reproducible. LAUNCH BLOCKERS unchanged: transactional email provider → authorized migrate-before-code deploy of the integration branch (4 additive migr + MAIL=postmark) → fulfillment-release ACL + order_email backfill → real inventory + genuine paid order. Phase-1 webhook verification COMPLETE.**
+
+---
+
 # SCA — SECURE CLAIM FULL COMBINED REGRESSION GREEN (c65dc1f): 150/787/0 across 11 claim+Shopify+integration suites; 2 pre-existing ENV test failures (untouched files, no security impact). UNMERGED; launch blocked on email+deploy. (Phase-1 webhook verification COMPLETE.)
 
 **STATUS (2026-10-29):** Authorized full combined disposable-DB regression of integration branch c65dc1f. Evidence: `docs/SCA-SECURE-CLAIM-FULL-COMBINED-REGRESSION-RESULT.md`. No merge/deploy/prod-DB change.
