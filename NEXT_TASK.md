@@ -1,3 +1,16 @@
+# SCA — STAFF ORDER→EYEWEAR ASSIGNMENT: isolated DB regression GREEN (17/17) at `5b29338` (was c37592b + 2 disclosed fixes); UNMERGED. prod 5bed316 unchanged. NEXT = code-only merge review. (Phase-1 webhook verification still OPEN.)
+
+**STATUS (2026-10-29):** Authorized disposable-DB regression of candidate c37592b. Evidence: `docs/SCA-SHOPIFY-ORDER-ITEM-ASSIGNMENT-DB-TEST-RESULT.md`. No merge/deploy/prod-DB change.
+- Fresh sca_domain_test (absent+0-conns; scoped user sca_test ALL on test DB only, dropped after); isolation verified (4 sources=sca_domain_test); migrate(incl additive 2026_10_31_000001)+db:seed. Dev vendor via app image.
+- **ShopifyOrderItemAssignmentTest 17/17 (64 assn) OK + ShopifySaleLinkTest 23/23 + ShopifySaleClaimVisibilityTest 12/12.** Security [7-19] all confirmed (authoritative-only order facts; paid/non-cancelled/non-refunded; exact public_ref→1 item; variant-match or manager-override+reason; dup idempotent/conflict fail-closed; cancel/refund no re-eligibility; append-only audit UPDATE/DELETE blocked; QR availability no-token; zero provenance; ACL separation view/assign/override; reject→no partial).
+- **2 DISCLOSED candidate fixes → branch c37592b→`5b29338e75d8bd57d3a712526fca7938f0a25377` (FF push):** (1) PRODUCT DEFECT — OrderAssignmentController used core User::hasPermission() which TypeErrors (in_array null) for 'all'-role staff → 500; switched to bouncer()->hasPermission() (same as sca.can middleware). (2) TEST FIXTURE — HTTP tests used non-numeric line id 'L1' vs controller's correct numeric validation; fixtures→numeric.
+- ⚠️ **PRE-EXISTING UNRELATED (NOT a regression; proven by reverting my config → still fails):** ShopifyReconciliationTest rc8+rc21 FAIL — OperationsController::index:81 has the SAME core hasPermission('all'-role) crash on baseline 5bed316 (file byte-identical to baseline, untouched here). Recommend SEPARATE bouncer() fix for OperationsController. Not changed (unrelated dev).
+- Cleanup verified; PROD UNCHANGED (5bed316/200; batch29/145; 3/5/2/4/3/1; assignment table absent).
+
+**STOP — regression GREEN at 5b29338; prod untouched. NEXT (separate auth): code-only merge review of 5b29338 → controlled deploy (1 additive migration, migrate-before-code). Consider a separate OperationsController bouncer() fix (pre-existing 'all'-role 500). SEPARATE OPEN: Phase-1 first genuine products/* webhook receipt verification.**
+
+---
+
 # SCA — STAFF ORDER→EYEWEAR ASSIGNMENT IMPLEMENTED (dev branch feat/sca-shopify-order-item-assignment c37592b off prod 5bed316; UNMERGED). Additive (1 migration). prod unchanged. (Phase-1 webhook verification still OPEN.)
 
 **STATUS (2026-10-29):** Authorized dev implementation of the staff order-line→pair binding (the matching-audit recommendation). Evidence: `docs/SCA-SHOPIFY-ORDER-ITEM-ASSIGNMENT.md`. No prod migration/merge/deploy/Shopify/ownership/QR/claim/email change.
