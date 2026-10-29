@@ -1,3 +1,16 @@
+# SCA — ORDER-ASSIGNMENT STAFF SOP DELIVERED (read-only) for first order→eyewear assignment at prod `eb137bf`. No blockers beyond operational prerequisites. (Phase-1 webhook verification still OPEN.)
+
+**STATUS (2026-10-29):** READ-ONLY staff SOP for connecting sold glasses to the Shopify order + QR Passport. Evidence: `docs/SCA-SHOPIFY-ORDER-ASSIGNMENT-STAFF-SOP.md`. No Shopify API/store change, no DB write, no test assignment/variant-link, no code/deploy.
+- INTERFACES verified: eyewear detail `/admin/sca/eyewear/{id}` (public_ref in header + copyable; QR status on Certification&QR tab w/ Print-QR-label; Shopify catalog-link panel); Order→Eyewear Assignment `/admin/sca/shopify/order-assign` (menu: SCA Shopify Integration→Order→Eyewear Assignment).
+- public_ref found on item detail or via QR-scan lookup (POST /admin/sca/eyewear/lookup, token in body). Variant selected from LOCAL catalog mirror by product/vendor/SKU (exact variant-id link, NO fuzzy name match). QR availability from Certification&QR tab + assign confirmation (token never on assign screen).
+- READ-ONLY Shopify API = getOrder (order lookup/assign + reconcile); SCA-record-only = catalog-search(local mirror)/link/relink/unlink/assign-write/QR-label; NO Shopify store write anywhere.
+- Edge cases documented (variant mismatch, no-variant-link→manager override+reason, already-assigned same/different pair, owned/ineligible, cancelled/refunded/unpaid, bad-ref) — all fail closed; append-only audit.
+- [9] Administrator sufficient for first controlled use; recommend Operator(link+assign, no override) + Manager(+override) roles before wider rollout. [10] NO code/deploy blockers; operational prereqs: 0 variant links in prod → link-first OR manager override; have order id + public_ref; pair unsold; active QR for packing.
+
+**STOP — SOP delivered. NEXT (owner/ops): do one Administrator end-to-end dry run (link variant → assign → confirm audit+QR) on a real order, then optionally create restricted roles. SEPARATE OPEN: Phase-1 first genuine products/* webhook receipt verification.**
+
+---
+
 # SCA — ORDER-ASSIGNMENT DEPLOYED + POST-DEPLOY VERIFIED READY at prod `eb137bf` (batch 30). Operational notes = role grants + variant-link-vs-override (config/workflow, NOT blockers). ZERO Shopify interaction. (Phase-1 webhook verification still OPEN.)
 
 **STATUS (2026-10-29):** READ-ONLY post-deployment verification of eb137bf. Evidence: `docs/SCA-SHOPIFY-ORDER-ASSIGNMENT-POST-DEPLOY-VERIFICATION.md`. No Shopify API/getOrder/store change; no DB write; no session created.
