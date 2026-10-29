@@ -1,3 +1,14 @@
+# SCA — QR PACKING-READINESS FIX: isolated DB regression GREEN (83/83) at a0bd8db; UNMERGED. prod eb137bf unchanged. NEXT = code-only merge review. (Phase-1 webhook verification still OPEN.)
+
+**STATUS (2026-10-29):** Authorized disposable-DB regression of candidate a0bd8db (display-only QR packing-readiness fix). Evidence: `docs/SCA-QR-PACKING-READINESS-FIX-DB-TEST-RESULT.md`. No merge/deploy/prod-DB change.
+- Diff = exactly OrderAssignmentController.php + ShopifyOrderItemAssignmentTest.php. Fresh sca_domain_test (absent+0-conns; scoped user no sca_krayin access; dropped). Isolation verified; migrate(146)+seed. **Ran on `docker network --internal sca_testnet` — egress to 1.1.1.1:443 BLOCKED (proven from test-runner image), kr-mariadb reachable → ZERO live Shopify requests; fake store; Http::fake; no prod creds; kr-mariadb restored to sca_internal.**
+- **ShopifyOrderItemAssignmentTest 21/21 + SaleLink 23/23 + SaleClaimVisibility 12/12 + OperationsPermission 6/6 + Reconciliation 21/21 = 83 tests / 523 assertions / 0 fail/err/warn/skip.** Verified: [16] active QR incl is_production=false → "QR ready for packing" (a17+a19); [17] revoked/absent never ready (a18/a12/a20); [18] no token in confirmation (a12); [19] no provenance created (a1); [20] perms/matching/idempotency/refund-cancel intact (a2-a16).
+- Cleanup verified; PROD UNCHANGED (eb137bf/200; batch30/146; 3/5/2/4/3/1; assignment table 0).
+
+**STOP — regression GREEN; NOT merged. NEXT (sep auth): code-only merge review of a0bd8db → release (code-only, no migration). SEPARATE OPEN: Phase-1 first genuine products/* webhook receipt verification.**
+
+---
+
 # SCA — QR PACKING-READINESS COPY FIX (display-only, branch fix/sca-qr-packing-readiness-copy a0bd8db off eb137bf; UNMERGED). Message now keyed on ACTIVE QR, not is_production. prod eb137bf unchanged. (Phase-1 webhook verification still OPEN.)
 
 **STATUS (2026-10-29):** Authorized display-only fix of the misleading "staging — not for print" packing message. Evidence: `docs/SCA-QR-PACKING-READINESS-LABEL-FIX.md`. No prod change/deploy/migration/DB write.
