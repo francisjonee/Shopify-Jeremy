@@ -1,3 +1,16 @@
+# SCA — SECURE CLAIM FULL COMBINED REGRESSION GREEN (c65dc1f): 150/787/0 across 11 claim+Shopify+integration suites; 2 pre-existing ENV test failures (untouched files, no security impact). UNMERGED; launch blocked on email+deploy. (Phase-1 webhook verification COMPLETE.)
+
+**STATUS (2026-10-29):** Authorized full combined disposable-DB regression of integration branch c65dc1f. Evidence: `docs/SCA-SECURE-CLAIM-FULL-COMBINED-REGRESSION-RESULT.md`. No merge/deploy/prod-DB change.
+- Only 4 R0b/R0c additive migrations new vs prod; deployed features preserved. Fresh sca_domain_test (scoped user, dropped); isolation verified; migrate(150)+seed(17). **Ran on `docker network --internal sca_testnet`: egress 1.1.1.1:443 BLOCKED (proven from runner image), kr-mariadb reachable → ZERO live Shopify; fake store; Http::fake; no prod creds.**
+- **CORE GREEN (150/787/0):** OwnershipR0 7 + PresaleClaimGrant 12 + VerifiedBuyerClaim 10 + ClaimWorkflow 11 + ExternalClaim 18 + SecureClaimOrderAssignmentIntegration 3 + ShopifyOrderItemAssignment 27(incl a21-a26) + ShopifySaleLink 23 + ShopifySaleClaimVisibility 12 + ShopifyReconciliation 21 + ShopifyOperationsPermission 6. [26] TransferWorkflow 15 + TransferStatusClarity 8 + PublicPassport 18 + PublicPassportSafety 14 + CollectorPrivacy 21 + QrPrintLabel 12 GREEN.
+- Security [27-38] ALL confirmed (public-QR never grants ownership; verified-buyer+trusted order email; staff-assign propagates authoritative-only email; missing/malformed/conflicting fail closed; dup no-overwrite; grants bound not bearer; refund/cancel block; no cross-item/order; registration/email-verif can't bypass; transfers independent; no-provider can't auto-verify (fails closed); no token/grant/PII leak).
+- ⚠️ **2 FAILURES, pre-existing ENV (files byte-identical to cb8a8c3 → NOT integration regressions; implementation NOT changed per [40]):** (1) TransactionalEmailHardeningTest h7/h8 = test .env APP_URL=localhost vs hard-coded prod reset URL → OK(9/24) when re-run with APP_URL=https://verify.secondchanceauthenticators.com; (2) CollectorAuthTest::c11 expects "Something went wrong" page but collector→staff-admin is REDIRECTED to /admin/login (access still denied; only shape differs). Housekeeping: parametrize reset-URL-origin on APP_URL; relax c11 to accept login redirect.
+- Cleanup verified; PROD UNCHANGED (4faf84d/200; batch30/146; 3/5/2/4/3/1; R0c tables absent 0/0).
+
+**STOP — integration regression GREEN; launch BLOCKERS remain [43]: (1) transactional email provider; (2) authorized migrate-before-code deploy of c65dc1f (4 additive migr + MAIL=postmark); (3) fulfillment-release ACL + order_email backfill; (4) real inventory + genuine paid order. Fix the 2 env tests as housekeeping. Phase-1 webhook verification COMPLETE.**
+
+---
+
 # SCA — SECURE CLAIM INTEGRATION + ORDER-EMAIL WIRING DONE (branch feat/sca-secure-claim-integration head `c65dc1f` off 4faf84d). Staff-assigned links now carry trusted order_email. UNMERGED/undeployed; combined regression + email provider still needed. (Phase-1 webhook verification COMPLETE.)
 
 **STATUS (2026-10-29):** Authorized follow-up wiring the trusted order email through the staff order-assignment path. Evidence: `docs/SCA-STAFF-ASSIGNMENT-ORDER-EMAIL-WIRING.md`. No merge/deploy/migration/prod-DB/Shopify/email change.
