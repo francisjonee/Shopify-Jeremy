@@ -1,3 +1,15 @@
+# SCA — INVENTORY ONBOARDING STRATEGY (read-only): CSV bulk register (≤500/batch) + batch QR labels ALREADY implemented; auth+certify(QR) are per-item human bottleneck; smallest safe automation = import-time variant linking. (Phase-1 webhook verification COMPLETE.)
+
+**STATUS (2026-10-29):** READ-ONLY onboarding strategy for genuine SCE inventory → per-pair QR Passports. Evidence: `docs/SCA-INVENTORY-ONBOARDING-STRATEGY.md`. No code/DB/Shopify/import/cert/QR change.
+- MODELS: Shopify product(4575)/variant(5345) = catalog mirror (SKU-with-qty); sca_eyewear_items = ONE row/physical pair (unique public_ref = provenance unit); link table many-items→one-variant (reference only).
+- IMPLEMENTED: **CSV bulk import** (InventoryImportController/Service, form→preview→confirm, ACL sca.eyewear.create) via ItemService::create — creates UNCERTIFIED items only (public_ref + 1 intake row; NO auth/cert/QR/ownership/variant); idempotent/resumable (content_sha256 UNIQUE batch + per-line UNIQUE ledger), in-file dedup, insert-only, **MAX 500 rows/batch**. Per-item authenticate→finalize→certify (CertificationService requires finalized PASSED auth, atomically mints+activates one QR). Per-item Shopify variant link (exact variant id). **Batch QR labels** POST /admin/sca/eyewear/qr/labels (ids[], printable sheet, skips no-active-QR). Order→pair assignment deployed.
+- [6] importing catalog as items = NOT done/NOT advisable (conflates SKU-qty w/ pairs); catalog sync never creates items; CSV import dedups + items stay uncertified until human cert → no bad/certified records.
+- [9] 10/100/1000: CSV registers fast (split ≤500); **bottleneck = per-item human authentication + certification (QR mint), irreducible by safety**; batch-print labels after. [10] auth/cert/variant-link per-item; batch item-register + batch QR labels exist; raising 500-cap needs background jobs (unsafe on swapless host). [11] **SMALLEST SAFE AUTOMATION = optional variant-link at CSV-import time (reuse validated ShopifyProductLinkService; NO auth/cert/QR change); secondary = certification worklist (one-click certify finalized-passed items). NEVER auto-certify w/o authentication / never import catalog as items.**
+
+**STOP — strategy delivered; AWAITING owner prioritization of the import-time-variant-link automation (or defer). Registration + batch labels ready now; auth/cert stay per-item human. Phase-1 webhook verification COMPLETE.**
+
+---
+
 # SCA — OWNERSHIP TRANSFER EXPERIENCE AUDIT (read-only): COMPLETE + fully DEPLOYED at 4faf84d; works WITHOUT email; no next task required. (Phase-1 webhook verification COMPLETE.)
 
 **STATUS (2026-10-29):** READ-ONLY review of collector→collector ownership transfer. Evidence: `docs/SCA-OWNERSHIP-TRANSFER-EXPERIENCE-AUDIT.md`. No code/DB/Shopify/email/deploy change.
