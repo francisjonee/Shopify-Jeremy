@@ -1,3 +1,16 @@
+# SCA — OWNERSHIP CLAIM LAUNCH READINESS (read-only): shell+staff-pipeline+transfer LIVE; secure claim R0/R0b/R0c code-complete+tested but UNDEPLOYED, DIVERGENT branch, BLOCKED on email. prod 4faf84d. (Phase-1 webhook verification COMPLETE.)
+
+**STATUS (2026-10-29):** READ-ONLY launch-readiness synthesis for customer purchase→claim. Evidence: `docs/SCA-OWNERSHIP-CLAIM-LAUNCH-READINESS.md`. No code/DB/Shopify/email/deploy change.
+- COMPLETE (deployed): collector register/login/My Collection/public Passport/transfer + transfer-status UX; staff pipeline register→authenticate→certify(+QR)→label→link-variant→order-assign; Phase-1 product-webhook sync. R0/R0b/R0c code-complete+tested (77/77) but NOT deployed.
+- ⚠️ **KEY: two lines DIVERGED (base cb8a8c3): origin/main a397a7e has R0/R0b/R0c (no order-assign/QR); prod 4faf84d has order-assign/QR (no R0c). Verified OrderItemAssignmentService absent on a397a7e; PresaleClaimGrantService absent on 4faf84d. R0/R0b/R0c must be RECONCILED onto the prod line, not just deployed from origin/main.**
+- ⛔ BLOCKED: email verification delivery (MAIL=log, no provider token, SPF absent, DNS GoDaddy; Postmark pm DKIM selector present) → R0c verified-buyer gate unsatisfiable. order_email column only on undeployed line.
+- Deployed claim path = PRE-R0 public-token (GAP-1, latent: 0 eligible sale links, 1 revoked_refund) → launching as-is would expose GAP-1. [5] no-weakening alternatives: transactional email (designed/shortest) or staff-manual identity-bound verification (must still bind identity, not bare bearer grant). [6] post-claim transfer COMPLETE/deployed.
+- SHORTEST SAFE PATH: (1) transactional email (Postmark: token+verified sender no-reply@secondchanceauthenticators.com+SPF/DKIM at GoDaddy); (2) reconcile R0/R0b/R0c onto prod line 4faf84d; (3) combined disposable-DB re-test; (4) authorized migrate-before-code deploy (4 additive migr + MAIL=postmark; closes GAP-1); (5) grant sca.eyewear.fulfillment.release ACL + order_email propagation/backfill; (6) controlled end-to-end proof on a genuine paid order + real certified pair (none exist yet per eligibility audit).
+
+**STOP — readiness delivered. NOT launch-ready: blocked on email + R0c-onto-prod-line reconcile+deploy. Do NOT launch on deployed GAP-1 code; never deploy R0b without R0c. AWAITING owner: email provider + authorize the reconcile/deploy path.**
+
+---
+
 # SCA — PHASE-1 PRODUCT-WEBHOOK VERIFICATION: ✅ COMPLETE (closed on prod evidence). prod 4faf84d. (No Shopify Phase-1 open items remain.)
 
 **STATUS (2026-10-29):** READ-ONLY verification closed the long-standing Phase-1 open item. Evidence: `docs/SCA-SHOPIFY-PHASE1-PRODUCT-WEBHOOK-VERIFICATION-COMPLETE.md`. No API/CLI/DB-write/replay/reconcile.
