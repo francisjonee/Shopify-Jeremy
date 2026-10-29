@@ -1,3 +1,14 @@
+# SCA — TRANSFER STATUS CLARITY MERGED code-only to main (e644c9c→a397a7e); prod cb8a8c3 unchanged, NOT deployed. Main carries R0/R0b/R0c (inert-until-email). (Phase-1 webhook verification still OPEN.)
+
+**STATUS (2026-10-29):** Authorized code-only merge of candidate `a44103a` into main. Evidence: `docs/SCA-OWNERSHIP-TRANSFER-STATUS-CLARITY-MERGE.md`. No deploy/restart/migration/Shopify/email/Option-C.
+- **origin/main `e644c9c`→`a397a7e07762a6a98c210979a9cd3c4984f8d6a8`** (--no-ff; parents e644c9c+a44103a; non-force FF push). Candidate is a LINEAR descendant of main (merge-base=e644c9c) → conflict-free, no R0c overlap. Merged tree byte-identical to a44103a; vs old main only the 6 approved files (2 controllers + 3 blade views + 1 new test; 229+/5−; NO migration/schema/service).
+- Merge in ISOLATED temp worktree, NOT live checkout → live /opt/sca-platform still cb8a8c3, main, clean; **local main ref intentionally left at cb8a8c3** (bind-mount docroot gets no new code until separate deploy). Loopback 200; prod sca_krayin UNCHANGED (batch 29/145; 3/5/2/4/3/1; R0c tables+order_email col absent 0/0). Temp worktree+branch removed.
+- Main retains BOTH R0/R0b/R0c (4 additive migr + email-verif stack + verified-buyer gate) AND the transfer-status banner+confirmations.
+
+**STOP — merged; origin/main=a397a7e. ⚠️ DO NOT DEPLOY main: carries R0/R0b/R0c (customer claiming inert-until-email; needs provider token+verified sender+SPF/DKIM, see SCA-OWNERSHIP-EMAIL-DELIVERY-READINESS). Any deploy = SEPARATE auth (the 4 R0c migr now on main need migrate-before-code; transfer-status change itself needs no migration). SEPARATE OPEN: Phase-1 first genuine products/* webhook receipt verification.**
+
+---
+
 # SCA — TRANSFER STATUS CLARITY: isolated DB regression GREEN (23/23) at a44103a; UNMERGED. prod cb8a8c3 unchanged. NEXT = code-only merge review. (Phase-1 webhook verification still OPEN.)
 
 **STATUS (2026-10-29):** Authorized single disposable-DB regression of candidate `a44103a`. Evidence: `docs/SCA-OWNERSHIP-TRANSFER-STATUS-CLARITY-DB-TEST-RESULT.md`. No merge/deploy/prod-DB change.
