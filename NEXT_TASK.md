@@ -1,3 +1,14 @@
+# SCA — SECURE CLAIM INTEGRATION DONE: R0/R0b/R0c reconciled onto prod line (branch feat/sca-secure-claim-integration `9e4c639` off 4faf84d, conflict-free). UNMERGED/undeployed; still BLOCKED on email. (Phase-1 webhook verification COMPLETE.)
+
+**STATUS (2026-10-29):** Authorized dev integration of R0/R0b/R0c onto the deployed prod line. Evidence: `docs/SCA-SECURE-CLAIM-INTEGRATION.md`. No deploy/merge/migration/prod-DB/Shopify/email change.
+- Branch off PROD **4faf84d** → merge `--no-ff 539cd1f` (R0c head; 7-commit chain off cb8a8c3) → `f84dc1c`; + 1 integration test → head **`9e4c6396145770212e05101868b8d77d84a6b6f4`** (pushed origin). **CONFLICT-FREE** — R0c(33 files) vs prod-line(18) are FILE-DISJOINT (0 overlap). Prod-line features preserved untouched (order-assign/QR/transfer-status/sync). Live 4faf84d + origin/main a397a7e untouched.
+- Security invariants intact: [6] ClaimWorkflow::claim→PUBLIC_CLAIM_RETIRED; [7][8] claimByPresaleGrant→buyerIsVerified (order_email non-null + verified collector email match) else BUYER_VERIFICATION_REQUIRED (R0b not usable without R0c); [10] email via(['mail']) + MAIL=log → email_verified_at unsettable → fails closed. [9] 4 additive migrations (fulfillment cols/presale_claim_grants/order_email col/collector_email_verifications) compatible w/ batch 30/146 → batch 31 on deploy (migrate-before-code). php -l clean.
+- ⚠️ **OUTSTANDING RISK (follow-up, not a conflict): OrderItemAssignmentService calls linkPaidLine WITHOUT order_email (optional 7th param) → staff-assigned sale links have order_email=NULL → NOT verified-buyer-claimable until email populated (fails closed/secure). Small follow-up: pass authoritative getOrder email through the staff assignment path.** New SecureClaimOrderAssignmentIntegrationTest covers the seam. DB tests NOT run (sep auth).
+
+**STOP — R0/R0b/R0c integrated onto prod line. NEXT (sep auth): combined disposable-DB regression of the integration branch → then launch path (transactional email provider → migrate-before-code deploy + MAIL=postmark + ACL grant + order_email backfill → controlled end-to-end proof). Consider the order-assignment→order_email follow-up. STILL BLOCKED on email for actual claims.**
+
+---
+
 # SCA — OWNERSHIP CLAIM LAUNCH READINESS (read-only): shell+staff-pipeline+transfer LIVE; secure claim R0/R0b/R0c code-complete+tested but UNDEPLOYED, DIVERGENT branch, BLOCKED on email. prod 4faf84d. (Phase-1 webhook verification COMPLETE.)
 
 **STATUS (2026-10-29):** READ-ONLY launch-readiness synthesis for customer purchase→claim. Evidence: `docs/SCA-OWNERSHIP-CLAIM-LAUNCH-READINESS.md`. No code/DB/Shopify/email/deploy change.
