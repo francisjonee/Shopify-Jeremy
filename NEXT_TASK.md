@@ -1,3 +1,20 @@
+# SCA — R0+R0b+R0c COMBINED DB TEST: verified-buyer path PROVEN (VerifiedBuyerClaimTest 10/10); 2 RELEASE BLOCKERS (order-email propagation + SMTP) + R0b test obsolescence; prod unchanged; do NOT release. (Phase-1 webhook verification still OPEN.)
+
+**STATUS (2026-10-29):** Authorized combined isolated DB-test of R0c c1e252a→`3148029` (incl R0+R0b). Evidence: `docs/SCA-OWNERSHIP-R0-R0B-R0C-COMBINED-DB-TEST-RESULT.md`. Disposable DB only; dropped+verified; prod sca_krayin + SHA cb8a8c3 UNCHANGED. No merge/deploy/prod-DB/live-Shopify/live-claim/real-email/SMTP-change/Option-C.
+- Isolation verified (fresh sca_domain_test, absent+0-procs; migrate incl R0b+R0c additive migr + db:seed).
+- Per-suite: **VerifiedBuyerClaimTest 10/10 (R0c gate PROVEN); OwnershipR0 7, ClaimWorkflow 11, ShopifySaleClaimVisibility 12, ExternalClaim 18 — all OK.** Combined 70 tests/294 assertions, 66 pass.
+- Security [12-17] confirmed: legit verified buyer claims (one ownership, case-insensitive match); wrong-buyer/unverified/missing-order-email fail closed; expired/cancelled/refunded/replay/concurrent protected; release ACL+idempotent; public QR 410; challenge single-use/expiring/bound/hashed.
+- ⚠️ **RELEASE BLOCKER #1 (FINDING-1, req20): order_email is NEVER propagated** — both linkPaidLine call sites (SaleLinkEventProcessor:62, ShopifyReconciliationService:100) pass only 6 args → order_email always NULL in prod → every presale claim fails closed. Must wire trusted order email (webhook/getOrder) + backfill before R0c works.
+- ⚠️ **RELEASE BLOCKER #2 (req24): SMTP delivery** — challenge rides MAIL=log (dormant) → email_verified_at unsettable in prod → gate unsatisfiable until SMTP+verified sender live. Mechanism real, NOT operational.
+- FINDING-2 (latent, req18): no in-app email-change path today (email registration-only/read-only) so safe now; but email_verified_at not re-cleared on change → if email becomes editable, clear it. 
+- R0b PresaleClaimGrantTest: 4 success-path cases OBSOLETED by the R0c gate (claim w/o verified buyer) → need verified-buyer setup (follow-up correction, like e16). 8/12 still pass.
+- DISCLOSED fixture fix (not product): VerifiedBuyerClaimTest cancelled-case dup email → per-iteration unique (c1e252a→3148029, test-only). RESIDUAL: grant/verify tokens in URL → access logs/history/Referer.
+- prod fingerprint items3/own5/claims2/cert4/qr3/grant1; batch 29/145; R0c tables+order_email col absent.
+
+**STOP — verified-buyer enforcement correct. ⚠️ RELEASE GATE: do NOT merge/deploy until (a) order-email propagation wired+backfilled, (b) SMTP operational w/ verified sender, (c) R0b PresaleClaimGrantTest updated to verified-buyer contract, (d) separate deploy approval. Never release bearer-only. NEXT (owner/sep auth): address blockers → combined re-regression → merge/deploy decision. SEPARATE OPEN: Phase-1 first genuine products/* webhook receipt verification.**
+
+---
+
 # SCA — OWNERSHIP R0c IMPLEMENTED (branch c1e252a, off R0b 1592a78): verified-buyer gate closes R0b bearer BLOCKER; static PASS; DB tests NOT run; AWAITING review. (Phase-1 webhook verification still OPEN.)
 
 **STATUS (2026-10-29):** R0c (verified-buyer private SCE claim) on feat/sca-ownership-r0c-verified-buyer off R0b 1592a78. Evidence: `docs/SCA-OWNERSHIP-R0C-VERIFIED-BUYER.md`. Worktree-only; prod/main cb8a8c3 untouched. No prod migration/deploy/merge/live-Shopify/live-claim/email/Option-C.
