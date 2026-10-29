@@ -1,3 +1,15 @@
+# SCA — SECURE CLAIM RELEASE CANDIDATE PREPARED (branch release/sca-secure-claim `4bd88d2` off prod 4faf84d; byte-identical to tested 7da38b8). RELEASE-PREPARED / DEPLOYMENT-BLOCKED on email+auth. (Phase-1 webhook verification COMPLETE.)
+
+**STATUS (2026-10-29):** Authorized prod-based RC for the integrated R0/R0b/R0c secure claim. Evidence: `docs/SCA-SECURE-CLAIM-RELEASE-CANDIDATE.md`. No deploy/merge/migration/prod-DB/Shopify/email change.
+- **RC branch `release/sca-secure-claim` = `4bd88d2102da5fddaf6f91c4b1285ce611e649ee`** (parents 4faf84d+7da38b8; --no-ff off prod). **Tree BYTE-IDENTICAL to tested dev head 7da38b8** (= regression-green 19/245/1141/0). 38 files vs prod; EXACTLY 4 additive migrations. php -l clean. origin/main a397a7e + live 4faf84d untouched; RC worktree removed.
+- Verified: [6] prod features intact (Shopify sync/order-assign/QR label/My Collection/transfer); [7] ClaimWorkflow::claim→PUBLIC_CLAIM_RETIRED + claimByPresaleGrant→buyerIsVerified mandatory; [8] only 4 additive migr (fulfillment cols/presale_claim_grants/order_email col/collector_email_verifications), no unexpected schema; [9] batch 30→31 migrate-before-code (always-on code reads order_email/email_verified_at); [10] no email provider → email_verified_at unsettable → buyerIsVerified false → fails closed (NOT a bypass).
+- [11] PRE-DEPLOY: transactional email (Postmark token+verified sender+SPF/DKIM@GoDaddy+smoke); order_email propagation live + backfill; fulfillment-release ACL; real paid order+certified pair for first claim. [12] ExternalClaimTest intermittent flake retained as OPEN test-reliability observation (green on retry; untouched).
+- DEPLOY (sep auth, migrate-before-code, no recreate): backup → migrate 4 additive (batch31) from separate mount → set MAIL=postmark → ff live→4bd88d2 → config:clear+view:clear+graceful → grant ACL → smoke (email challenge + 1 verified-buyer claim). ROLLBACK: code→4faf84d + view:clear + graceful (NO DB rollback, additive).
+
+**STOP — RC RELEASE-PREPARED / DEPLOYMENT-BLOCKED. Do NOT deploy until transactional email configured+verified + separate deploy authorization. Phase-1 webhook verification COMPLETE.**
+
+---
+
 # SCA — SECURE CLAIM REGRESSION FULLY GREEN + ENV-HARDENED (branch head `7da38b8`): 19 suites / 245 tests / 1141 assertions / 0 fail. UNMERGED; launch blocked on email+deploy. (Phase-1 webhook verification COMPLETE.)
 
 **STATUS (2026-10-29):** Authorized test-env hardening → completely green reproducible regression. Evidence: `docs/SCA-SECURE-CLAIM-REGRESSION-ENV-HARDENING.md`. No merge/deploy/prod-DB/app-behavior change.
