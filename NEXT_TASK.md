@@ -1,4 +1,16 @@
-# SCA — ASSIGNMENT + PERM-FIX + rc21 FINAL COMBINED REGRESSION: ALL GREEN (79/79; rc8+rc21 pass; rc21 N+1-detection proven). 3 branches UNMERGED off 5bed316; prod untouched. NEXT = code-only merge review → release. (Phase-1 webhook verification still OPEN.)
+# SCA — ORDER-ASSIGNMENT RELEASE CANDIDATE READY: branch release/sca-shopify-order-assignment `eb137bf` off prod 5bed316 (assignment+permfix+rc21; 1 additive migration; R0c excluded; tree==tested integration). NOT deployed. (Phase-1 webhook verification still OPEN.)
+
+**STATUS (2026-10-29):** Authorized prod-based RC prep combining 5b29338 + e2470a6 + d6e4b96. Evidence: `docs/SCA-SHOPIFY-ORDER-ASSIGNMENT-RELEASE-CANDIDATE.md`. No deploy/migration/Shopify/prod-DB change; no Shopify access (pure git).
+- **RC branch `release/sca-shopify-order-assignment` = `eb137bf905758e7bfa2a9b13a2ce68384340c54f`, parent 5bed316** (pushed origin). Built off PROD (not origin/main a397a7e) → R0/R0b/R0c + Option C excluded by construction. **RC tree BYTE-IDENTICAL to tested integration 86f1d13** (git diff empty) = exactly what passed 79/79.
+- Diff = 12 files (3 approved changes) + EXACTLY 1 additive migration (sca_shopify_order_item_assignments). No R0c symbols; NO Shopify store/OAuth/webhook/theme/app-config files (only SCA app ACL/menu/routes + new assignment controller/service/model/view/migration + OperationsController perm-fix + rc21 test). php -l clean on all.
+- MIGRATE-BEFORE-CODE required: new table read only by route-gated OrderAssignmentController (not always-on), but order-assign screen/action query it → migrate first then activate code. Rollback: code ff→5bed316 + view:clear + graceful (NO DB rollback needed; migration additive). Full plan in doc [12].
+- origin/main (a397a7e) + live (5bed316/clean/200) untouched; RC worktree removed.
+
+**STOP — RC ready, NOT deployed. NEXT (separate auth): independent review → controlled production deployment (migrate 2026_10_31_000001 first → ff live tree to eb137bf → view:clear + apachectl graceful, NO Docker recreate; smoke: Administrator opens operations+order-assign 200). SEPARATE OPEN: Phase-1 first genuine products/* webhook receipt verification.**
+
+---
+
+# SCA — ASSIGNMENT + PERM-FIX + rc21 FINAL COMBINED REGRESSION: ALL GREEN (79/79; rc8+rc21 pass; rc21 N+1-detection proven). 3 branches UNMERGED off 5bed316; prod untouched. (Phase-1 webhook verification still OPEN.)
 
 **STATUS (2026-10-29):** Authorized FINAL combined disposable-DB regression (egress BLOCKED) of assignment 5b29338 + perm-fix e2470a6 + rc21-fix d6e4b96 onto 5bed316 (R0c excluded). Evidence: `docs/SCA-SHOPIFY-ASSIGN-PERM-RC21-FINAL-REGRESSION-RESULT.md`. No merge/deploy/prod-DB change.
 - Integration off 5bed316, --no-ff all three (disjoint, no conflicts). Combined diff = approved files + 1 additive migration (assignment audit) ONLY; ZERO R0c.
