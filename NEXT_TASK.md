@@ -1,4 +1,15 @@
-# SCA — QR PACKING-READINESS DEPLOYED to prod: live eb137bf→`4faf84d` (code-only FF, NO migration, graceful). Order-assign confirmation now keyed on ACTIVE QR, not is_production. (Phase-1 webhook verification still OPEN.)
+# SCA — PHASE-1 PRODUCT-WEBHOOK VERIFICATION: ✅ COMPLETE (closed on prod evidence). prod 4faf84d. (No Shopify Phase-1 open items remain.)
+
+**STATUS (2026-10-29):** READ-ONLY verification closed the long-standing Phase-1 open item. Evidence: `docs/SCA-SHOPIFY-PHASE1-PRODUCT-WEBHOOK-VERIFICATION-COMPLETE.md`. No API/CLI/DB-write/replay/reconcile.
+- **1186 genuine product webhooks PROCESSED** (8 create + 1177 update + 1 delete; +2 noop), 1188 distinct webhook_ids, 2026-10-28 20:18→2026-10-29 17:36, all HMAC-verified from the configured store `second-chance-eyewear-accessories.myshopify.com` (matches credentials; NOT the test fake domain). ZERO rejected/failed. Idempotent (1188 rows=1188 wids).
+- Catalog corroborates: 4575 products (1705 active/2789 archived/80 draft/1 pending_delete) + 5345 variants; latest product updated_at 2026-10-29 17:36:14 == latest receipt timestamp (lockstep); 1066 updated in window; products/delete → soft pending_delete (never hard delete); 0 duplicate products/variants.
+- **PHASE-1 genuine product-webhook verification CLOSED as COMPLETE.** No Phase-1 Shopify open items remain.
+
+**STOP — Phase-1 webhook verification COMPLETE. (The previously-standing "preserve the first genuine products/* webhook verification" task is now closed.) Live prod = 4faf84d; order-assignment feature + QR copy fix live; R0/R0b/R0c remain undeployed (email-gated).**
+
+---
+
+# SCA — QR PACKING-READINESS DEPLOYED to prod: live eb137bf→`4faf84d` (code-only FF, NO migration, graceful). Order-assign confirmation now keyed on ACTIVE QR, not is_production. (Phase-1 webhook verification NOW COMPLETE.)
 
 **STATUS (2026-10-29):** Authorized controlled production deployment of RC 4faf84d (display-only QR packing-readiness fix). Evidence: `docs/SCA-QR-PACKING-READINESS-DEPLOY.md`. No migration/Docker-recreate/DB-write; ZERO Shopify API/store change.
 - **LIVE /opt/sca-platform + local main = `4faf84d49b4a67823aff31ba0dc926bd91110c16`** (prev eb137bf; single-commit `git merge --ff-only`, origin/main NOT pulled). Parent eb137bf; diff = 2 files only. view:clear + apachectl graceful (opcache validate_timestamps=On; NO recreate; vendor(53)+.env preserved).
