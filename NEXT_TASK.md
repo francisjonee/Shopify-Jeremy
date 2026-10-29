@@ -1,3 +1,14 @@
+# SCA — QR PACKING-READINESS RELEASE CANDIDATE READY: branch release/sca-qr-packing-readiness `4faf84d` off prod eb137bf (display-only; NO migration; byte-identical to tested a0bd8db). NOT deployed. (Phase-1 webhook verification still OPEN.)
+
+**STATUS (2026-10-29):** Authorized prod-based RC prep of the QR packing-readiness fix. Evidence: `docs/SCA-QR-PACKING-READINESS-RELEASE-CANDIDATE.md`. No deploy/merge/migration/DB/Shopify change; pure git.
+- **RC branch `release/sca-qr-packing-readiness` = `4faf84d49b4a67823aff31ba0dc926bd91110c16`, parent eb137bf** (pushed origin; cherry-pick of a0bd8db onto eb137bf). **Tree BYTE-IDENTICAL to tested a0bd8db** (83/523/0). 2 files; the only prod-code change = the order-assign QR confirmation line (+comment); NO migration/model/QrService/cert/Token change; R0/R0b/R0c+Option C excluded. php -l clean.
+- DEPLOY (sep auth, code-only, NO migration/recreate): confirm migrate:status 0 pending → ff live tree to 4faf84d (preserve .env+vendor) → view:clear + apachectl graceful → safe/local smoke (login 200, order-assign 302 unauth). ROLLBACK: ff/checkout live→eb137bf + view:clear + graceful (NO DB rollback — display-only).
+- origin/main (a397a7e) + live (eb137bf/clean/200) untouched; RC worktree removed.
+
+**STOP — RC ready, NOT deployed. NEXT (sep auth): independent review → controlled code-only deployment (no migration). SEPARATE OPEN: Phase-1 first genuine products/* webhook receipt verification.**
+
+---
+
 # SCA — QR PACKING-READINESS FIX: isolated DB regression GREEN (83/83) at a0bd8db; UNMERGED. prod eb137bf unchanged. NEXT = code-only merge review. (Phase-1 webhook verification still OPEN.)
 
 **STATUS (2026-10-29):** Authorized disposable-DB regression of candidate a0bd8db (display-only QR packing-readiness fix). Evidence: `docs/SCA-QR-PACKING-READINESS-FIX-DB-TEST-RESULT.md`. No merge/deploy/prod-DB change.
