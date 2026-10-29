@@ -1,3 +1,14 @@
+# SCA — STAFF ORDER→EYEWEAR ASSIGNMENT IMPLEMENTED (dev branch feat/sca-shopify-order-item-assignment c37592b off prod 5bed316; UNMERGED). Additive (1 migration). prod unchanged. (Phase-1 webhook verification still OPEN.)
+
+**STATUS (2026-10-29):** Authorized dev implementation of the staff order-line→pair binding (the matching-audit recommendation). Evidence: `docs/SCA-SHOPIFY-ORDER-ITEM-ASSIGNMENT.md`. No prod migration/merge/deploy/Shopify/ownership/QR/claim/email change.
+- Branch off PROD 5bed316 (R0/R0b/R0c EXCLUDED) → head **`c37592b7633f68e81453824be235ab5471c0d4c4`** (pushed origin). Live /opt/sca-platform untouched (5bed316/main/clean/200). 9 files (6 new, 3 mod); 1 ADDITIVE migration (append-only audit table `sca_shopify_order_item_assignments` + UPDATE/DELETE triggers).
+- OrderItemAssignmentService: authoritative read-only getOrder (facts never from form) → exact line → fail closed on cancelled/refunded-line/unpaid/line-not-in-order/unknown-item/bad-ref/SHOPIFY_*; variant-link MUST match purchased variant (else SCA_ASSIGN_VARIANT_MISMATCH); NO variant link → refused unless manager-override ACL + reason (SCA_ASSIGN_NO_VARIANT_LINK); binding ONLY via SaleLinkService::linkPaidLine (reuses dup/lock/never-rebind/eligibility/refund; sale≠ownership); QR availability (presence+production flag, NEVER token); no provenance created. OrderAssignmentController + order-assign.blade (view-gated; assign + manager-override ACLs). 2 new ACLs (sca.eyewear.shopify.order-assign + .override), menu entry, routes.
+- Tests `ShopifyOrderItemAssignmentTest` (16, Http::fake, hard-guard sca_domain_test): matched/mismatch/no-link-override/dup-exists/conflict/cancel/refund/unpaid/line-not-in-order/unknown-item/fetch-error/QR-no-token/ACL/append-only/provenance-unchanged. WRITTEN, **NOT run** (no DB-test auth). php -l + Blade balance clean.
+
+**STOP — dev implementation complete. NEXT (separate auth): disposable-DB run of ShopifyOrderItemAssignmentTest → code-only merge review → controlled deploy (1 additive migration = migrate-before-code). SEPARATE OPEN: Phase-1 first genuine products/* webhook receipt verification.**
+
+---
+
 # SCA — SHOPIFY SALE→EYEWEAR MATCHING AUDIT (read-only): matching by sca_item_ref→public_ref ONLY; correct+protected but INERT in prod (104 paid webhooks → 0 active sale links); no staff order→pair binding. Smallest safe slice = staff order-line→pair binding. prod 5bed316. (Phase-1 webhook verification still OPEN.)
 
 **STATUS (2026-10-29):** READ-ONLY audit at prod 5bed316. Evidence: `docs/SCA-SHOPIFY-SALE-TO-EYEWEAR-MATCHING-AUDIT.md`. No code/DB/Shopify/claim/ownership/email change.
