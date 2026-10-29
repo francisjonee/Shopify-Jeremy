@@ -1,3 +1,14 @@
+# SCA — TRANSFER STATUS CLARITY DEPLOYED to prod: live cb8a8c3→`5bed316` (code-only FF, NO migration, graceful). R0/R0b/R0c absent; prod data+schema unchanged. (Phase-1 webhook verification still OPEN.)
+
+**STATUS (2026-10-29):** Authorized controlled production deployment of RC `5bed316`. Evidence: `docs/SCA-OWNERSHIP-TRANSFER-STATUS-CLARITY-DEPLOY.md`. No DB migration/change, no Docker recreate, no Shopify/SMTP/claim/Option-C.
+- **LIVE /opt/sca-platform working tree + local main = `5bed316926575e79e46eaefadf1509c9605a0aa2`** (prev cb8a8c3; one-commit FF `git merge --ff-only`, origin/main NOT pulled). vendor(53)+app/.env preserved. `view:clear` + `apachectl -k graceful` (opcache validate_timestamps=On; no compiled config/route cache). No Docker recreate.
+- POST-DEPLOY ALL PASS: SHA=5bed316; routes login200/register200/collection302/unauth-detail302/passport200; banner data path (pendingInviteToken) runs on batch-29 schema (existing transfer req=accepted→banner hidden); R0c absent (no files/routes/claimByPresaleGrant); **DB fingerprint UNCHANGED** (batch29/145; items3/state3/auth4/cert4/qr3/own5/claims2/grant1/treq1/tevt2/sale1; R0c 0/0/0); ZERO 2026-10-29 errors (only prior-day CLI-probe error). Backup 20261029T021703Z sha256 OK.
+- ⚠️ origin/main `a397a7e` (R0/R0b/R0c) remains UNDEPLOYED; deployed live code intentionally diverges from origin/main to exclude email-gated claiming. Rollback (if ever): reset/checkout live tree→cb8a8c3 + view:clear + graceful (no DB action).
+
+**STOP — transfer-status clarity LIVE at 5bed316; prod data/schema unchanged; R0/R0b/R0c absent. Do NOT deploy origin/main a397a7e without separate auth + operational email delivery. SEPARATE OPEN: Phase-1 first genuine products/* webhook receipt verification.**
+
+---
+
 # SCA — TRANSFER STATUS CLARITY prod-only RC ready: branch release/transfer-status-clarity-prod `5bed316` off cb8a8c3 (transfer-status ONLY, NO R0c, NO migration). prod cb8a8c3 unchanged, NOT deployed. (Phase-1 webhook verification still OPEN.)
 
 **STATUS (2026-10-29):** Authorized production-only release prep. Evidence: `docs/SCA-OWNERSHIP-TRANSFER-STATUS-CLARITY-PROD-RC.md`. No deploy/restart/prod-DB/migration/Shopify/email/claim/Option-C.
