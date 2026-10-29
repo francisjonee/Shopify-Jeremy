@@ -1,3 +1,14 @@
+# SCA — QR PACKING-READINESS COPY FIX (display-only, branch fix/sca-qr-packing-readiness-copy a0bd8db off eb137bf; UNMERGED). Message now keyed on ACTIVE QR, not is_production. prod eb137bf unchanged. (Phase-1 webhook verification still OPEN.)
+
+**STATUS (2026-10-29):** Authorized display-only fix of the misleading "staging — not for print" packing message. Evidence: `docs/SCA-QR-PACKING-READINESS-LABEL-FIX.md`. No prod change/deploy/migration/DB write.
+- Branch off PROD eb137bf → head **`a0bd8db418d8a5396f51b39bf7bab9c98be7d872`** (pushed origin). Live untouched (eb137bf/main/clean/200). 2 files: OrderAssignmentController (1 msg line + comment) + ShopifyOrderItemAssignmentTest (+a17-a20). NO migration/flag/route/QR/cert/ownership change.
+- ROOT CAUSE: order-assign confirmation derived wording from is_production, but certify always mints is_production=false AND qr/qrLabel routes IGNORE the flag (print any active QR) → every certified item mislabeled "(staging — not for print)". FIX: packing message now `qr_available ? 'QR ready for packing' : 'no active QR yet…'` — based on ACTIVE QR only (qr_available nets activated−revoked, so revoked/absent never "ready"). is_production stored flags untouched; qrAvailability still returns it (now unused by msg).
+- Tests a17 (active staging→ready), a18 (revoked→not ready), a19 (HTTP flash=ready not staging), a20 (HTTP no-QR→"no active QR"); existing a12/a13 preserved. DB-backed, **NOT run** (no DB-test auth). php -l clean.
+
+**STOP — display-only fix on dev branch. NEXT (sep auth): disposable-DB run of ShopifyOrderItemAssignmentTest (expect 21 incl a17-a20) → merge review → code-only release. SEPARATE OPEN: Phase-1 first genuine products/* webhook receipt verification.**
+
+---
+
 # SCA — EYEWEAR REGISTRATION→QR WORKFLOW AUDIT (read-only): FULL chain register→authenticate→certify(+QR)→label→link-variant→assign→pack ALREADY IMPLEMENTED/deployed; NO dev needed. prod eb137bf. (Phase-1 webhook verification still OPEN.)
 
 **STATUS (2026-10-29):** READ-ONLY audit of the real-inventory prep workflow. Evidence: `docs/SCA-EYEWEAR-REGISTRATION-QR-WORKFLOW-AUDIT.md`. No API/DB write/record creation.
