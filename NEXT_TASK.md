@@ -1,3 +1,16 @@
+# SCA — ASSIGNMENT + PERM-FIX COMBINED INTEGRATION REGRESSION: functionally GREEN (58 pass; rc8 FIXED); rc21 = pre-existing admin-chrome query-budget artifact (NOT merged). Both branches UNMERGED off prod 5bed316. (Phase-1 webhook verification still OPEN.)
+
+**STATUS (2026-10-29):** Authorized combined disposable-DB integration of assignment 5b29338 + perm-fix e2470a6 onto 5bed316 (R0/R0b/R0c excluded). Evidence: `docs/SCA-SHOPIFY-ASSIGN-PLUS-PERMFIX-COMBINED-DB-TEST-RESULT.md`. No merge/deploy/prod-DB change.
+- Integration worktree off 5bed316; --no-ff merged both (disjoint, no conflict). Combined diff = ONLY the approved files + 1 additive migration (assignment audit); ZERO R0c code/migrations/symbols (grep-verified).
+- Fresh sca_domain_test (absent+0-conns; scoped user; dropped). **Tests ran on a throwaway `docker network --internal sca_testnet` (NO egress — example.com unreachable; kr-mariadb reachable) → ZERO live Shopify requests possible; fake store domain sca-test-store.myshopify.com; no prod Shopify creds; Http::fake only. kr-mariadb restored to sca_internal only at teardown.**
+- RESULTS: ShopifyOperationsPermissionTest 6/6 + ShopifyOrderItemAssignmentTest 17/17 + ShopifySaleLinkTest 23/23 + ShopifySaleClaimVisibilityTest 12/12 + ShopifyReconciliationTest 20/21 (**rc8 FIXED ✔**). Objectives 13-17 confirmed (admin 200 no-500; view-only no reconcile/assign; assign+override ACLs separate; paid/variant/dup/refund/cancel/audit-immutability; zero provenance).
+- ⚠️ **rc21 FAILS (44 queries vs <30 budget) — REPORTED NOT REPAIRED, NOT MERGED (per step 19).** Query-log decomposition: attribute_options15+attributes11+core_config10=36 = Krayin admin-layout CHROME (x-admin::layouts EAV/config), inherent to any admin page; feature's OWN queries = 3 (bounded, NO N+1). rc21 was a pre-existing baseline failure (500 before fix); perm fix correctly renders the page, exposing that admin chrome alone > 30. NOT a regression, NOT a real N+1. RECOMMEND (separate): raise rc21 budget or scope it to feature queries.
+- Cleanup verified; PROD UNCHANGED (5bed316/200; batch29/145; 3/5/2/4/3/1; assignment table absent).
+
+**STOP — functionally green; NOT merged due to rc21 (pre-existing chrome artifact). NEXT (separate owner decision): resolve rc21 threshold → code-only merge review (assignment 5b29338 + perm-fix e2470a6) → controlled release (assignment adds 1 additive migration, migrate-before-code; perm-fix code-only). SEPARATE OPEN: Phase-1 first genuine products/* webhook receipt verification.**
+
+---
+
 # SCA — SHOPIFY OPERATIONS ADMIN-PERM FIX (branch fix/sca-shopify-operations-admin-perm e2470a6 off prod 5bed316; UNMERGED). Fixes pre-existing OperationsController 'all'-role 500. prod unchanged. (Phase-1 webhook verification still OPEN.)
 
 **STATUS (2026-10-29):** Authorized narrow fix of the pre-existing Administrator permission crash (rc8/rc21). Evidence: `docs/SCA-SHOPIFY-OPERATIONS-ADMIN-PERM-FIX.md`. No merge/deploy/migration/Shopify/reconcile-logic change.
