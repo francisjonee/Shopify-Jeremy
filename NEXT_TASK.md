@@ -1,3 +1,17 @@
+# SCA — OWNERSHIP EMAIL-DELIVERY READINESS (read-only): BLOCKED pending provider token + verified sender + SPF; app/code READY; backfill a no-op (0 eligible rows). Prod cb8a8c3. (Phase-1 webhook verification still OPEN.)
+
+**STATUS (2026-10-29):** READ-ONLY email-delivery readiness assessment (R0+R0b+R0c candidate 539cd1f). Evidence: `docs/SCA-OWNERSHIP-EMAIL-DELIVERY-READINESS.md`. No mail/DNS/DB/deploy change, no email sent, no creds printed.
+- MAIL=log; only MAIL_MAILER/FROM_ADDRESS/FROM_NAME set; NO SMTP host/creds; from=no-reply@localhost (placeholder). Provider tokens (postmark/ses/mailgun) ALL unset. App supports `postmark` mailer → raw SMTP NOT required.
+- DNS (read-only, GoDaddy/Secureserver — NOT Namecheap): DMARC present (p=quarantine, rua=onsecureserver.net); DKIM `pm`(Postmark)+`s1` selectors appear present; **SPF ABSENT** on apex+verify subdomain. (host resolver flaky → confirm DKIM in provider dashboard.)
+- Notification CollectorEmailVerification uses Laravel Mail correctly (via mail, MailMessage, host-pinned app.url, Notifiable collector). Error reporting hardened (log exception class only; no 500/enumeration; tokens hashed).
+- Sender should be verified `no-reply@secondchanceauthenticators.com` (apex carries DMARC+pm DKIM).
+- **[9/10] Backfill: prod has 1 sale link, state revoked_refund (NOT eligible) → 0 claim-eligible rows missing order_email → backfill SAFELY SKIPPABLE** (new orders capture order_email via R0c).
+- **VERDICT: BLOCKED (operational).** Missing: (1) provider account+API token (Postmark recommended; store POSTMARK_TOKEN); (2) verified sender signature; (3) SPF record + DKIM/Return-Path confirm at GoDaddy/Secureserver; (4) prod app/.env MAIL_MAILER=postmark+token+verified FROM + config:clear+graceful; (5) controlled smoke test to an SCA-owned inbox. App/code READY FOR CONFIGURATION.
+
+**STOP — read-only. RELEASE GATE unchanged: R0+R0b+R0c remain BLOCKED until operational email delivery (provider token + verified sender + SPF/DKIM) is live + separate deploy approval; backfill no-op/skippable. NEXT (owner): provision Postmark (preflight [[sca-postmark-activation-preflight]]) + DNS at GoDaddy/Secureserver → set prod MAIL config → smoke test → combined merge/deploy decision. SEPARATE OPEN: Phase-1 first genuine products/* webhook receipt verification.**
+
+---
+
 # SCA — R0+R0b+R0c FINAL DB REGRESSION GREEN (77/77, disposable DB; branch 539cd1f); prod unchanged; release gated on SMTP + order-email backfill (operational). (Phase-1 webhook verification still OPEN.)
 
 **STATUS (2026-10-29):** Authorized final combined isolated DB-test of R0c b042125→`539cd1f` (incl R0+R0b). Evidence: `docs/SCA-OWNERSHIP-R0-R0B-R0C-FINAL-DB-TEST-RESULT.md`. Disposable DB only; dropped+verified; prod sca_krayin + SHA cb8a8c3 UNCHANGED. No merge/deploy/prod-DB/live-Shopify/prod-backfill/real-email/SMTP-change/Option-C.
