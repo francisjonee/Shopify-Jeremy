@@ -1,3 +1,14 @@
+# SCA — ORDER-ASSIGNMENT DEPLOYED + POST-DEPLOY VERIFIED READY at prod `eb137bf` (batch 30). Operational notes = role grants + variant-link-vs-override (config/workflow, NOT blockers). ZERO Shopify interaction. (Phase-1 webhook verification still OPEN.)
+
+**STATUS (2026-10-29):** READ-ONLY post-deployment verification of eb137bf. Evidence: `docs/SCA-SHOPIFY-ORDER-ASSIGNMENT-POST-DEPLOY-VERIFICATION.md`. No Shopify API/getOrder/store change; no DB write; no session created.
+- Live eb137bf/main/clean/200. Routes+view+ACL registered (GET order-assign→ScaAuthorize:sca.shopify.view; POST→sca.eyewear.shopify.order-assign+throttle; override is a SEPARATE key). All 5 ACL keys present in config('acl') incl order-assign + .override. Administrator role (id1, permission_type=all, 1 active user) → effective access via bouncer. Manager-override separately enforced (non-admin custom role withheld by default).
+- Assignment-audit table exists + EMPTY (0 rows, append-only triggers). Provenance UNCHANGED (items3/own5/claims2/cert4/qr3/grant1); sale_links=1; reconciliation_runs=0 (no getOrder invoked). No logs referencing new functionality; no genuine errors.
+- VERDICT: interface OPERATIONALLY READY, no code/data blockers. Operational notes (config/workflow, NOT blockers): (1) only Administrator holds the assign/override ACLs now (it's 'all') → grant to custom staff roles to enable non-admins; (2) 0 Phase-2 variant links in prod → first assignments need the manager-override+reason path (or pre-link item↔variant via Phase-2 UI); (3) use-time inputs = Shopify order id + pair public_ref (system does its own authoritative getOrder). [5] authenticated render not exercised live (no existing session; not created per constraint) — verified indirectly + by regression.
+
+**STOP — deployed interface verified ready; zero Shopify interaction; prod records unchanged. NEXT (owner/ops decision): grant assign/override ACLs to the appropriate staff roles + decide variant-link-vs-override workflow for first real assignments. SEPARATE OPEN: Phase-1 first genuine products/* webhook receipt verification.**
+
+---
+
 # SCA — ORDER-ASSIGNMENT DEPLOYED to prod: live 5bed316→`eb137bf` (migrate-before-code, batch 30, graceful). Assignment+permfix+rc21 LIVE; R0c excluded; ZERO Shopify interaction. (Phase-1 webhook verification still OPEN.)
 
 **STATUS (2026-10-29):** Authorized controlled production deployment of RC eb137bf. Evidence: `docs/SCA-SHOPIFY-ORDER-ASSIGNMENT-DEPLOY.md`. No Docker recreate; ZERO Shopify API/store/credential/webhook change.
