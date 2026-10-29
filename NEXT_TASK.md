@@ -1,3 +1,14 @@
+# SCA — SECURE CLAIM INTEGRATION + ORDER-EMAIL WIRING DONE (branch feat/sca-secure-claim-integration head `c65dc1f` off 4faf84d). Staff-assigned links now carry trusted order_email. UNMERGED/undeployed; combined regression + email provider still needed. (Phase-1 webhook verification COMPLETE.)
+
+**STATUS (2026-10-29):** Authorized follow-up wiring the trusted order email through the staff order-assignment path. Evidence: `docs/SCA-STAFF-ASSIGNMENT-ORDER-EMAIL-WIRING.md`. No merge/deploy/migration/prod-DB/Shopify/email change.
+- Branch `9e4c639`→**`c65dc1f9d9190df1997fc56dc38cd1b394b7bdc3`** (pushed origin). Live 4faf84d untouched. 3 files (1 prod + 2 tests); NO migration.
+- FIX: OrderItemAssignmentService::assign already builds AuthoritativeOrder (parses trusted email: top-level `email` else customer.email, normalized) from read-only getOrder → now passes `$order->email` as linkPaidLine's 7th arg (existing R0c interface). Email ONLY from authoritative response (assign() has no email param → never staff/form/QR/customer). Missing/empty→null→fails closed; malformed stored as-is (no fabrication); linkPaidLine 'exists' path never overwrites (retry/conflict-safe). Binding/variant/override/invariants unchanged.
+- Tests (DB-backed, NOT run): ShopifyOrderItemAssignmentTest a21-a26 (top-level propagate/missing-null/customer-fallback/whitespace-null/duplicate-preserve/conflict-no-overwrite); refund/cancel a6/a7 + no-ownership a1 already cover. SecureClaimOrderAssignmentIntegrationTest updated → positive end-to-end (matching verified buyer claims) + null→fail-closed + public-QR retired. php -l clean. R0 retirement + verified-buyer gate preserved (no weakening).
+
+**STOP — order-email wired. NEXT (separate auth, REQUIRED before release prep): FULL combined isolated regression of branch c65dc1f (R0c suites + prod-line suites incl a21-a26 + integration test) on internal no-egress net with Http::fake. Then launch path: transactional email provider → migrate-before-code deploy + MAIL=postmark + fulfillment-release ACL + order_email backfill → controlled end-to-end proof. STILL BLOCKED on email for actual claims.**
+
+---
+
 # SCA — SECURE CLAIM INTEGRATION DONE: R0/R0b/R0c reconciled onto prod line (branch feat/sca-secure-claim-integration `9e4c639` off 4faf84d, conflict-free). UNMERGED/undeployed; still BLOCKED on email. (Phase-1 webhook verification COMPLETE.)
 
 **STATUS (2026-10-29):** Authorized dev integration of R0/R0b/R0c onto the deployed prod line. Evidence: `docs/SCA-SECURE-CLAIM-INTEGRATION.md`. No deploy/merge/migration/prod-DB/Shopify/email change.
