@@ -1,3 +1,15 @@
+# SCA — OWNERSHIP TRANSFER EXPERIENCE AUDIT (read-only): COMPLETE + fully DEPLOYED at 4faf84d; works WITHOUT email; no next task required. (Phase-1 webhook verification COMPLETE.)
+
+**STATUS (2026-10-29):** READ-ONLY review of collector→collector ownership transfer. Evidence: `docs/SCA-OWNERSHIP-TRANSFER-EXPERIENCE-AUDIT.md`. No code/DB/Shopify/email/deploy change.
+- ALL transfer functionality DEPLOYED (prod 4faf84d): owner-only initiate (public_ref-authorized; adverse-status blocked; single-use Token::opaque 14-day invite; reuse-pending no-dup); recipient accept inside collector.auth (new recipient → login/register intended-URL onboarding SCA-032, email-free); cancel (idempotent); pending-status banner + confirmation flashes (transfer-status-clarity); append-only transfer_out/transfer_in history (claim untouched); QR passport UNCHANGED (item-bound/immutable; no re-mint/print).
+- [4] guards STRONG (TransferWorkflowTest 15/15): non-owner NOT_FOUND; self-accept SELF/409; expired (14d) rejected; single-use/replay → NOT_FOUND/NOT_AVAILABLE; stale-owner + adverse mid-flight NOT_AVAILABLE; serialized lockForUpdate+version; infra failure propagates (not disguised).
+- [8] **transfer path sends NO email/notification → works fully WITHOUT an email provider** (owner shares link out-of-band; privacy: no collector enumeration). Independent of the email-blocked claim flow.
+- [9] minor gaps (optional, email-gated, NOT blocking): no auto recipient notification; no owner "transfer accepted" confirmation. [10] nothing transfer-related is dev-only (4bd88d2 RC is about CLAIMING, not transfer; transfer independent of claim gate). [11] **NO next task required — transfer is launch-ready; optional email-gated enhancements only if owner wants, after email live.**
+
+**STOP — transfer experience complete/deployed/launch-ready (no email needed). RC 4bd88d2 remains DEPLOYMENT-BLOCKED (claims, separate). Phase-1 webhook verification COMPLETE.**
+
+---
+
 # SCA — TRANSACTIONAL EMAIL READINESS (read-only): minimum = Postmark SMTP (config-only) OR API transport (release needs symfony/postmark-mailer added). Email fail-closed; no Shopify change. RC still DEPLOYMENT-BLOCKED. (Phase-1 webhook verification COMPLETE.)
 
 **STATUS (2026-10-29):** READ-ONLY email-config readiness for verified-buyer claim launch. Evidence: `docs/SCA-TRANSACTIONAL-EMAIL-READINESS.md`. No account/DNS/email/config/deploy change; no secrets.
