@@ -1,3 +1,14 @@
+# SCA — CUSTOMER PASSPORT UI AUDIT (read-only): UI already built/deployed; smallest safe slice = transfer status-clarity (presentation-only). repo main e644c9c; prod cb8a8c3. (Phase-1 webhook verification still OPEN.)
+
+**STATUS (2026-10-29):** READ-ONLY audit of the customer Passport / My Collection / transfer UI at repo main e644c9c. Evidence: `docs/SCA-CUSTOMER-PASSPORT-UI-AUDIT-PLAN.md`. No code/DB/merge/deploy change.
+- ALREADY BUILT + DEPLOYED (cb8a8c3): public passport /p/{token} (mobile, image, brand/model, authenticity badge, cert valid/number/date, auth date, QR+registry status, adverse-warning-dominant, trust copy "auth≠ownership"; safe DTO only, no PII/token/path) — objective 4/7/8 MET. Collector app: register/login/account/profile/home/public-profile; My Collection index (image+brand/model+cert/registry badges+stats+filters+sort+groups+empty) — obj 5 MET; eyewear detail (asset-first, badges, market ref, adverse banner, flash); transfer initiate/accept/unavailable (single-use expiring invite link, cancel, self-guard) — obj 6 PARTIAL.
+- GENUINE GAP (obj 6): item detail shows plain "Transfer ownership →" with NO "transfer pending" indicator (data exists via TransferWorkflow::pendingInviteToken); TransferController sets NO status flash after initiate/cancel/accept.
+- **SMALLEST SAFE SLICE (recommended): "transfer status clarity" — presentation+flash only: (1) detail-page "Transfer pending" banner when pendingInviteToken non-null (reuse service; no token rendered); (2) status flashes after initiate/cancel/accept. NO schema/workflow/mutation change; reuses deployed workflow; no claim activation; independently testable.** ~2 views + controller DTO flag + 3 strings.
+
+**STOP — audit delivered; UI largely complete. NEXT (owner): authorize the transfer-status-clarity slice (dev branch + disposable-DB test) OR defer. SEPARATE OPEN: Phase-1 first genuine products/* webhook receipt verification.**
+
+---
+
 # SCA — OWNERSHIP R0+R0b+R0c MERGED to origin/main (e644c9c); CODE-ONLY, NOT deployed; prod still cb8a8c3 (batch 29). Claiming workflow INERT until email delivery. (Phase-1 webhook verification still OPEN.)
 
 **STATUS (2026-10-29):** Authorized CODE-ONLY merge of 539cd1f into main. Evidence: `docs/SCA-OWNERSHIP-R0-R0B-R0C-MERGE.md`. No deploy/restart/migration/SMTP/Shopify/Option-C.
