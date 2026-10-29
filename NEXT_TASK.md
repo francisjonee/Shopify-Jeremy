@@ -1,3 +1,17 @@
+# SCA — OWNERSHIP R0c INTEGRATION CORRECTIONS (branch b042125): order-email propagation wired + obsolete R0b tests fixed + backfill (dry-run) added; static PASS; DB tests NOT run; AWAITING combined DB regression. (Phase-1 webhook verification still OPEN.)
+
+**STATUS (2026-10-29):** Narrow dev corrections on feat/sca-ownership-r0c-verified-buyer. Evidence: `docs/SCA-OWNERSHIP-R0C-INTEGRATION-CORRECTIONS.md`. Worktree-only; prod/main cb8a8c3 untouched. No prod migration/deploy/merge/live-Shopify/backfill-exec/real-email/SMTP/Option-C.
+- **SHA 3148029→`b0421252f4fabc1a1b8ce68f7bb1e499c014d842`** (pushed origin). 7 files (5 mod, 2 new); NO new migration.
+- BLOCKER-1 FIXED: trusted order email now propagated to BOTH sale-link paths — AuthoritativeOrder.email (top-level/customer.email, normalized) → ShopifyReconciliationService passes $order->email; SaleLinkEventProcessor::handlePaid extracts from HMAC-verified webhook payload. Trusted-source only; missing→null→fail closed. cancel/refund never restore eligibility (existing-line authoritative).
+- read_orders scope UNCHANGED (email exposed under it); no Shopify config change.
+- BACKFILL (dry-run default, NOT executed): new cmd sca:shopify:backfill-sale-link-email — scans order_email IS NULL, getOrder-derives trusted email; --apply idempotent (only NULL rows, never overwrite/never touch eligibility). Console-only, not scheduled, not run vs prod.
+- R0b PresaleClaimGrantTest: 4 obsolete success cases updated (verifiedBuyer() + per-link order_email) → expected 12/12 on re-run. Added SaleLinkOrderEmailTest (webhook propagation + customer fallback + normalize + missing→null + dup-event idempotent + refund/cancel no-restore + AuthoritativeOrder parse). php -l clean. DB tests NOT run (sep auth).
+- ⚠️ REMAINING RELEASE DEPENDENCIES: (1) SMTP delivery (challenge email MAIL=log → email_verified_at unsettable in prod); (2) backfill run for existing sale links; (3) latent email-change invalidation (no change path today). Residual: tokens in URL→logs/history/Referer.
+
+**STOP — corrections for review. ⚠️ RELEASE GATE: do NOT merge/deploy until combined DB regression GREEN at b042125 (authorized disposable-DB session) + SMTP operational + backfill executed + separate deploy approval; never bearer-only. NEXT (sep auth): combined R0+R0b+R0c disposable-DB regression at b042125. SEPARATE OPEN: Phase-1 first genuine products/* webhook receipt verification.**
+
+---
+
 # SCA — R0+R0b+R0c COMBINED DB TEST: verified-buyer path PROVEN (VerifiedBuyerClaimTest 10/10); 2 RELEASE BLOCKERS (order-email propagation + SMTP) + R0b test obsolescence; prod unchanged; do NOT release. (Phase-1 webhook verification still OPEN.)
 
 **STATUS (2026-10-29):** Authorized combined isolated DB-test of R0c c1e252a→`3148029` (incl R0+R0b). Evidence: `docs/SCA-OWNERSHIP-R0-R0B-R0C-COMBINED-DB-TEST-RESULT.md`. Disposable DB only; dropped+verified; prod sca_krayin + SHA cb8a8c3 UNCHANGED. No merge/deploy/prod-DB/live-Shopify/live-claim/real-email/SMTP-change/Option-C.
