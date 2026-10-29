@@ -1,3 +1,14 @@
+# SCA — TRANSFER STATUS CLARITY IMPLEMENTED (presentation-only) on branch feat/sca-transfer-status-clarity (a44103a, off main e644c9c; UNMERGED). prod cb8a8c3. (Phase-1 webhook verification still OPEN.)
+
+**STATUS (2026-10-29):** Authorized presentation-only implementation of the transfer status-clarity slice. Evidence: `docs/SCA-OWNERSHIP-TRANSFER-STATUS-CLARITY.md`. Dev branch only — NO merge/deploy/migration/schema/service change.
+- Branch `feat/sca-transfer-status-clarity` off `e644c9c` → head **`a44103a`** (pushed origin=impl repo). Live `/opt/sca-platform` untouched (prod `cb8a8c3`, clean, bind-mount safe). 6 files (5 mod + 1 new test); NO migration/schema; `TransferWorkflow`/`TransferService` UNCHANGED.
+- CHANGES: (1) `CollectionController::show` injects `TransferWorkflow`, passes presentation-only bool `transferPending` = `pendingInviteToken(...) !== null` (token fetched server-side, reduced to bool, **NEVER passed to view**); (2) `collection/show.blade.php` shows a "⏳ Transfer pending — awaiting acceptance / Manage or cancel transfer →" banner when pending, else the ordinary link — no token rendered either branch; (3) `TransferController` adds `status` flashes on initiate/cancel/accept; (4) `transfer/initiate.blade.php` + `collection/index.blade.php` render the session flash slot (layout only renders validation `$errors`).
+- TESTS: `TransferStatusClarityTest.php` (new, `php -l` clean) — pending/no-pending display, confirmation messages, owner-only access control, token privacy. WRITTEN, **NOT run** (no DB-changing tests authorized here).
+
+**STOP — implemented on dev branch. NEXT (separate auth): authorized disposable-DB session to run `TransferStatusClarityTest` + `TransferWorkflowTest` (regression), then code-only merge review. No deploy without separate auth. SEPARATE OPEN: Phase-1 first genuine products/* webhook receipt verification.**
+
+---
+
 # SCA — CUSTOMER PASSPORT UI AUDIT (read-only): UI already built/deployed; smallest safe slice = transfer status-clarity (presentation-only). repo main e644c9c; prod cb8a8c3. (Phase-1 webhook verification still OPEN.)
 
 **STATUS (2026-10-29):** READ-ONLY audit of the customer Passport / My Collection / transfer UI at repo main e644c9c. Evidence: `docs/SCA-CUSTOMER-PASSPORT-UI-AUDIT-PLAN.md`. No code/DB/merge/deploy change.
