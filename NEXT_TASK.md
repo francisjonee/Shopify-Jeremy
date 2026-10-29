@@ -1,3 +1,18 @@
+# SCA — OWNERSHIP R0c IMPLEMENTED (branch c1e252a, off R0b 1592a78): verified-buyer gate closes R0b bearer BLOCKER; static PASS; DB tests NOT run; AWAITING review. (Phase-1 webhook verification still OPEN.)
+
+**STATUS (2026-10-29):** R0c (verified-buyer private SCE claim) on feat/sca-ownership-r0c-verified-buyer off R0b 1592a78. Evidence: `docs/SCA-OWNERSHIP-R0C-VERIFIED-BUYER.md`. Worktree-only; prod/main cb8a8c3 untouched. No prod migration/deploy/merge/live-Shopify/live-claim/email/Option-C.
+- **SHA 1592a78→`c1e252ab4c876dfda0315dc7d13d05427173651d`** (pushed origin). 12 files (6 mod, 6 new); 2 ADDITIVE migrations; EXTERNAL-intake flow UNTOUCHED.
+- Trusted buyer email: additive nullable sca_shopify_sale_links.order_email (captured ONLY from verified Shopify webhook/getOrder, never a form; normalized). SaleLinkService::linkPaidLine +optional $orderEmail (back-compat).
+- Email verification (REAL mechanism, NOT faked): sca_collector_email_verifications (SHA-256 token_hash, single-use, expiring) + CollectorEmailVerificationService.request/confirm→stamps email_verified_at + CollectorEmailVerification notification + collector routes (POST request auth + public GET confirm). Mirrors hardened password-reset.
+- Gate (ClaimWorkflow::claimByPresaleGrant): require order_email + collector email_verified_at NOT NULL + normalized match → else ClaimRejection::BUYER_VERIFICATION_REQUIRED (409, no ownership, grant not consumed). Preserves release/eligibility/exact-item+sale-link/expiry/single-use/replay/concurrency. preview surfaces buyer_verification_required → claim page prompts email verify.
+- PRESERVED: external_intake grants, My Collection, passport viewing, transfers; public QR 410 (R0).
+- ⚠️ RELEASE DEPENDENCIES: (a) SMTP — challenge delivery is MAIL=log (dormant) → email_verified_at cannot be set in prod until SMTP live → gate unsatisfiable in prod yet (mechanism real, NOT treated as done). (b) order_email capture must be wired into the live sale-link path/backfill (else null → fail closed, safe). RESIDUAL: grant/verify tokens in URL paths → access logs/history/Referer may record (shared w/ external grant).
+- Tests VerifiedBuyerClaimTest WRITTEN NOT run (sep disposable-DB auth; literal sca_domain_test guard): legit buyer, case-insensitive, wrong buyer, unverified, missing order email, cancelled/refunded, expired, replay/2nd-buyer, challenge issue→confirm→stamp + bad/expired. php -l clean; Blade balanced.
+
+**STOP — R0c for review. ⚠️ RELEASE GATE: R0+R0b+R0c COMBINED security regression + separate deploy approval; do NOT release bearer-only; R0c gate also needs SMTP + order-email capture activation. NEXT (sep auth): combined DB test of R0+R0b+R0c (disposable sca_domain_test). SEPARATE OPEN: Phase-1 first genuine products/* webhook receipt verification.**
+
+---
+
 # SCA — R0+R0b COMBINED DB TEST PASS (60/60, disposable DB; 1592a78); prod unchanged; ⚠️ SECURITY BLOCKER (bearer grant, no buyer verification) — do NOT release until resolved. (Phase-1 webhook verification still OPEN.)
 
 **STATUS (2026-10-29):** Authorized combined isolated DB-test of R0b 1592a78 (incl R0). Evidence: `docs/SCA-OWNERSHIP-R0-R0B-COMBINED-DB-TEST-RESULT.md`. Disposable DB only; dropped+verified; prod sca_krayin + SHA cb8a8c3 UNCHANGED. No merge/deploy/prod-DB/live-Shopify/live-claim/Option-C.
