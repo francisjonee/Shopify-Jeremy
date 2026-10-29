@@ -1,3 +1,14 @@
+# SCA — EYEWEAR REGISTRATION→QR WORKFLOW AUDIT (read-only): FULL chain register→authenticate→certify(+QR)→label→link-variant→assign→pack ALREADY IMPLEMENTED/deployed; NO dev needed. prod eb137bf. (Phase-1 webhook verification still OPEN.)
+
+**STATUS (2026-10-29):** READ-ONLY audit of the real-inventory prep workflow. Evidence: `docs/SCA-EYEWEAR-REGISTRATION-QR-WORKFLOW-AUDIT.md`. No API/DB write/record creation.
+- ALL 7 steps IMPLEMENTED+deployed: (1) register `/admin/sca/eyewear/create`→store (sca.eyewear.create; public_ref=Token::publicRef() auto); (2) authenticate `{id}/authenticate`+`/finalize` (sca.eyewear.authenticate); (3) certify `{id}/certify` (sca.eyewear.certify) — **CertificationService::issue() ATOMICALLY mints+activates the QR Passport** (no separate QR step); (4) QR label `{id}/qr`(SVG)+`{id}/qr/label`(print)+`qr/labels`(batch) (sca.eyewear.view); (5) link Shopify variant = item-detail catalog-link panel (sca.eyewear.shopify.link; exact variant-id from local mirror); (6) assign `/admin/sca/shopify/order-assign` (deployed); (7) verify QR label for packing.
+- [8] no missing feature in chain; Administrator(all) has all ACLs. [9] all 3 current eyewear are TEST/DEMO (no system test-vs-prod flag — naming only; create fresh real records). [11] every step implemented, NONE needs dev.
+- [12] NO dev required. OPTIONAL cosmetic only: certify mints QR is_production=false (default; createIdentity never passed true) → order-assign confirmation shows "(staging — not for print)" for normally-certified items; BUT qr/qrLabel routes IGNORE is_production and print the real passport QR regardless (verified "never touches is_production"). One-line copy/flag fix if operators are confused; defer otherwise.
+
+**STOP — full inventory-prep workflow already works; no development needed. Prereqs operational only (create real inventory + print/affix QR; genuine paid order + real pair for assignment per eligibility audit). SEPARATE OPEN: Phase-1 first genuine products/* webhook receipt verification.**
+
+---
+
 # SCA — FIRST-ORDER-ASSIGNMENT ELIGIBILITY AUDIT (read-only): NO local candidate (sole sale-link refunded; all 3 eyewear are test/demo, 2 owned; 0 variant links). Needs real paid order + real unowned QR-active pair (sep auth). prod eb137bf. (Phase-1 webhook verification still OPEN.)
 
 **STATUS (2026-10-29):** READ-ONLY local-data eligibility audit for the first Order→Eyewear Assignment. Evidence: `docs/SCA-SHOPIFY-FIRST-ORDER-ASSIGNMENT-ELIGIBILITY-AUDIT.md`. No Shopify API/getOrder/reconciliation, no DB write, no PII, no item/order fabrication.
