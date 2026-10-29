@@ -1,3 +1,15 @@
+# SCA — SHOPIFY SALE→EYEWEAR MATCHING AUDIT (read-only): matching by sca_item_ref→public_ref ONLY; correct+protected but INERT in prod (104 paid webhooks → 0 active sale links); no staff order→pair binding. Smallest safe slice = staff order-line→pair binding. prod 5bed316. (Phase-1 webhook verification still OPEN.)
+
+**STATUS (2026-10-29):** READ-ONLY audit at prod 5bed316. Evidence: `docs/SCA-SHOPIFY-SALE-TO-EYEWEAR-MATCHING-AUDIT.md`. No code/DB/Shopify/claim/ownership/email change.
+- MATCHING: line-item property `sca_item_ref` (config line_item_ref_property, default sca_item_ref) carries pair `public_ref` (^SCA-[0-9A-Fa-f]{12}$) → SaleLinkService resolves to exactly ONE item. NO variant/SKU/title/fuzzy matching. Two paths, one writer: webhook (WebhookController HMAC→SaleLinkEventProcessor) + staff reconcile (ShopifyReconciliationService→AuthoritativeOrder, read-only getOrder). Both use same rule.
+- ⚠️ INERT IN PROD: 104 orders/paid receipts (+4 cancelled, 2 refunds, 870 products/update) but only 1 sale link total = revoked_refund (0 active) → real orders carry NO sca_item_ref property (storefront must inject it; NOT in SCA repo). Variant links 0.
+- [4] multiple pairs/variant = irrelevant (matcher never uses variant; Phase-2 link table is many-items→one-variant staff reference only, NOT consulted). [5] NO staff order→pair binding exists (reconcile=read-only re-read of property; link/relink=item↔variant catalog SKU only). [6] no fulfillment QR-attach workflow. [7] protections STRONG (UNIQUE(shop,line)+idempotency+lock; one-active; never-rebind; refund/cancel deterministic+tombstone; sale≠ownership) EXCEPT residual: matcher trusts the property's public_ref value, no cross-check vs purchased variant → wrong ref binds wrong (valid) pair.
+- [8] SMALLEST SAFE SLICE: staff-only ACL-gated audited "bind (shop,order_id,line_id)→staff-selected public_ref" via EXISTING SaleLinkService::linkPaidLine (reuses all invariants; cross-check vs Phase-2 variant link to close residual). Storefront property-injection = preferred long-term but OUT of SCA code / "no Shopify mods" limit.
+
+**STOP — audit delivered. AWAITING owner prioritization of the staff order→pair binding slice (or storefront property injection). No implementation without authorization. SEPARATE OPEN: Phase-1 first genuine products/* webhook receipt verification.**
+
+---
+
 # SCA — TRANSFER STATUS CLARITY DEPLOYED to prod: live cb8a8c3→`5bed316` (code-only FF, NO migration, graceful). R0/R0b/R0c absent; prod data+schema unchanged. (Phase-1 webhook verification still OPEN.)
 
 **STATUS (2026-10-29):** Authorized controlled production deployment of RC `5bed316`. Evidence: `docs/SCA-OWNERSHIP-TRANSFER-STATUS-CLARITY-DEPLOY.md`. No DB migration/change, no Docker recreate, no Shopify/SMTP/claim/Option-C.
