@@ -1,3 +1,14 @@
+# SCA — TRANSFER STATUS CLARITY prod-only RC ready: branch release/transfer-status-clarity-prod `5bed316` off cb8a8c3 (transfer-status ONLY, NO R0c, NO migration). prod cb8a8c3 unchanged, NOT deployed. (Phase-1 webhook verification still OPEN.)
+
+**STATUS (2026-10-29):** Authorized production-only release prep. Evidence: `docs/SCA-OWNERSHIP-TRANSFER-STATUS-CLARITY-PROD-RC.md`. No deploy/restart/prod-DB/migration/Shopify/email/claim/Option-C.
+- Precondition: R0/R0b/R0c did NOT touch the 5 app files (diff cb8a8c3→e644c9c empty) → byte-identical on prod & main → `cherry-pick a44103a` onto cb8a8c3 applies with exact context.
+- **RC branch `release/transfer-status-clarity-prod` = `5bed316926575e79e46eaefadf1509c9605a0aa2`, parent cb8a8c3** (pushed origin). RC diff (cb8a8c3..5bed316) **byte-identical** to the a44103a commit diff; exactly the 6 files (2 controllers + 3 blade + 1 test; 229+/5−). NO migration/schema; NO R0c code/services/routes (only benign pre-existing `sce_presale` enum string in test fixture). php -l + Blade balance clean.
+- origin/main still a397a7e (untouched); live /opt/sca-platform still cb8a8c3/main/clean. RC worktree removed.
+
+**STOP — RC ready. NEXT (separate auth): deploy RC `5bed316` to prod = checkout/ff the RC onto live tree + apachectl graceful (NO migration, NO Docker recreate, NO email config needed). DO NOT deploy merged main a397a7e (email-gated R0/R0b/R0c). SEPARATE OPEN: Phase-1 first genuine products/* webhook receipt verification.**
+
+---
+
 # SCA — TRANSFER STATUS CLARITY MERGED code-only to main (e644c9c→a397a7e); prod cb8a8c3 unchanged, NOT deployed. Main carries R0/R0b/R0c (inert-until-email). (Phase-1 webhook verification still OPEN.)
 
 **STATUS (2026-10-29):** Authorized code-only merge of candidate `a44103a` into main. Evidence: `docs/SCA-OWNERSHIP-TRANSFER-STATUS-CLARITY-MERGE.md`. No deploy/restart/migration/Shopify/email/Option-C.
