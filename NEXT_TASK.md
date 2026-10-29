@@ -1,3 +1,18 @@
+# SCA — R0+R0b+R0c FINAL DB REGRESSION GREEN (77/77, disposable DB; branch 539cd1f); prod unchanged; release gated on SMTP + order-email backfill (operational). (Phase-1 webhook verification still OPEN.)
+
+**STATUS (2026-10-29):** Authorized final combined isolated DB-test of R0c b042125→`539cd1f` (incl R0+R0b). Evidence: `docs/SCA-OWNERSHIP-R0-R0B-R0C-FINAL-DB-TEST-RESULT.md`. Disposable DB only; dropped+verified; prod sca_krayin + SHA cb8a8c3 UNCHANGED. No merge/deploy/prod-DB/live-Shopify/prod-backfill/real-email/SMTP-change/Option-C.
+- Isolation verified (fresh sca_domain_test, absent+0-procs; migrate incl R0b+R0c additive migr + db:seed).
+- **ALL SEVEN SUITES GREEN: 77 tests / 326 assertions / 0 err/fail/warn/skip.** VerifiedBuyerClaim 10, PresaleClaimGrant 12 (4 obsolete cases now pass w/ verified buyer), OwnershipR0 7, ClaimWorkflow 11, ShopifySaleClaimVisibility 12, ExternalClaim 18, SaleLinkOrderEmail 7.
+- Security [12-21] confirmed: legit verified-buyer claim; mismatch/missing/unverified fail closed; order email from trusted webhook+getOrder (never form); dup-event idempotent + refund/cancel no-restore; grants single-use/expiring/item-specific/concurrency-safe; public QR 410; fulfillment-release ACL + external-intake intact; verify tokens hashed/expiring/single-use.
+- **[20] BACKFILL safety EXERCISED on disposable DB: dry-run default (no writes); scans only order_email IS NULL (existing-email row never scanned→never overwritten); --apply required for writes (no token→no write); eligibility unchanged.**
+- DISCLOSED test-only fix: SaleLinkOrderEmailTest missing-email asserted 'linked' (return status) vs stored 'eligible' → corrected (b042125→539cd1f; feature correct).
+- ⚠️ REMAINING RELEASE DEPENDENCIES (operational, NOT code): (1) SMTP delivery — challenge MAIL=log → email_verified_at unsettable in prod → gate unsatisfiable until SMTP+verified sender live; (2) prod order-email backfill run (sca:shopify:backfill-sale-link-email --apply) for existing links; (3) latent email-change invalidation. Residual: tokens in URL→logs/history/Referer.
+- prod fingerprint items3/own5/claims2/cert4/qr3/grant1; batch 29/145; R0c tables+order_email col absent.
+
+**STOP — combined claiming flow GREEN. ⚠️ RELEASE GATE: do NOT merge/deploy R0+R0b+R0c until (a) operational SMTP delivery verified w/ verified sender, (b) prod order-email backfill separately authorized+completed, (c) separate deploy approval; never bearer-only. NEXT (owner/sep auth): activate SMTP (Postmark preflight) → run backfill → combined merge/deploy decision. SEPARATE OPEN: Phase-1 first genuine products/* webhook receipt verification.**
+
+---
+
 # SCA — OWNERSHIP R0c INTEGRATION CORRECTIONS (branch b042125): order-email propagation wired + obsolete R0b tests fixed + backfill (dry-run) added; static PASS; DB tests NOT run; AWAITING combined DB regression. (Phase-1 webhook verification still OPEN.)
 
 **STATUS (2026-10-29):** Narrow dev corrections on feat/sca-ownership-r0c-verified-buyer. Evidence: `docs/SCA-OWNERSHIP-R0C-INTEGRATION-CORRECTIONS.md`. Worktree-only; prod/main cb8a8c3 untouched. No prod migration/deploy/merge/live-Shopify/backfill-exec/real-email/SMTP/Option-C.
