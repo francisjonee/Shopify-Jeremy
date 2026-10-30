@@ -1,3 +1,13 @@
+# SCA — INVENTORY PILOT OPERATIONAL HANDOVER (read-only, 2026-10-30): owner-approval + staff-execution packet for the first genuine 10-pair pilot. No import/DB/Shopify/cert/QR. AWAITING OWNER APPROVAL. Prod LIVE `a53eff3`. (Phase-1 webhook verification COMPLETE.)
+
+**STATUS (2026-10-30):** READ-ONLY operational handover on top of the pilot SOP. Evidence: `docs/SCA-INVENTORY-PILOT-OPERATIONAL-HANDOVER.md` (+ SOP `docs/SCA-INVENTORY-ONBOARDING-PILOT-SOP.md` + template `docs/templates/sca-inventory-pilot-10pair-TEMPLATE.csv`, all on origin/main).
+- **Part A (owner/Jeremy):** provide 10 pairs + details (+ optional link choice); APPROVE: go-ahead for first genuine import, the preview sign-off before confirm, and which staff hold the roles (sca.eyewear.create [+shopify.link if linking], authenticate, certify, view).
+- **Part B (staff):** B1 data-collection checklist (8 fields; intake_type required); B2 variant-id via /admin/sca/shopify/catalog-search (local mirror, no Shopify call); B3 upload at **/admin/sca/eyewear/import** → preview (creates nothing) → **MANDATORY owner preview sign-off CHECKPOINT** → confirm; B4 per-item authenticate→finalize→certify(mints QR)→batch labels /admin/sca/eyewear/qr/labels; B5 expected results (10 new items INTAKE/uncertified, 1 link+audit per linked pair, no cert/QR/ownership until certify; after certify 1 active QR/pair, ownership still unset); B6 Shopify NOT changed; B7 completion/failure/exception report format.
+
+**STOP — handover delivered; nothing imported/changed; prod `a53eff3`. AWAITING OWNER APPROVAL + staff execution. Secure-claim RC `4bd88d2` DEPLOYMENT-BLOCKED + untouched.**
+
+---
+
 # SCA — FIRST GENUINE INVENTORY ONBOARDING PILOT SOP (read-only, 2026-10-30): 10-pair pilot runbook + reusable placeholder CSV template for the deployed CSV variant-linking feature. No import/DB/Shopify/cert/QR. AWAITING OWNER APPROVAL to run the first genuine import. Prod LIVE `a53eff3`. (Phase-1 webhook verification COMPLETE.)
 
 **STATUS (2026-10-30):** READ-ONLY pilot preparation. Evidence: `docs/SCA-INVENTORY-ONBOARDING-PILOT-SOP.md` + template `docs/templates/sca-inventory-pilot-10pair-TEMPLATE.csv`. Grounded in live code `a53eff3`.
