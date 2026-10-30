@@ -1,3 +1,16 @@
+# SCA — FIRST GENUINE INVENTORY ONBOARDING PILOT SOP (read-only, 2026-10-30): 10-pair pilot runbook + reusable placeholder CSV template for the deployed CSV variant-linking feature. No import/DB/Shopify/cert/QR. AWAITING OWNER APPROVAL to run the first genuine import. Prod LIVE `a53eff3`. (Phase-1 webhook verification COMPLETE.)
+
+**STATUS (2026-10-30):** READ-ONLY pilot preparation. Evidence: `docs/SCA-INVENTORY-ONBOARDING-PILOT-SOP.md` + template `docs/templates/sca-inventory-pilot-10pair-TEMPLATE.csv`. Grounded in live code `a53eff3`.
+- **CSV format:** 8 intake cols + optional `shopify_variant_id`. REQUIRED: intake_type ∈ {sce_presale, external_intake}. year int 1800..2027. variant id numeric `^[0-9]{1,24}$` (optional; blank/omit = unlinked). Unsupported/duplicate columns or >500 rows block import.
+- **Variant id lookup:** GET /admin/sca/shopify/catalog-search (ACL sca.eyewear.shopify.link) searches the LOCAL mirror (no Shopify call) → exact variant id.
+- **Procedure:** /admin/sca/eyewear/import (ACL sca.eyewear.create; +sca.eyewear.shopify.link if linking) upload→preview(no mutation)→confirm; then per-item authenticate (sca.eyewear.authenticate)→finalize→certify (sca.eyewear.certify; atomically mints 1 QR)→batch labels POST /admin/sca/eyewear/qr/labels (sca.eyewear.view). Imported items UNCERTIFIED until certify.
+- **Failure checks:** duplicate→WARNING (needs acknowledge); invalid/archived/cross-store/ambiguous variant→row INVALID; partial failure→row rolls back, siblings import, resume via re-upload (ack warnings→ledger skip). Post-import checklist: item count/INTAKE; variant links + audit; no cert/QR/ownership yet; after certify = 1 active QR/item, ownership still unset.
+- **Approver:** owner (Jeremy) authorizes the first genuine import. **Zero Shopify impact confirmed** (import/validation read local mirror only; no outbound HTTP).
+
+**STOP — SOP + template delivered; nothing imported/changed; prod `a53eff3`. AWAITING OWNER APPROVAL for the first genuine 10-pair import. Secure-claim RC `4bd88d2` DEPLOYMENT-BLOCKED + untouched.**
+
+---
+
 # SCA — CSV VARIANT LINKING DEPLOYED TO PRODUCTION (2026-10-30): LIVE at `a53eff3` (code-only ff from 4faf84d; NO migration/recreate). All prechecks + post-deploy checks GREEN; DB fingerprint UNCHANGED; backup 20261030T021703Z verified recoverable; zero deploy errors; no rollback. (Phase-1 webhook verification COMPLETE.)
 
 **STATUS (2026-10-30):** Controlled production deployment of CSV inventory variant-linking DONE. Evidence: `docs/SCA-CSV-VARIANT-LINKING-DEPLOYMENT.md`. **PROD/LIVE now `a53eff321580f7338c2192bf0cdb0ef8375bfea7`** (was 4faf84d). Method: live-tree `git merge --ff-only a53eff3` (NOT origin/main) → `view:clear` → `apachectl -k graceful`; .env/vendor preserved (git-ignored, md5 unchanged); kr-app not recreated.
