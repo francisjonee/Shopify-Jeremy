@@ -1,3 +1,16 @@
+# SCA — RESALE DOCUMENTATION GAP ANALYSIS (DEV, 2026-10-30): existing cert PDF + new provenance report + current-ownership-gated access + PII-free passport ALREADY satisfy resale documentation → NO new document. ONE smallest-safe fix: representation guard so the provenance report isn't read as a certified/insured VALUE. DEV branch `feature/sca-provenance-report-resale` `63b5808` off `ba2da33`. View-only; no tests (owner freeze). STOP for review. (Phase-1 webhook verification COMPLETE.)
+
+**STATUS (2026-10-30):** DEVELOPMENT-ONLY. Evidence: `docs/SCA-RESALE-DOCUMENTATION-GAP-ANALYSIS.md`. Branch `63b5808` (1 Blade file) off `ba2da33` (which is off prod `b007606`).
+- **GAP ANALYSIS:** cert PDF (`CertificatePdfService`, staff-generated, is_public media, current-owner download) + new provenance report (`ProvenanceReportService`, on-demand owner PDF, full record) + PII-free public passport (buyer pre-purchase verify) TOGETHER cover resale documentation. **No new PDF created (declined per task).**
+- **DOCUMENT ACCESS ACROSS TRANSFER — reviewed, CORRECT:** all surfaces gated on canonical current ownership (ownedItemByRef/ownedItemId/ownerVisibleDocument). New owner gains cert + is_public docs + provenance report (media keyed to eyewear_item_id, not owner; full append-only history, neutral labels); previous owner → shared privacy-safe 404; staff-only (is_public=0) never collector-visible. No leak, no missing-access gap.
+- **ONE FIX (step 9 — representation safety, view-only):** report retitled "SCA Digital Provenance Record — documentation for insurance & resale" + explicit "Not an appraisal / not a statement of insured or market value" header + strengthened market disclaimer (informational estimate only; insured value set by owner+insurer) + footer. Market disclaimer PRESERVED+reinforced. No logic/service/route/schema change.
+- **OBSERVATIONS (NOT changed, flag to owner):** certificate PDF is a separate staff action (not auto at certify) → certified item may lack downloadable cert until staff generate (provenance report covers record regardless); optional future QR-image/verification-code on the report.
+- **TESTS REQUIRED LATER (owner freeze; carried from ba2da33 + new-wording render):** ownership-auth/404, owner-safety content scan, correctness, no-side-effects, render robustness, isolated disposable-DB regression before any RC/deploy.
+
+**STOP for review. Two stacked unmerged branches: `ba2da33` (feature) ← `63b5808` (resale wording). NEXT (after owner lifts freeze): consolidate + isolated regression → RC → deploy. Secure-claim RC `4bd88d2` DEPLOYMENT-BLOCKED + untouched.**
+
+---
+
 # SCA — NEXT FEATURE: DIGITAL PROVENANCE / INSURANCE REPORT PDF (DEV, 2026-10-30): gap analysis says the clearest essential missing feature is the owner-facing Insurance Report → implemented. DEV branch `feature/sca-provenance-report` `ba2da33` off prod `b007606`. On-demand owner-safe PDF; NO store/migration/service change. No tests (owner freeze). STOP for review. (Phase-1 webhook verification COMPLETE.)
 
 **STATUS (2026-10-30):** DEVELOPMENT-ONLY. Evidence: `docs/SCA-PROVENANCE-REPORT-FEATURE.md`. Branch `ba2da33` (5 files: 3 new + 2 modified) off prod `b007606`.
