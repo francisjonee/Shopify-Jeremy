@@ -1,3 +1,14 @@
+# SCA — TRANSFER-LINK COPY/SHARE RELEASE CANDIDATE (2026-10-30): RELEASE-PREPARED, VIEW-ONLY. RC `b007606` on `release/sca-transfer-link-copy-share` (parent prod `a53eff3`), byte-identical to reviewed `19c3ca0`; 1 Blade view; NO migration; no claim/ownership/transfer service change; CSP-compatible (NO CSP on collector pages). Awaiting independent review + separate deploy auth. (Phase-1 webhook verification COMPLETE.)
+
+**STATUS (2026-10-30):** Prod-based RC for the transfer-link Copy/Share enhancement. Evidence: `docs/SCA-TRANSFER-LINK-COPY-SHARE-RELEASE-CANDIDATE.md`. No prod deploy/DB/Shopify/email; no live transfer/claim.
+- **RC `b0076068c60704036da0ca04735dfd1a1537a070`** (single commit off `a53eff3`), **byte-identical to `19c3ca0`** (git diff --quiet). **Exactly 1 file**: `Collector/.../views/transfer/initiate.blade.php`. ZERO migration; no claim/ownership/transfer service/controller/route change.
+- **CSP (verified on deployed app, loopback + edge):** collector pages send NO Content-Security-Policy (only X-Content-Type-Options + X-Frame-Options) → inline Copy/Share JS is compatible; public passport keeps stricter CSP (no JS). **Token-safe:** JS reads the already-rendered link and copies/shares on explicit click only — NO fetch/XHR/beacon/console/analytics/submit/redirect; no regeneration/transmission/logging/exposure. No-JS fallback (read-only input + tap-to-select) preserved; Share injected only if navigator.share; clipboard failure → execCommand + Ctrl/Cmd+C hint. Blade compiles + php -l clean.
+- **DEPLOY (code-only, separate auth):** live `git merge --ff-only b007606` → `php artisan view:clear` (key for Blade) → `apachectl -k graceful` (NO recreate/migration); read-only smoke. **ROLLBACK:** restore the 1 view to a53eff3 (backward move, NOT ff) → view:clear → graceful; no DB rollback.
+
+**STOP for review. NEXT (separately authorized): controlled production deployment of RC `b007606`. Secure-claim RC `4bd88d2` DEPLOYMENT-BLOCKED + untouched.**
+
+---
+
 # SCA — PASSPORT & MY COLLECTION UX REVIEW + 1 IMPROVEMENT (2026-10-30): customer experience launch-ready (no owner PII/tokens/internal records; transfer links + pending indicator present). DEV branch `feature/sca-passport-collection-ux` `19c3ca0` off prod `a53eff3` adds a view-only Copy/Share control for the one-time transfer link. No prod/DB/Shopify/claim-security change. STOP for review. (Phase-1 webhook verification COMPLETE.)
 
 **STATUS (2026-10-30):** Read-only UX review of public Passport + collector login/home/My Collection/item-detail/transfer + nav, plus ONE narrowly-scoped view-only improvement. Evidence: `docs/SCA-PASSPORT-COLLECTION-UX-REVIEW.md`. Branch `19c3ca0` (1 file).
