@@ -1,3 +1,18 @@
+# SCA — CSV INVENTORY IMPORT WITH SHOPIFY VARIANT LINKING (DEVELOPMENT — awaiting review): optional `shopify_variant_id` column links each imported pair to its exact Shopify variant atomically; NO prod/DB/migration/Shopify. Branch `feature/sca-csv-variant-link` = `9c1103c` off prod `4faf84d`. (Phase-1 webhook verification COMPLETE.)
+
+**STATUS (2026-10-30):** DEVELOPMENT (not merged/deployed). Evidence: `docs/SCA-CSV-INVENTORY-VARIANT-LINKING.md`. Builds item [11] of the onboarding strategy. No production deploy/merge/migration/DB write; zero Shopify contact.
+- **FORMAT:** adds ONE optional column `shopify_variant_id` (numeric Shopify variant id) to the 8 intake columns. Blank cell / omitted column → unlinked (behaves exactly as today). No shop column — always the configured expected store.
+- **VALIDATION (local mirror only, preview, zero mutation):** format `^[0-9]{1,24}$`; active variant for expected shop (`sca_shopify_variants`); active parent product — mirrors `ShopifyProductLinkService` eligibility. Malformed/unknown/archived/cross-store/ambiguous ref → that ROW is INVALID (never imported with a bad link, never silently onboarded unlinked).
+- **CONFIRM:** item create + ledger + `ShopifyProductLinkService::link` (SOLE writer; reuses one-variant-per-item UNIQUE + append-only audit) in ONE transaction; non-success throws `LinkRejectedException` → whole row rolls back (no orphan/partial). Re-validated at confirm so a variant archived between preview and confirm fails just that row; siblings still import.
+- **PRESERVED:** 500-row cap; idempotency/resume (ledger is the single authority; re-upload skips + keeps links); insert-only; `content_sha256` folds the variant ref but is NULL-STABLE (a no-variant CSV keeps its prior hash); human auth/cert/QR untouched (items stay UNCERTIFIED; NO provenance created by linking).
+- **ACL:** a linking CSV additionally requires `sca.eyewear.shopify.link` (token withheld + re-checked at confirm; never silently drops links). Non-linking CSV needs only `sca.eyewear.create`.
+- **MIGRATION: NONE** (catalog + link + audit tables already deployed). 6 files changed (service, controller, 3 views, new test).
+- **TESTS:** `InventoryImportVariantLinkTest` (valid link+audit, many→one, each invalid class, blank/no-column, batch identity, idempotent resume, partial-failure rollback+resume, no-provenance, ACL). WRITTEN + syntax-checked (`php -l` + Blade compile), **NOT RUN** (DB-changing → needs separately authorized disposable-DB isolation).
+
+**STOP — dev complete on `feature/sca-csv-variant-link` (`9c1103c`), pushed. NEXT (each separately authorized): isolated disposable-DB regression → code-only release candidate off prod → controlled deployment. Secure-claim RC `4bd88d2` remains DEPLOYMENT-BLOCKED + untouched.**
+
+---
+
 # SCA — INVENTORY ONBOARDING STRATEGY (read-only): CSV bulk register (≤500/batch) + batch QR labels ALREADY implemented; auth+certify(QR) are per-item human bottleneck; smallest safe automation = import-time variant linking. (Phase-1 webhook verification COMPLETE.)
 
 **STATUS (2026-10-29):** READ-ONLY onboarding strategy for genuine SCE inventory → per-pair QR Passports. Evidence: `docs/SCA-INVENTORY-ONBOARDING-STRATEGY.md`. No code/DB/Shopify/import/cert/QR change.
