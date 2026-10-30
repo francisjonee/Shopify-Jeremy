@@ -1,3 +1,14 @@
+# SCA — PASSPORT & MY COLLECTION UX REVIEW + 1 IMPROVEMENT (2026-10-30): customer experience launch-ready (no owner PII/tokens/internal records; transfer links + pending indicator present). DEV branch `feature/sca-passport-collection-ux` `19c3ca0` off prod `a53eff3` adds a view-only Copy/Share control for the one-time transfer link. No prod/DB/Shopify/claim-security change. STOP for review. (Phase-1 webhook verification COMPLETE.)
+
+**STATUS (2026-10-30):** Read-only UX review of public Passport + collector login/home/My Collection/item-detail/transfer + nav, plus ONE narrowly-scoped view-only improvement. Evidence: `docs/SCA-PASSPORT-COLLECTION-UX-REVIEW.md`. Branch `19c3ca0` (1 file).
+- **Review:** experience is mature. Public Passport = PII-free DTO (no owner id/contact/frame_serial/tokens/internal ids/Shopify refs), adverse-dominant, trust copy (step 6 PASS). Item detail = tabs + transfer w/ pending indicator + safety + market ref + gallery (step 7 PASS). Home dashboard, browse-first My Collection w/ filters + CP-6, responsive nav all present.
+- **CHOSEN GAP (smallest high-impact, view-only):** the one-time transfer link (the whole email-free hand-off) had no Copy/Share control — only tap-to-select (fiddly on mobile). Implemented in `transfer/initiate.blade.php`: "Copy link" button + JS-injected native "Share" (navigator.share) + aria-live status; progressive enhancement (no-JS fallback = existing read-only input/select); CSP-safe (collector pages already run inline JS). **Does NOT touch token/single-use/expiry/accept/claim safeguards (R0/R0b/R0c untouched).** No controller/service/route/DB change. Blade compiles + php -l clean.
+- **DEFERRED backlog (not blockers):** transfer-pending on collection grid/home (needs list-DTO field); item-detail tab ARIA roles; "why no passport" for uncertified items; public-passport share (stricter CSP).
+
+**STOP for review. NEXT (separately authorized if accepted): isolated regression (view-only) → code-only RC off prod → deploy. Secure-claim RC `4bd88d2` DEPLOYMENT-BLOCKED + untouched.**
+
+---
+
 # SCA — INVENTORY PILOT OPERATIONAL HANDOVER (read-only, 2026-10-30): owner-approval + staff-execution packet for the first genuine 10-pair pilot. No import/DB/Shopify/cert/QR. AWAITING OWNER APPROVAL. Prod LIVE `a53eff3`. (Phase-1 webhook verification COMPLETE.)
 
 **STATUS (2026-10-30):** READ-ONLY operational handover on top of the pilot SOP. Evidence: `docs/SCA-INVENTORY-PILOT-OPERATIONAL-HANDOVER.md` (+ SOP `docs/SCA-INVENTORY-ONBOARDING-PILOT-SOP.md` + template `docs/templates/sca-inventory-pilot-10pair-TEMPLATE.csv`, all on origin/main).
