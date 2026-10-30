@@ -1,3 +1,16 @@
+# SCA — FINAL ESSENTIAL FEATURE GAP REVIEW (read-only, 2026-10-30): DEVELOPMENT COMPLETE. Every product requirement DEPLOYED / DEVELOPED-NOT-DEPLOYED / BLOCKED-on-owner-ops / FUTURE-OPTIONAL; no genuinely-missing business-essential email/Shopify-independent requirement remains → NO code built/changed. Single highest-priority remaining = email-blocked customer CLAIM (`4bd88d2`), an owner/ops gate. Prod `b007606`. STOP. (Phase-1 webhook verification COMPLETE.)
+
+**STATUS (2026-10-30):** READ-ONLY full requirement→status matrix vs PRODUCT_REQUIREMENTS + ROADMAP. Evidence: `docs/SCA-FINAL-ESSENTIAL-FEATURE-GAP-REVIEW.md`. NO code, no branch.
+- **DEPLOYED:** pre-sale state, Shopify sync + order-assign + CSV variant-link, provenance record + metadata + gallery, permanent QR + public passport (domain cutover), ownership history, transfer (+copy/share), service history, lost/stolen registry, My Collection + collector profiles CP-3..CP-6, market reference, external-submission+payment code, certificate PDF.
+- **DEVELOPED-NOT-DEPLOYED:** 3 stacked document branches ba2da33←63b5808←a923dfd (provenance report + resale wording + on-demand cert availability), awaiting owner testing-freeze lift.
+- **BLOCKED (owner/ops, not missing code):** customer CLAIM flow R0/R0b/R0c `4bd88d2` ← transactional email (Postmark) + separate deploy auth = the single highest-priority remaining business-essential capability, EXCLUDED here (email + R0). Paid external auth ← Stripe activation (dormant).
+- **OPS/INFRA:** Phase 10 off-host durable backup + permanent-infra migration (cutover already done). **FUTURE/OPTIONAL:** Phase 11 expansion (market history/value tracking/resale-marketplace/analytics), Shopify embedded admin app.
+- **CONCLUSION:** DEVELOPMENT COMPLETE for email/Shopify-independent essentials; path to launch is OPERATIONAL (stand up email → deploy claim RC; lift freeze → regression/deploy document branches), not feature dev. No code changed.
+
+**STOP for review. No new branch. NEXT = OWNER/OPS actions: (1) transactional email → deploy claim RC `4bd88d2`; (2) lift testing freeze → consolidate+regress+deploy document branches; (3) Stripe for paid external auth; (4) Phase 10 off-host backup/infra. Secure-claim RC `4bd88d2` DEPLOYMENT-BLOCKED + untouched.**
+
+---
+
 # SCA — COLLECTOR DOCUMENT-MANAGEMENT GAP ANALYSIS (read-only, 2026-10-30): NO essential gap. Collector view+download experience complete for required scope; collector UPLOAD is NOT required by Jeremy and would undermine provenance integrity → NO code built/changed. Prod `b007606`. STOP for review. (Phase-1 webhook verification COMPLETE.)
 
 **STATUS (2026-10-30):** READ-ONLY document-management review. Evidence: `docs/SCA-COLLECTOR-DOCUMENT-MANAGEMENT-GAP-ANALYSIS.md`. NO code change, no branch.
