@@ -1,3 +1,14 @@
+# SCA — CSV VARIANT LINKING PRODUCTION RELEASE CANDIDATE (2026-10-30): RELEASE-PREPARED. RC `a53eff3` on `release/sca-csv-variant-link` (parent prod `4faf84d`), byte-identical to tested `79b0184`; exactly 6 files; NO migration. Awaiting independent review + separate deploy auth. (Phase-1 webhook verification COMPLETE.)
+
+**STATUS (2026-10-30):** Prod-based release candidate for CSV inventory variant-linking. Evidence: `docs/SCA-CSV-VARIANT-LINKING-RELEASE-CANDIDATE.md`. No prod merge/deploy/DB/migration/restart; zero Shopify.
+- **RC `a53eff321580f7338c2192bf0cdb0ef8375bfea7`** (single commit off `4faf84d`), **byte-identical to tested `79b0184`** (git diff --quiet = identical; regression 173/651/0). **Exactly 6 files** (InventoryImportController, InventoryImportService, import form/preview/result views, InventoryImportVariantLinkTest). **ZERO migration/schema change** (catalog+link+audit tables already deployed).
+- **Verified:** MAX_ROWS=500 + idempotency/resume + per-row atomic txn intact; ALLOWED_HEADERS still the 8 (shopify_variant_id optional via ACCEPTED_HEADERS); content_sha256 null-stable (omitted column = prior identity); local-mirror-only (no outbound HTTP); items UNCERTIFIED (no QR/ownership/sale-link); R0/R0b/R0c + Option C excluded; php -l clean. Prod UNCHANGED `4faf84d` clean/healthy; release worktree removed; no test-DB leftovers.
+- **DEPLOY PLAN (code-only, separate auth):** live-tree `git merge --ff-only a53eff3` → `php artisan view:clear` → `apachectl -k graceful` (NO recreate, NO migration); read-only staff smoke (import form; no-column CSV = prior; valid-column CSV shows mapping, don't confirm). **ROLLBACK:** restore 6 files to 4faf84d (backward move, NOT a fast-forward) → view:clear → graceful; no DB rollback (no migration, nothing written until a staff confirm).
+
+**STOP for review. NEXT (separately authorized): controlled production deployment of RC `a53eff3`. Secure-claim RC `4bd88d2` RELEASE-PREPARED / DEPLOYMENT-BLOCKED + untouched.**
+
+---
+
 # SCA — CSV VARIANT LINKING vl9/vl10 TEST CORRECTION + RE-REGRESSION (2026-10-30): test-only fix (commit `79b0184`, was 9c1103c); FULL isolated regression GREEN = 173 tests / 651 assertions / 0 failures; NO app/controller/UI/logic change; prod unchanged at `4faf84d`. (Phase-1 webhook verification COMPLETE.)
 
 **STATUS (2026-10-30):** Corrected the two wrong duplicate-reimport assertions in InventoryImportVariantLinkTest (TEST-ONLY) and re-ran the isolated regression. Evidence: `docs/SCA-CSV-VARIANT-LINKING-VL9-VL10-TEST-CORRECTION.md`. Candidate `feature/sca-csv-variant-link` now **`79b0184`** (parent prod 4faf84d). Isolation: `sca_domain_test` + scoped `sca_test` user (denied sca_krayin ERROR 1044); `--internal` sca_testnet egress blocked (curl 1.1.1.1 exit7, DNS exit6), DB reachable; identity probe all=sca_domain_test; fake Shopify creds; ZERO live Shopify. No prod merge/deploy/migration/restart.
