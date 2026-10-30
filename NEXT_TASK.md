@@ -1,3 +1,14 @@
+# SCA — DOCUMENT ENHANCEMENTS DEPLOYED TO PRODUCTION (2026-10-30): LIVE at `6e36aa7` (code-only ff from b007606; 17 files; NO migration/recreate). All prechecks + post-deploy GREEN; DB fingerprint UNCHANGED; backup 20261030T021703Z verified; zero deploy errors; no rollback. (Phase-1 webhook verification COMPLETE.)
+
+**STATUS (2026-10-30):** Controlled production deployment of the 3 document enhancements + test corrections DONE. Evidence: `docs/SCA-DOCUMENT-ENHANCEMENTS-DEPLOYMENT.md`. **PROD/LIVE now `6e36aa74a3af4cd17415c4aad996a53a166dd1bf`** (was b007606). Method: live-tree `git merge --ff-only 6e36aa7` (NOT origin/main; 4bd88d2 never merged) → `view:clear` → `apachectl -k graceful`; .env md5 unchanged + vendor/storage intact; kr-app not recreated.
+- **PRECHECKS:** prod b007606 clean/healthy; RC parent=b007606 ff-able; 8 app + 9 test = 17 files; no migration/Shopify-app/R0; batch 30/146 0 pending; backup 20261030T021703Z (4.58GB DB+media) sha256-verified + key present.
+- **POST-DEPLOY (all GREEN):** SHA=6e36aa7; /collector/login + /admin/login 200; report GET + certificate POST routes under CollectorAuthenticate; ownership gating (ownedItemByRef/ownedItemIdByRef→404) in deployed code; report disclaimers present (not an appraisal / not a statement of insured or market value); cert availability reuses CertificatePdfService::ensureForItem; **DB UNCHANGED** (146/b30, items3, own5, certs4, media2, qr3, claims2, transfers2); ZERO error/warning log lines today; no real report/cert generated.
+- **ROLLBACK (unused):** `git reset --hard b007606` (backward, NOT ff) → view:clear → graceful; no DB/media rollback.
+
+**STOP. Feature LIVE. Baseline advanced b007606→6e36aa7 (see memory current-baseline). Secure-claim RC `4bd88d2` DEPLOYMENT-BLOCKED + untouched. origin/main a397a7e still NOT deployed (live diverges).**
+
+---
+
 # SCA — DOCUMENT ENHANCEMENTS CONSOLIDATED RELEASE CANDIDATE (2026-10-30): RELEASE-PREPARED. RC `6e36aa7` on `release/sca-document-enhancements` (single commit off prod `b007606`), byte-identical to green-tested `4bf93dd`; 17 files; NO migration; both new routes collector-auth+ownership-gated. Awaiting review + separate deploy auth. (Phase-1 webhook verification COMPLETE.)
 
 **STATUS (2026-10-30):** Prod-based consolidated RC for the 3 document enhancements + test corrections. Evidence: `docs/SCA-DOCUMENT-ENHANCEMENTS-RELEASE-CANDIDATE.md`. No prod merge/deploy/DB/migration; zero Shopify.
