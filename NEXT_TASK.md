@@ -1,3 +1,16 @@
+# SCA — FULL REGRESSION PHASE 1 (2026-10-30): document enhancements PASS / ZERO regression (candidate a923dfd); full suite NOT clean-green = 8 PRE-EXISTING failures (proven identical on prod baseline b007606), NONE from the change; new features lack dedicated tests. RELEASE BLOCKED on test-health fix + new-feature coverage. Prod unchanged b007606. STOP. (Phase-1 webhook verification COMPLETE.)
+
+**STATUS (2026-10-30):** Isolated full regression of the 3 stacked document branches (candidate `a923dfd`, off prod `b007606`). Evidence: `docs/SCA-FULL-REGRESSION-PHASE1-RESULT.md`. Isolation proven (scoped sca_test denied sca_krayin; --internal egress blocked; identity=sca_domain_test; fake Shopify/Stripe; MAIL=array).
+- **RESULT:** `tests/Feature/Sca` = **1525 tests / 7832 assn / 5 errors / 3 failures / 1 skip** (deterministic across 2 runs). Candidate vs **prod-baseline b007606 = IDENTICAL failing set** → document features add ZERO regression.
+- **8 FAILURES ALL PRE-EXISTING, none from the change:** 5 ERRORS = proc_open concurrency tests (cc1a/cc1b/cc2/cc_mr1/cc_sc1) `proc_open(storage/*.err) No such file or directory` = test-harness/env (storage not provisioned in disposable container), error before app logic. 2 FAILURES = stale assertions: c11 (app CORRECTLY 302→/admin/login denies collector; test expects "Something went wrong") + s12 (webhook returns 'ok'/safely-ignored; test expects "ignored"). 1 FLAKE = CertificateDocumentClassification d9 (fails in full-suite ordering, PASSES in isolation).
+- **SECURITY (Phase 4):** verified via passing suites + prod-baseline parity (non-owner/prev-owner doc denial, no PII/tokens, immutable cert, dup-cert idempotency, market disclaimer, staff-only hidden, claim unchanged). NEW features' own security = code-reviewed but UNTESTED.
+- **MISSING COVERAGE (the real gate):** 3 document features have NO dedicated tests (provenance report owner-gate/no-PII/no-dup-media; resale wording; cert-availability idempotency/owner-gate/transfer).
+- **NO app code or test modified** (stop-on-failure honoured). Prod UNCHANGED: b007606 clean/healthy; sca_krayin 146/b30, items3/certs4/qr3/own5/media2; logins 200. Disposable DB/user/net/2 worktrees removed+verified.
+
+**STOP for review. RECOMMENDED NEXT (separately authorized): (1) test-only health fix — proc_open storage path for the 5 concurrency errors + stale c11/s12 assertions + d9 ordering flake; (2) add dedicated tests for the 3 document features; (3) green re-run → consolidated RC of ba2da33←63b5808←a923dfd → code-only deploy (no migration). Secure-claim RC `4bd88d2` untouched/NOT deployed; public-QR claim gap NOT approved for launch.**
+
+---
+
 # SCA — FINAL ESSENTIAL FEATURE GAP REVIEW (read-only, 2026-10-30): DEVELOPMENT COMPLETE. Every product requirement DEPLOYED / DEVELOPED-NOT-DEPLOYED / BLOCKED-on-owner-ops / FUTURE-OPTIONAL; no genuinely-missing business-essential email/Shopify-independent requirement remains → NO code built/changed. Single highest-priority remaining = email-blocked customer CLAIM (`4bd88d2`), an owner/ops gate. Prod `b007606`. STOP. (Phase-1 webhook verification COMPLETE.)
 
 **STATUS (2026-10-30):** READ-ONLY full requirement→status matrix vs PRODUCT_REQUIREMENTS + ROADMAP. Evidence: `docs/SCA-FINAL-ESSENTIAL-FEATURE-GAP-REVIEW.md`. NO code, no branch.
