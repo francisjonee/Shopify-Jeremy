@@ -1,3 +1,14 @@
+# SCA — CSV VARIANT LINKING DEPLOYED TO PRODUCTION (2026-10-30): LIVE at `a53eff3` (code-only ff from 4faf84d; NO migration/recreate). All prechecks + post-deploy checks GREEN; DB fingerprint UNCHANGED; backup 20261030T021703Z verified recoverable; zero deploy errors; no rollback. (Phase-1 webhook verification COMPLETE.)
+
+**STATUS (2026-10-30):** Controlled production deployment of CSV inventory variant-linking DONE. Evidence: `docs/SCA-CSV-VARIANT-LINKING-DEPLOYMENT.md`. **PROD/LIVE now `a53eff321580f7338c2192bf0cdb0ef8375bfea7`** (was 4faf84d). Method: live-tree `git merge --ff-only a53eff3` (NOT origin/main) → `view:clear` → `apachectl -k graceful`; .env/vendor preserved (git-ignored, md5 unchanged); kr-app not recreated.
+- **PRECHECKS:** prod 4faf84d clean/healthy; RC parent=4faf84d ff-able; exactly 6 files; no migr/R0/Option-C; batch 30/146, 0 pending; backup 20261030T021703Z (4.58GB) sha256-verified + key present (local-only/OFFSITE_DEFERRED residual).
+- **POST-DEPLOY (all GREEN):** SHA=a53eff3; /admin/login + /collector/login 200 via loopback (edge 403 on /admin = pre-existing IP rule); import routes keep ScaAuthenticate+ScaAuthorize:sca.eyewear.create; shopify_variant_id handling present; ALLOWED_HEADERS still 8 (no-column CSVs OK); MAX_ROWS=500; **DB UNCHANGED** (146/b30, items3, links0, imports0, certs4, qr3, own5, sale1, audit0); ZERO error/warning log lines dated today; no real CSV processed.
+- **ROLLBACK (unused):** restore 6 files to 4faf84d (backward move, NOT ff) → view:clear → graceful; no DB rollback.
+
+**STOP. Feature LIVE. Baseline advanced to a53eff3 (see memory current-baseline). Secure-claim RC `4bd88d2` RELEASE-PREPARED / DEPLOYMENT-BLOCKED + untouched. origin/main a397a7e still NOT deployed (live diverges).**
+
+---
+
 # SCA — CSV VARIANT LINKING PRODUCTION RELEASE CANDIDATE (2026-10-30): RELEASE-PREPARED. RC `a53eff3` on `release/sca-csv-variant-link` (parent prod `4faf84d`), byte-identical to tested `79b0184`; exactly 6 files; NO migration. Awaiting independent review + separate deploy auth. (Phase-1 webhook verification COMPLETE.)
 
 **STATUS (2026-10-30):** Prod-based release candidate for CSV inventory variant-linking. Evidence: `docs/SCA-CSV-VARIANT-LINKING-RELEASE-CANDIDATE.md`. No prod merge/deploy/DB/migration/restart; zero Shopify.
