@@ -1,3 +1,16 @@
+# SCA — COLLECTOR DOCUMENT-MANAGEMENT GAP ANALYSIS (read-only, 2026-10-30): NO essential gap. Collector view+download experience complete for required scope; collector UPLOAD is NOT required by Jeremy and would undermine provenance integrity → NO code built/changed. Prod `b007606`. STOP for review. (Phase-1 webhook verification COMPLETE.)
+
+**STATUS (2026-10-30):** READ-ONLY document-management review. Evidence: `docs/SCA-COLLECTOR-DOCUMENT-MANAGEMENT-GAP-ANALYSIS.md`. NO code change, no branch.
+- **REQUIREMENTS:** no collector-upload requirement anywhere; "Downloadable records"=retrieve; roadmap Phase 9 SCA-DOCUMENTS-017 = "durable documents from TRUSTED SCA DATA." Document upload is STAFF-ONLY (POST admin/.../documents, ACL sca.eyewear.document); only collector "upload" route = profile avatar (unrelated).
+- **IMPLEMENTED (excluded):** Documents tab lists is_public media by kind (Certificate(PDF) current/superseded + cert#, Photo, Document) with date+Download (visibleDocumentsForOwnedItem/ownerVisibleDocument); certificate on-demand availability (a923dfd); provenance report (ba2da33); auth findings (Auth tab); service history (History tab). All current-ownership gated.
+- **TRANSFER ACCESS (verified):** current-ownership gated → new owner gains is_public docs+cert; previous owner/non-owner→shared 404; listings expose only kind/date/cert# (NO owner PII).
+- **CONCLUSION:** no essential gap; collector UPLOAD/manage NOT required + unsafe (blurs provenance integrity, moderation/abuse/scan/storage obligations, risks immutable-cert/append-only invariants) → DO NOT build (and not now). No code changed.
+- **OPTIONAL (NOT built, owner to prioritise if ever):** group Documents by source; surface report download from Documents tab too; a separate explicitly-scoped "collector-provided, not verified by SCA" personal-file feature only on owner request.
+
+**STOP for review. No new branch — stacked unmerged document branches remain `ba2da33` ← `63b5808` ← `a923dfd`. NEXT (after owner lifts freeze): consolidate + isolated regression → RC → deploy. Secure-claim RC `4bd88d2` DEPLOYMENT-BLOCKED + untouched.**
+
+---
+
 # SCA — OWNER-TRIGGERED ON-DEMAND CERTIFICATE PDF AVAILABILITY (DEV, 2026-10-30): closes flagged gap (certified item could lack a downloadable cert until staff act). Collector "Make my certificate available (PDF)" reuses the existing idempotent CertificatePdfService — never issues/alters/duplicates. DEV branch `feature/sca-collector-certificate-availability` `a923dfd` off `63b5808`. No migration; no tests (owner freeze). STOP for review. (Phase-1 webhook verification COMPLETE.)
 
 **STATUS (2026-10-30):** DEVELOPMENT-ONLY. Evidence: `docs/SCA-COLLECTOR-CERTIFICATE-AVAILABILITY.md`. Branch `a923dfd` (5 files: 2 new + 3 modified) off `63b5808`.
