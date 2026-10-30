@@ -1,3 +1,14 @@
+# SCA — DOCUMENT ENHANCEMENTS CONSOLIDATED RELEASE CANDIDATE (2026-10-30): RELEASE-PREPARED. RC `6e36aa7` on `release/sca-document-enhancements` (single commit off prod `b007606`), byte-identical to green-tested `4bf93dd`; 17 files; NO migration; both new routes collector-auth+ownership-gated. Awaiting review + separate deploy auth. (Phase-1 webhook verification COMPLETE.)
+
+**STATUS (2026-10-30):** Prod-based consolidated RC for the 3 document enhancements + test corrections. Evidence: `docs/SCA-DOCUMENT-ENHANCEMENTS-RELEASE-CANDIDATE.md`. No prod merge/deploy/DB/migration; zero Shopify.
+- **RC `6e36aa74a3af4cd17415c4aad996a53a166dd1bf`** (single commit off `b007606`), **byte-identical to `4bf93dd`** (git diff --quiet). Consolidates dev stack ba2da33→63b5808→a923dfd→4bf93dd (regression 1536/7960/0-fail/1-skip). **17 files** (8 Collector app: ProvenanceReportService/CollectionReportController/report view, CollectorCertificateService/CollectionCertificateController, show.blade, collector-routes, CollectionService +ownedItemIdByRef; 9 tests). ZERO migration/schema change.
+- **Verified:** report GET + certificate POST routes in collector.auth group, controllers ownership-gated via ownedItemByRef/ownedItemIdByRef→404; CollectionService change = additive accessor ONLY; immutable-cert/privacy/transfer/provenance unchanged; Shopify sync/inventory/order-assign code unchanged (only ShopifyConnectionTest=test); R0/R0b/R0c + Option C excluded; php -l + Blade compile clean.
+- **DEPLOY (code-only, separate auth):** live `git merge --ff-only 6e36aa7` (NOT origin/main; never merge 4bd88d2) → `view:clear` (compiled Blade) → `apachectl -k graceful` (NO recreate/migration); read-only smoke (report + make-cert buttons render; don't generate). **ROLLBACK:** `git reset --hard b007606` (backward, NOT ff) → view:clear → graceful; no DB rollback. (Isolated-test detail: concurrency tests need app mounted at /var/www/html — does NOT affect deploy.)
+
+**STOP for review. NEXT (separately authorized): controlled production deployment of RC `6e36aa7`. Secure-claim RC `4bd88d2` DEPLOYMENT-BLOCKED + untouched.**
+
+---
+
 # SCA — REGRESSION HARNESS REPAIR + DOCUMENT COVERAGE (2026-10-30): full tests/Feature/Sca GREEN = 1536 tests / 7960 assertions / 0 failures / 0 errors / 1 (pre-existing) skip. TEST-ONLY (no app code); 8 prior failures fixed + 11 new document-feature tests. Branch `feature/sca-test-harness-repair` `4bf93dd` off a923dfd. Prod unchanged b007606. STOP for review. (Phase-1 webhook verification COMPLETE.)
 
 **STATUS (2026-10-30):** Isolated test-harness repair + new coverage for the 3 document features. Evidence: `docs/SCA-REGRESSION-HARNESS-REPAIR-AND-COVERAGE.md`. Branch `4bf93dd` (9 files, ALL under app/tests/). Isolation: scoped sca_test denied sca_krayin; --internal egress blocked; identity=sca_domain_test; fake Shopify/Stripe; MAIL=array; app mounted at **/var/www/html**.
