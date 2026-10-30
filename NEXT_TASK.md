@@ -1,3 +1,14 @@
+# SCA — TRANSFER-LINK COPY/SHARE DEPLOYED TO PRODUCTION (2026-10-30): LIVE at `b007606` (code-only ff from a53eff3; 1 Blade view; NO migration/recreate). All prechecks + post-deploy GREEN; DB fingerprint UNCHANGED; zero deploy errors; no rollback. (Phase-1 webhook verification COMPLETE.)
+
+**STATUS (2026-10-30):** Controlled production deployment of the transfer-link Copy/Share enhancement DONE. Evidence: `docs/SCA-TRANSFER-LINK-COPY-SHARE-DEPLOYMENT.md`. **PROD/LIVE now `b0076068c60704036da0ca04735dfd1a1537a070`** (was a53eff3). Method: live-tree `git merge --ff-only b007606` (NOT origin/main; 4bd88d2 never merged) → `view:clear` → `apachectl -k graceful`; .env md5 unchanged + vendor intact; kr-app not recreated.
+- **PRECHECKS:** prod a53eff3 clean/healthy; RC parent=a53eff3 ff-able; exactly 1 view file; no migration/controller/route/service/perm/QR/claim/ownership; backup 20261030T021703Z present; collector pages send NO CSP (inline JS compatible).
+- **POST-DEPLOY (all GREEN):** SHA=b007606; /collector/login + /admin/login 200 (loopback); deployed view has Copy(sca-transfer-copy)+conditional navigator.share+no-JS onclick-select fallback; transfer routes (show/initiate/cancel + accept token) all behind CollectorAuthenticate, unchanged; **DB UNCHANGED** (146/b30, ownership 5, transfer 2, qr 3, certs 4, grants 1); ZERO error/warning log lines today; no real transfer initiated.
+- **ROLLBACK (unused):** restore the 1 view to a53eff3 (backward move, NOT ff) → view:clear → graceful; no DB rollback.
+
+**STOP. Feature LIVE. Baseline advanced a53eff3→b007606 (see memory current-baseline). Secure-claim RC `4bd88d2` RELEASE-PREPARED / DEPLOYMENT-BLOCKED + untouched. origin/main a397a7e still NOT deployed (live diverges).**
+
+---
+
 # SCA — TRANSFER-LINK COPY/SHARE RELEASE CANDIDATE (2026-10-30): RELEASE-PREPARED, VIEW-ONLY. RC `b007606` on `release/sca-transfer-link-copy-share` (parent prod `a53eff3`), byte-identical to reviewed `19c3ca0`; 1 Blade view; NO migration; no claim/ownership/transfer service change; CSP-compatible (NO CSP on collector pages). Awaiting independent review + separate deploy auth. (Phase-1 webhook verification COMPLETE.)
 
 **STATUS (2026-10-30):** Prod-based RC for the transfer-link Copy/Share enhancement. Evidence: `docs/SCA-TRANSFER-LINK-COPY-SHARE-RELEASE-CANDIDATE.md`. No prod deploy/DB/Shopify/email; no live transfer/claim.
