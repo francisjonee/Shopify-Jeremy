@@ -1,3 +1,11 @@
+# SCA — FIRST PASSPORT STAFF EXECUTION HANDOVER (read-only, 2026-11-02): staff-facing checklist for `SCA-058DAA468939` (item 17, Alain Mikli AO1347, variant 48797037494559). Confirmed still INTAKE/uncertified (0 auth/cert/qr/owner). Covers exact dashboard pages+inputs+ACLs for metadata-correct→physical-inspect→authenticate→finalize→certify(mints QR+snapshot)→cert/Passport verify→QR label, with physical-inspection-before-PASS + brand/model-before-certify gates + safe-stop criteria. Nothing executed; prod 6e36aa7. STOP.
+
+**STATUS (2026-11-02):** READ-ONLY staff handover packet. Evidence: `docs/SCA-FIRST-PASSPORT-STAFF-HANDOVER.md` (builds on readiness doc `docs/SCA-FIRST-GENUINE-PASSPORT-READINESS.md`). Item 17 re-confirmed INTAKE/normal, brand/model NULL, 0 auth/cert/qr. STOP conditions documented (pair absent/mismatch→stop; can't verify→Failed/Inconclusive no finalize; already certified→stop; wrong/blank brand on preview→fix in metadata BEFORE certify; missing ACL→stop). Irreversible point = typing FINALIZE.
+
+**STOP for owner/staff. NEXT (NOT auto): execute the checklist on the physical pair once authorized → first real QR Passport. Collector claim/transfer SEPARATE later. Secure-claim RC `4bd88d2` DEPLOYMENT-BLOCKED + untouched.**
+
+---
+
 # SCA — FIRST GENUINE PASSPORT READINESS (read-only, 2026-11-02): READY, NO CODE BLOCKERS. Full staff chain metadata-correct→authenticate→finalize→certify(atomic: mints+activates QR Passport + freezes SCA-045 snapshot)→QR label is live, dashboard-driven, ACL-gated. First candidate = `SCA-058DAA468939` (item 17, Alain Mikli AO1347 Brand New/Unworn, variant 48797037494559), INTAKE/uncertified. Prereqs physical only (pair in hand, staff-verified brand/model entered BEFORE certify (snapshot ordering), 5 staff ACLs, QR label printer; photos optional). Nothing issued; prod 6e36aa7. STOP.
 
 **STATUS (2026-11-02):** READ-ONLY readiness review + execution checklist. Evidence: `docs/SCA-FIRST-GENUINE-PASSPORT-READINESS.md`.
