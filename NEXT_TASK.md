@@ -1,3 +1,17 @@
+# SCA — GENUINE INVENTORY ONBOARDING PREPARATION (read-only, 2026-11-02): registry + CSV import (+variant linking) LIVE/ready; catalog safely supplies ONLY shopify_variant_id + title-to-identify (vendor=store name, brand/model are free-text in titles) → per-pair facts MUST be staff-verified, never bulk-imported. Inventory qty ~3,443 across 1,823 in-stock SKUs = non-authoritative sizing estimate. NEXT = authorized 10-pair pilot. Prod unchanged 6e36aa7. STOP. (Phase-1 webhook verification COMPLETE.)
+
+**STATUS (2026-11-02):** READ-ONLY onboarding prep. Evidence: `docs/SCA-GENUINE-INVENTORY-ONBOARDING-PREP.md`. Builds on deployed CSV variant-linking ([[sca-csv-inventory-variant-linking]]) + pilot SOP/handover.
+- **LIVE COUNTS:** prod 6e36aa7 healthy; catalog 4610 products (1708 active) / 5384 variants (5375 active); **1,823 active in-stock (qty>0) summing 3,443 units**; SCA items=3 (test), variant-links=0, imports=0 (onboarding not started).
+- **CSV CONTRACT (deployed):** MAX_ROWS=500; required intake_type∈{sce_presale,external_intake}; optional brand/model_name/frame_serial/year(1800-2027)/country/materials/original_specs + optional shopify_variant_id (validated vs local mirror; bad→row INVALID). Each row = 1 UNCERTIFIED item; authenticate→certify(QR)→labels after.
+- **SAFE catalog prefill = ONLY shopify_variant_id + product title (staff reference).** vendor = store name "Second Chance Eyewear & Accessories" (NOT brand); brand+model are free-text in titles (e.g. "125 Rodenstock Green Frame…") → staff must parse/verify, do NOT auto-populate. Bulk catalog-as-items FORBIDDEN (SKU-qty≠pair).
+- **STAFF VERIFY:** pair exists, intake_type, brand/model, frame_serial, year/country/materials/specs, exact variant_id. inventory_quantity = non-authoritative ESTIMATE only (needs read_inventory for truth). qty N → N rows (many-items→one-variant OK) after physical count.
+- **APPROVAL:** owner go-ahead for first genuine import + preview sign-off (handover); linking CSV needs sca.eyewear.shopify.link. ~3,443 units ≈ 7×500 batches; START with 10-pair pilot (SOP).
+- **INFO NEEDED FROM JEREMY (§9):** which in-stock SKUs are genuine pre-sale pairs (vs accessories/archived); confirm intake_type=sce_presale; link-now vs later; staffing for per-pair auth/cert; go-ahead+approver; whether qty reflects real count.
+
+**STOP for review. NEXT (owner-authorized): run the 10-pair pilot (staff verify + variant-id lookup → fill 10-row template → upload→preview→OWNER SIGN-OFF→confirm → per-pair authenticate/certify/labels), then scale to ≤500 batches. No import until Jeremy authorizes. Secure-claim RC `4bd88d2` DEPLOYMENT-BLOCKED + untouched.**
+
+---
+
 # SCA — OFF-SERVER BACKUP IMPLEMENTATION PLAN (read-only, 2026-10-30): off-site is a CONFIG + CREDENTIALS + KEY-ESCROW task, NOT new dev — the encrypted app-consistent backup + provider-independent atomic off-site upload (lib-offsite.sh rclone/aws) + isolated restore-proof already exist. Smallest reliable = install rclone → restricted-key bucket (B2, object-lock) → set SCA_BACKUP_REMOTE → escrow backup.key. ~4.3GB/day (~130GB@30d) ≈ $1/mo. All install/infra steps OWNER-GATED, none performed. Prod unchanged 6e36aa7. STOP. (Phase-1 webhook verification COMPLETE.)
 
 **STATUS (2026-10-30):** READ-ONLY planning. Evidence: `docs/SCA-OFFSITE-BACKUP-IMPLEMENTATION-PLAN.md`. Addresses the known residual (off-host backup + key escrow) from [[sca-backup-dr-remediation]].
