@@ -1,3 +1,15 @@
+# SCA — INVENTORY ONBOARDING BATCH 1 (read-only, 2026-11-02): 10 in-stock qty=1 eyewear candidates selected from the worklist for staff physical review; review sheet + import DRAFT (variant IDs prefilled, all intake fields BLANK — not importable until staff complete). Nothing invented/imported; Shopify + prod 6e36aa7 unchanged. STOP for owner review. (Phase-1 webhook verification COMPLETE.)
+
+**STATUS (2026-11-02):** READ-ONLY Batch-1 prep from the worklist. Evidence: `docs/SCA-INVENTORY-BATCH1-PREP.md` + `docs/worklists/batch1/sca-batch1-review-sheet-20261102.csv` + `docs/worklists/batch1/sca-batch1-import-DRAFT-20261102.csv`.
+- **SELECTED 10 qty=1 clear-eyewear variant IDs:** 47188919320863, 48164649992479, 48177084399903, 48177595973919, 48177696309535, 48189911302431, 48193329463583, 48193435009311, 48777697493279, 48797142417695 (mostly "Vintage Japanese Aluminum Frame" re-lensed by SCE + Ultra Catalina sunglasses + Emmanuelle Khanh + Traction Productions optical). IDs/SKUs/titles preserved EXACT.
+- **EXCLUDED as non-pair (flagged, transparency):** AKONI EYEWEAR CounterCard (display card), Vava "Catalog And Look Book-217 Pages" (book), "Smart Music Sunglasses & Earphones-Bluetooth" (gadget), computer/reading glasses — eyewear-keyword matches that aren't collectible pairs.
+- **DELIVERABLES:** review sheet (10 candidates + physical_pair_exists_confirmed + BLANK staff fields: brand/model/serial/year/country/materials/specs/intake_type/status); import DRAFT = exact SCA import headers, shopify_variant_id prefilled, 8 intake fields BLANK (NOT importable until staff fill intake_type[req]+verified fields). Nothing invented (step 6).
+- **STAFF MUST VERIFY:** pair exists; brand/model (titles are free-text, NOT clean brand/model — #9 hints Emmanuelle Khanh 9280, #10 Traction Productions Palmaria, but read from frame); serial; year/country/materials/specs; intake_type=sce_presale. Note: many are vintage frames RE-LENSED by SCE ("Brand New Custom Lenses") → owner confirm provenance wording.
+
+**STOP for owner review. NEXT (owner-authorized): approve the 10 → staff physically verify review sheet → complete import DRAFT → upload→preview→OWNER sign-off→confirm → per-pair authenticate/certify/labels. No import until authorized. Secure-claim RC `4bd88d2` DEPLOYMENT-BLOCKED + untouched.**
+
+---
+
 # SCA — STAFF PHYSICAL INVENTORY VERIFICATION WORKLIST (read-only, 2026-11-02): generated `docs/worklists/sca-inventory-verification-worklist-20261102.csv` = 1,750 in-stock active linkable variants (one row each, exact 14-digit variant IDs, staff fields BLANK, 18 batches×100, 191 accessory hints). KEY: 1,579 qty=1 (likely unique pairs) vs 33 qty≥10 = 1,328 units (likely bulk→owner scope decision). No Shopify/DB/import. Prod 6e36aa7. STOP. (Phase-1 webhook verification COMPLETE.)
 
 **STATUS (2026-11-02):** READ-ONLY worklist from the local catalog mirror. Evidence: `docs/SCA-INVENTORY-VERIFICATION-WORKLIST.md` + CSV `docs/worklists/sca-inventory-verification-worklist-20261102.csv`. Builds on [[sca-csv-inventory-variant-linking]] onboarding prep.
