@@ -1,3 +1,15 @@
+# SCA — INVENTORY ONBOARDING BATCH 2 PREP (read-only, 2026-11-02): next 10 in-stock qty=1 eyewear candidates selected from the worklist, ALL distinct from Batch 1 and already_linked=0, all confirmed active variant+active parent (linkable); review sheet + import DRAFT (variant IDs prefilled, all intake fields BLANK — not importable until staff complete). Nothing invented/imported; Shopify + prod 6e36aa7 unchanged. STOP for owner review.
+
+**STATUS (2026-11-02):** READ-ONLY Batch-2 prep. Evidence: `docs/SCA-INVENTORY-BATCH2-PREP.md` + `docs/worklists/batch2/sca-batch2-review-sheet-20261102.csv` + `docs/worklists/batch2/sca-batch2-import-DRAFT-20261102.csv`.
+- **SELECTED 10 qty=1 clear-eyewear variant IDs (distinct from Batch 1):** 48797037494559, 48873805283615, 49109051408671, 51252452917535, 49588562166047, 50011473871135, 51252418806047, 51252429357343, 50561634959647, 50562863399199. Likely brands in titles: Alain Mikli AO1347/O144, Leonard Harley Lh1010, Traction Productions Ledosky, Barton Perreira Seagrave, Kangol KL500-3, 1940s Browline (re-lensed), Gucci GG4252/S, American Optical cat-eye, Trouble Andrew x Vintage Frames (sealed collab). IDs/SKUs/titles EXACT.
+- **SAFETY CHECKS (read-only vs live mirror):** all 10 `already_linked=0` (only linked variants in prod = the 10 Batch-1); all 10 variant active + parent product active, shop second-chance-eyewear-accessories (= expected_shop_domain) → linkable at import. Zero overlap w/ Batch 1; no dup vids.
+- **DELIVERABLES:** review sheet (10 + physical_pair_exists_confirmed + BLANK staff fields) + import DRAFT (exact headers, shopify_variant_id prefilled, 8 intake fields BLANK → NOT importable until staff fill intake_type[req]+verified). Nothing invented.
+- **STAFF VERIFY:** pair exists; brand/model (free-text titles, read from frame); serial/year/country/materials/specs; intake_type=sce_presale. FLAG #8 "Trouble Andrew x Vintage Frames Unopened/Sealed" = sealed collab — confirm wearable pair vs sealed collectible. #5/#6 vintage re-lensed by SCE → owner confirm provenance wording.
+
+**STOP for owner review. NEXT (owner-authorized): approve 10 → staff verify review sheet → complete DRAFT → upload→preview→OWNER sign-off→confirm (same path as Batch 1 [[sca-batch1-import-result]]) → per-pair authenticate/certify/labels. No import until authorized. Secure-claim RC `4bd88d2` DEPLOYMENT-BLOCKED + untouched.**
+
+---
+
 # SCA — BATCH 1 IMPORTED (owner-authorized, 2026-11-02): the 10 Batch-1 candidates are now REGISTERED as UNCERTIFIED SCA eyewear records (ids 7–16, `SCA-6207BC1F69C6`…`SCA-464387C2ED74`), each atomically LINKED to its exact Shopify variant (47188919320863…48797142417695) under second-chance-eyewear-accessories. imported=10/skipped=0/failed=0. ALL physical fields BLANK (nothing invented), intake_type=sce_presale. ZERO auth/cert/QR/ownership/sale-link; pre-existing records intact; ZERO Shopify API call/store change; prod code 6e36aa7 unchanged (working tree clean, no migration/recreate). STOP.
 
 **STATUS (2026-11-02):** First GENUINE production inventory import DONE. Evidence: `docs/SCA-INVENTORY-BATCH1-IMPORT-RESULT.md`. Memory: [[sca-batch1-import-result]].
