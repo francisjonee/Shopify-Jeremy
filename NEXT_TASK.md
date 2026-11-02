@@ -1,3 +1,16 @@
+# SCA — 30-RECORD OPERATIONAL READINESS REVIEW (read-only, 2026-11-02): READY, NO BLOCKERS. All 30 catalog-linked UNCERTIFIED records (ids 7–36) are visible+manageable from the existing staff admin UI: registry listing (`/admin/sca/eyewear`) + item-detail (`/{id}`) show each public_ref with pending "Intake / Not authenticated" status + "Shopify ✓" link pill; NULL physical fields render "—" (never invented); metadata-correction ("Correct item metadata", ACL sca.eyewear.metadata.correct) reachable AND UNLOCKED for these uncertified items (pdfFieldsLocked=false when no current cert) → staff can fill brand/model/serial/year/country/materials/specs. Nothing modified; prod 6e36aa7. STOP.
+
+**STATUS (2026-11-02):** READ-ONLY operational review. Evidence: `docs/SCA-30-RECORD-OPERATIONAL-REVIEW.md`.
+- **Confirmed:** 30 items/30 links (expected variants); all intake_type=sce_presale, brand/model NULL, 0 auth/cert/qr; current_state(7-36) all lifecycle=INTAKE registry=normal (pending auth).
+- **Listing** EyewearItemController::index (SCA-051): card title = brand+model ?: public_ref (NULL→public_ref, not invented); SKU ?: '—'; Intake pill + Shopify ✓ pill ($shopifyLinks); public_ref/brand/model/serial search + filters/sort/paginate.
+- **Detail** show(): real 404 on missing; physical fields `?: '—'` (show.blade 160-166); Intake/normal + "Not authenticated"; Shopify-link section.
+- **Metadata-correction** ItemMetadataCorrectionController::pdfFieldsLocked returns FALSE when no current cert → brand/model editable for all 30 (locked only for snapshot-less CERTIFIED items per [[sca-046-metadata-correction]]).
+- **Blockers: NONE.** Minor non-blocking: card titles uncertified items by public_ref (brand/model blank) + catalog title not on card (resolve via Shopify-link/detail) — enhancement only.
+
+**STOP. NEXT (owner/staff, NOT auto): per pair physically verify + enter brand/model/serial/specs via metadata-correction → authenticate→finalize→certify(QR)→batch labels. Secure-claim RC `4bd88d2` DEPLOYMENT-BLOCKED + untouched.**
+
+---
+
 # SCA — BATCH 3 IMPORTED (owner-authorized, 2026-11-02): the next 10 eligible candidates are now REGISTERED as UNCERTIFIED SCA eyewear records (ids 27–36, `SCA-4FC3733D7102`…`SCA-688D938F1C0A`), each atomically LINKED to its exact Shopify variant (50584573509919…50779717304607) under second-chance-eyewear-accessories. imported=10/skipped=0/failed=0 (import batch#3, sha `de0eb7dfa036df5f…`). ALL physical fields NULL (nothing invented), intake_type=sce_presale. ZERO auth/cert/QR/ownership/sale-link; Batches 1+2 (7–26) + all pre-existing intact; ZERO Shopify API call/store change; prod code 6e36aa7 unchanged (tree clean, no migration/recreate). SCA registry now = 30 catalog-linked UNCERTIFIED records (Batches 1–3). STOP.
 
 **STATUS (2026-11-02):** Third genuine prod inventory import DONE. Evidence: `docs/SCA-INVENTORY-BATCH3-IMPORT-RESULT.md`. Memory: [[sca-batch2-import-result]] (import procedure + gotchas apply identically).
