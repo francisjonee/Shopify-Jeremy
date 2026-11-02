@@ -1,3 +1,15 @@
+# SCA — STAFF PHYSICAL INVENTORY VERIFICATION WORKLIST (read-only, 2026-11-02): generated `docs/worklists/sca-inventory-verification-worklist-20261102.csv` = 1,750 in-stock active linkable variants (one row each, exact 14-digit variant IDs, staff fields BLANK, 18 batches×100, 191 accessory hints). KEY: 1,579 qty=1 (likely unique pairs) vs 33 qty≥10 = 1,328 units (likely bulk→owner scope decision). No Shopify/DB/import. Prod 6e36aa7. STOP. (Phase-1 webhook verification COMPLETE.)
+
+**STATUS (2026-11-02):** READ-ONLY worklist from the local catalog mirror. Evidence: `docs/SCA-INVENTORY-VERIFICATION-WORKLIST.md` + CSV `docs/worklists/sca-inventory-verification-worklist-20261102.csv`. Builds on [[sca-csv-inventory-variant-linking]] onboarding prep.
+- **SET:** variant active + qty>0 + parent product active (matches ShopifyProductLinkService eligibility) = **1,750** rows; excluded 73 in-stock-under-archived + all zero-stock/archived. 0 dup variant IDs; IDs preserved exact 14-digit.
+- **COLUMNS:** title, product_id, variant_id, sku, option_values, inventory_quantity, possible_accessory_hint (system heuristic, 191 flagged), + BLANK staff fields (staff_eyewear_or_accessory/physical_quantity_confirmed/verified_brand/verified_model/frame_serial/notes/verification_status) + staff_batch (B001–B018, 100/batch).
+- **DATA-QUALITY:** 1,579 qty=1 (likely unique), 138 qty2-9, **33 qty≥10 = 1,328 units (max 395) likely BULK/interchangeable → owner decide if they belong in per-pair registry**; vendor=store name (brand in free-text titles, NOT prefilled); 17 blank SKU (non-blocking); 171 multi-unit.
+- **CONVERSION→IMPORT (documented):** keep eyewear+verified rows → emit physical_quantity_confirmed rows each w/ same shopify_variant_id → intake_type=sce_presale, brand/model/serial from staff, ≤500/import CSV → preview→owner sign-off→confirm (linking needs sca.eyewear.shopify.link).
+
+**STOP for review. NEXT (owner-authorized): confirm scope (recommend onboard qty=1 unique pairs first; decide bulk/mass SKUs) → staff verify a batch → convert to import CSV → 10-pair pilot → scale. No import until Jeremy authorizes. Secure-claim RC `4bd88d2` DEPLOYMENT-BLOCKED + untouched.**
+
+---
+
 # SCA — GENUINE INVENTORY ONBOARDING PREPARATION (read-only, 2026-11-02): registry + CSV import (+variant linking) LIVE/ready; catalog safely supplies ONLY shopify_variant_id + title-to-identify (vendor=store name, brand/model are free-text in titles) → per-pair facts MUST be staff-verified, never bulk-imported. Inventory qty ~3,443 across 1,823 in-stock SKUs = non-authoritative sizing estimate. NEXT = authorized 10-pair pilot. Prod unchanged 6e36aa7. STOP. (Phase-1 webhook verification COMPLETE.)
 
 **STATUS (2026-11-02):** READ-ONLY onboarding prep. Evidence: `docs/SCA-GENUINE-INVENTORY-ONBOARDING-PREP.md`. Builds on deployed CSV variant-linking ([[sca-csv-inventory-variant-linking]]) + pilot SOP/handover.
