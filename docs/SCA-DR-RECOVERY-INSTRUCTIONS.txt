@@ -10,14 +10,18 @@ PACKAGE CONTENTS
                       client/webhook secrets, and the database credentials.
   compose.env         Docker Compose settings -> /opt/sca-platform/.env (MariaDB root and app passwords).
   caddy-sca-site.txt  Reverse-proxy site block for verify.secondchanceauthenticators.com (exists nowhere else).
+  PACKAGE-INFO.txt    Creation time (UTC) and the production code commit at that time.
   CHECKSUMS.sha256    SHA-256 of the files above.  Check:  sha256sum -c CHECKSUMS.sha256
+
+OPEN THE PACKAGE (Linux):  gpg -d SCA-DR-<UTC>.tar.gpg | tar -x     (asks for the package passphrase)
+OPEN THE PACKAGE (Windows, Gpg4win, cmd.exe):  gpg -d SCA-DR-<UTC>.tar.gpg > pkg.tar  then  tar -xf pkg.tar
 
 IF ANY KEY IS ROTATED, THIS PACKAGE IS STALE: build a new one. Archives made before a backup.key
 change still need the OLD backup.key, so keep old packages until those archives have expired.
 
 RESTORE (new Ubuntu host, Docker installed, as root)
  1. Code:  git clone the private repo francisjonee/francisjonee-sca-platform-private into
-    /opt/sca-platform and check out the production commit recorded in the package notes
+    /opt/sca-platform and check out the commit in PACKAGE-INFO.txt
     (as of 2026-11-10: 46da80d).
  2. Secrets:
       install -m 600 compose.env /opt/sca-platform/.env
