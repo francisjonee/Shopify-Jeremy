@@ -1,0 +1,48 @@
+SCA — DISASTER RECOVERY INSTRUCTIONS (goes inside the encrypted recovery package as RECOVERY.txt)
+Contains no secrets. Secrets are the other files in the package.
+
+PACKAGE CONTENTS
+  backup.key          Passphrase file for every sca-backup-*.tar.gz.gpg archive (GPG symmetric AES-256).
+                      Use it as a FILE (--passphrase-file). Never open or re-save it in an editor:
+                      changed line endings break decryption.
+  app.env             Laravel settings -> /opt/sca-platform/app/.env. Contains APP_KEY (needed to decrypt
+                      the stored Shopify OAuth token and existing document links), the Shopify
+                      client/webhook secrets, and the database credentials.
+  compose.env         Docker Compose settings -> /opt/sca-platform/.env (MariaDB root and app passwords).
+  caddy-sca-site.txt  Reverse-proxy site block for verify.secondchanceauthenticators.com (exists nowhere else).
+  CHECKSUMS.sha256    SHA-256 of the files above.  Check:  sha256sum -c CHECKSUMS.sha256
+
+IF ANY KEY IS ROTATED, THIS PACKAGE IS STALE: build a new one. Archives made before a backup.key
+change still need the OLD backup.key, so keep old packages until those archives have expired.
+
+RESTORE (new Ubuntu host, Docker installed, as root)
+ 1. Code:  git clone the private repo francisjonee/francisjonee-sca-platform-private into
+    /opt/sca-platform and check out the production commit recorded in the package notes
+    (as of 2026-11-10: 46da80d).
+ 2. Secrets:
+      install -m 600 compose.env /opt/sca-platform/.env
+      install -m 600 app.env     /opt/sca-platform/app/.env
+      mkdir -p /opt/sca-platform/secrets && install -m 600 backup.key /opt/sca-platform/secrets/backup.key
+ 3. Backup archive: copy the newest sca-backup-<UTC>.tar.gz.gpg (from Backblaze sca/sca-backup-*, or any
+    saved copy) into /opt/sca-platform/backups/ and check its SHA-256 against its .sha256 or the backup log.
+ 4. Decrypt + unpack:
+      mkdir -m 700 /root/restore && cd /root/restore
+      gpg --batch --pinentry-mode loopback --passphrase-file /opt/sca-platform/secrets/backup.key \
+          -d /opt/sca-platform/backups/sca-backup-<UTC>.tar.gz.gpg | tar -x
+      -> MANIFEST.txt  db.sql.gz  documents.tar.gz  documents.sha256.txt  (check hashes in MANIFEST.txt)
+ 5. Start + load database:
+      cd /opt/sca-platform && docker compose up -d --build kr-mariadb   (wait until healthy)
+      gunzip -c /root/restore/db.sql.gz | docker exec -i kr-mariadb sh -c 'mariadb -uroot -p"$MARIADB_ROOT_PASSWORD" sca_krayin'
+ 6. Documents:  tar -xzf /root/restore/documents.tar.gz -C /opt/sca-platform/app/storage/app   (creates sca/)
+ 7. App:  cd /opt/sca-platform/app && composer install --no-dev (inside kr-app, or as in docs/RUNBOOK.md);
+          chown -R 33:33 /opt/sca-platform/app ; docker compose up -d --build ; php artisan optimize:clear
+ 8. Edge: add caddy-sca-site.txt to the host reverse proxy (kr-app must share its Docker network);
+          point DNS 'verify' A record (GoDaddy) at the new IP; wait for the HTTPS certificate.
+ 9. Backups: reinstall cron   17 3 * * * root /opt/sca-platform/scripts/backup-run.sh >> /opt/sca-platform/backups/backup.log 2>&1
+          (host timezone Europe/Berlin = 02:17 UTC), then run scripts/backup-verify-restore.sh once.
+10. Check: /collector/login loads; a known passport /p/<token> renders; staff admin login works;
+          a Shopify test webhook verifies. If APP_KEY was lost, re-authorize the Shopify app (new OAuth token).
+
+NOT IN BACKUPS (re-create by hand): app/storage/app/public (~3 MB: catalog/configuration images,
+data-transfer files); Docker image (rebuilt from docker/app.Dockerfile); GitHub deploy keys
+(make new ones); Backblaze, Postmark and GoDaddy logins (owner's password manager).
